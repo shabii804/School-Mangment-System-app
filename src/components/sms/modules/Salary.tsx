@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from "@/lib/sms-store";
+import { printSalarySlip } from "@/lib/pdf-service";
 
 const WORKING_DAYS = 26;
 const LATE_FINE = 500;
@@ -35,6 +37,7 @@ interface SalaryRow {
 
 export function SalaryModule() {
   const { toast } = useToast();
+  const { school } = useAppStore();
   const [month, setMonth] = useState("July 2026");
   const [selected, setSelected] = useState<SalaryRow | null>(null);
 
@@ -274,8 +277,14 @@ export function SalaryModule() {
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelected(null)}>Close</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => toast({ title: "Sending to printer...", description: "Salary slip queued for A4 PDF print." })}>
-              <Printer className="w-4 h-4 mr-1.5" />Print Slip
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => {
+              if (!selected) return;
+              const calc = calculate(selected);
+              const slipNo = `SLIP-202607-${selected.id.slice(-3)}`;
+              toast({ title: "Opening salary slip PDF...", description: slipNo });
+              printSalarySlip(selected, month, calc, slipNo, school);
+            }}>
+              <Printer className="w-4 h-4 mr-1.5" />Print Slip (PDF)
             </Button>
           </DialogFooter>
         </DialogContent>

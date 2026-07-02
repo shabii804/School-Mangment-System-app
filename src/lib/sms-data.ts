@@ -21,6 +21,7 @@ export interface Student {
   attendancePct: number;
   feePaidThisMonth: boolean;
   outstandingAmount: number;
+  isHosteller: boolean; // NEW: hosteller flag → adds hostel fee
 }
 
 export interface Teacher {
@@ -59,7 +60,11 @@ export interface FeeCollection {
   date: string;
   amount: number;
   mode: "Cash" | "Cheque" | "Bank Transfer";
-  feeType: string;
+  // Breakdown by fee type (only 3 types now)
+  tuition?: number;
+  admission?: number;
+  hostel?: number;
+  feeType: string; // legacy label, derived from breakdown
 }
 
 export interface TimetableSlot {
@@ -130,6 +135,10 @@ const STUDENT_SEED: Student[] = Array.from({ length: 48 }, (_, i) => {
   const name = `${isMale ? pick(FIRST_NAMES_M, i) : pick(FIRST_NAMES_F, i)} ${pick(LAST_NAMES, i)}`;
   const fatherName = `${pick(FIRST_NAMES_M, i + 3)} ${pick(LAST_NAMES, i)}`;
   const feePaid = (i % 5) !== 0; // 80% have paid
+  const isHosteller = i % 4 === 0; // 25% are hostellers
+  const tuition = cls.monthlyFee;
+  const hostel = isHosteller ? 3500 : 0;
+  const totalMonthly = tuition + hostel;
   return {
     id: `SCH-2026-${String(i + 1).padStart(4, "0")}`,
     rollNo: String((i % 30) + 1).padStart(2, "0"),
@@ -145,7 +154,8 @@ const STUDENT_SEED: Student[] = Array.from({ length: 48 }, (_, i) => {
     status: i < 45 ? "Active" : "Left",
     attendancePct: 78 + (i % 22),
     feePaidThisMonth: feePaid,
-    outstandingAmount: feePaid ? 0 : cls.monthlyFee + (i % 3 === 0 ? cls.monthlyFee : 0),
+    isHosteller,
+    outstandingAmount: feePaid ? 0 : totalMonthly + (i % 3 === 0 ? totalMonthly : 0),
   };
 });
 
@@ -183,6 +193,13 @@ export const FEE_COLLECTIONS: FeeCollection[] = Array.from({ length: 38 }, (_, i
   const daysAgo = i % 30;
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
+  // Only 3 fee types: Tuition, Admission, Hostel
+  const isAdmission = i % 11 === 0; // ~9% admissions
+  const tuition = isAdmission ? 0 : student.monthlyFee;
+  const admission = isAdmission ? student.monthlyFee * 3 : 0; // admission = 3x monthly
+  const hostel = student.isHosteller && !isAdmission ? 3500 : 0;
+  const total = tuition + admission + hostel;
+  const feeTypeLabel = isAdmission ? "Admission Fee" : student.isHosteller ? "Tuition + Hostel" : "Tuition";
   return {
     id: `FC-${String(i + 1).padStart(4, "0")}`,
     receiptNo: `RCPT-202607${String(daysAgo).padStart(2, "0")}-${String(i + 1).padStart(3, "0")}`,
@@ -190,9 +207,12 @@ export const FEE_COLLECTIONS: FeeCollection[] = Array.from({ length: 38 }, (_, i
     studentName: student.name,
     class: student.class,
     date: date.toISOString().split("T")[0],
-    amount: student.monthlyFee,
+    amount: total,
     mode: i % 4 === 0 ? "Cheque" : i % 7 === 0 ? "Bank Transfer" : "Cash",
-    feeType: i % 10 === 0 ? "Exam Fee" : "Monthly Tuition",
+    tuition,
+    admission,
+    hostel,
+    feeType: feeTypeLabel,
   };
 });
 

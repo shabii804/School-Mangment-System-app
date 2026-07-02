@@ -76,7 +76,7 @@ interface AppState {
 
   // Actions
   addStudent: (s: Student) => void;
-  collectFee: (studentId: string, amount: number, mode: "Cash" | "Cheque" | "Bank Transfer", feeType: string) => void;
+  collectFee: (studentId: string, amount: number, mode: "Cash" | "Cheque" | "Bank Transfer", feeType: string, breakdown?: { tuition?: number; admission?: number; hostel?: number }) => void;
   markAttendance: (studentIds: string[], status: "Present" | "Absent" | "Late" | "Leave") => void;
 }
 
@@ -169,7 +169,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addStudent: (s) => set((state) => ({ students: [s, ...state.students] })),
 
-  collectFee: (studentId, amount, mode, feeType) => {
+  collectFee: (studentId, amount, mode, feeType, breakdown) => {
     const state = get();
     const student = state.students.find(s => s.id === studentId);
     if (!student) return;
@@ -183,6 +183,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       date: new Date().toISOString().split("T")[0],
       amount,
       mode,
+      tuition: breakdown?.tuition,
+      admission: breakdown?.admission,
+      hostel: breakdown?.hostel,
       feeType,
     };
     const newActivity: Activity = {
@@ -190,7 +193,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
       user: state.userName,
       action: "Fee Collected",
-      description: `Rs. ${amount.toLocaleString()} from ${student.name} (${student.class})`,
+      description: `Rs. ${amount.toLocaleString()} from ${student.name} (${student.class}) — ${feeType}`,
       type: "fee",
     };
     set({

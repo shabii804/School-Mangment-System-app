@@ -14,6 +14,8 @@ import {
 } from "recharts";
 import { EXPENSE_BREAKDOWN, FEE_TREND, STUDENT_GROWTH, TEACHERS, STAFF } from "@/lib/sms-data";
 import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from "@/lib/sms-store";
+import { printFeeCollectionReport, printDefaulterList } from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
 
 const REPORTS = [
@@ -31,9 +33,29 @@ const REPORTS = [
 
 export function ReportsModule() {
   const { toast } = useToast();
+  const { feeCollections, students, school } = useAppStore();
+
+  const handlePrint = (reportId: number, name: string) => {
+    toast({ title: "Generating PDF...", description: name });
+    try {
+      if (reportId === 5) {
+        // Fee Collection Report
+        printFeeCollectionReport(feeCollections.slice(0, 30), school);
+      } else if (reportId === 6) {
+        // Defaulter Report
+        const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
+        printDefaulterList(defaulters, school);
+      } else {
+        // For other reports, just show a toast for now
+        toast({ title: "PDF ready ✓", description: `${name} — would open in new tab (demo)` });
+      }
+    } catch (e) {
+      toast({ title: "Print failed", description: "Could not generate PDF.", variant: "destructive" });
+    }
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fade-in">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">10 printable report types with PDF / Excel export.</p>
         <div className="flex gap-2">
@@ -45,8 +67,9 @@ export function ReportsModule() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {REPORTS.map(r => {
           const Icon = r.icon;
+          const isPrintable = r.id === 5 || r.id === 6;
           return (
-            <Card key={r.id} className="border-0 shadow-sm glass-card hover:shadow-md transition-shadow">
+            <Card key={r.id} className={cn("border-0 shadow-sm glass-card transition-shadow", isPrintable ? "card-hover hover:shadow-md ring-1 ring-primary/10" : "")}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={cn("rounded-xl p-2.5", r.color)}>
@@ -56,14 +79,18 @@ export function ReportsModule() {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono text-muted-foreground">#{r.id}</span>
                       <p className="font-semibold text-sm">{r.name}</p>
+                      {isPrintable && <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-700 border-0 ml-auto">Ready</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{r.desc}</p>
                     <p className="text-[10px] text-muted-foreground/70 mt-1.5">Filters: {r.filters}</p>
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-border/30 flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs"
-                    onClick={() => toast({ title: "Generating PDF...", description: r.name })}
+                  <Button
+                    variant={isPrintable ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 h-7 text-xs"
+                    onClick={() => handlePrint(r.id, r.name)}
                   >
                     <FileText className="w-3 h-3 mr-1" />PDF
                   </Button>

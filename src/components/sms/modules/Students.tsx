@@ -27,16 +27,25 @@ import {
 } from "lucide-react";
 import { CLASSES, type Student } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
+import { printStudentIDCard } from "@/lib/pdf-service";
 
 export function StudentsModule() {
-  const { students, searchQuery, addStudent } = useAppStore();
+  const { students, searchQuery, addStudent, school } = useAppStore();
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Student | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
+  const printIDCard = async (s: Student) => {
+    try {
+      await printStudentIDCard(s, school);
+    } catch {
+      // silent fail
+    }
+  };
+
   // Add form state
-  const [form, setForm] = useState({ name: "", fatherName: "", fatherPhone: "", class: "Grade 1", section: "A", gender: "Male" as "Male" | "Female" });
+  const [form, setForm] = useState({ name: "", fatherName: "", fatherPhone: "", class: "Grade 1", section: "A", gender: "Male" as "Male" | "Female", isHosteller: false });
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -64,11 +73,12 @@ export function StudentsModule() {
       status: "Active",
       attendancePct: 100,
       feePaidThisMonth: false,
-      outstandingAmount: CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 2000,
+      isHosteller: form.isHosteller,
+      outstandingAmount: (CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 2000) + (form.isHosteller ? 3500 : 0),
     };
     addStudent(newStudent);
     setAddOpen(false);
-    setForm({ name: "", fatherName: "", fatherPhone: "", class: "Grade 1", section: "A", gender: "Male" });
+    setForm({ name: "", fatherName: "", fatherPhone: "", class: "Grade 1", section: "A", gender: "Male", isHosteller: false });
   };
 
   return (
@@ -144,6 +154,19 @@ export function StudentsModule() {
                     <SelectItem value="C">C</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="col-span-2 flex items-center gap-3 rounded-lg border border-border/40 p-3">
+                <input
+                  type="checkbox"
+                  id="isHosteller"
+                  checked={form.isHosteller}
+                  onChange={e => setForm({...form, isHosteller: e.target.checked})}
+                  className="w-4 h-4 rounded accent-primary"
+                />
+                <Label htmlFor="isHosteller" className="cursor-pointer flex-1">
+                  <span className="font-medium">Hosteller (boarding student)</span>
+                  <p className="text-[10px] text-muted-foreground">Adds Rs. 3,500/month hostel fee to outstanding</p>
+                </Label>
               </div>
             </div>
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
@@ -263,7 +286,9 @@ export function StudentsModule() {
                     </DrawerDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline"><QrCode className="w-4 h-4 mr-1.5" />ID Card</Button>
+                    <Button size="sm" variant="outline" onClick={() => printIDCard(selected)}>
+                      <QrCode className="w-4 h-4 mr-1.5" />Print ID Card
+                    </Button>
                     <Button size="sm" variant="outline"><Printer className="w-4 h-4 mr-1.5" />Profile</Button>
                   </div>
                 </div>

@@ -18,6 +18,8 @@ import {
   FileText, Plus, Printer, Award, BookOpen, GraduationCap, CheckCircle2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from "@/lib/sms-store";
+import { printCertificate, printResultCard } from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
 
 const GRADE_BANDS = [
@@ -35,6 +37,7 @@ function gradeFor(pct: number) {
 
 export function ResultsModule() {
   const { toast } = useToast();
+  const { school } = useAppStore();
   const [selectedExam, setSelectedExam] = useState(EXAMS[0].id);
   const [selectedClass, setSelectedClass] = useState("Grade 9");
   const [marksDialog, setMarksDialog] = useState(false);
@@ -71,9 +74,25 @@ export function ResultsModule() {
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setMarksDialog(true)}><Plus className="w-4 h-4 mr-1.5" />Enter Marks</Button>
           <Button size="sm" className="bg-primary hover:bg-primary/90"
-            onClick={() => toast({ title: "Result Cards Generated", description: `${classStudents.length} cards for ${selectedClass}.` })}
+            onClick={() => {
+              if (marksData.length === 0) return;
+              const top = marksData[0];
+              const examName = EXAMS.find(e => e.id === selectedExam)?.name || "Exam";
+              toast({ title: "Opening result card PDF...", description: `${top.student.name} • ${examName}` });
+              printResultCard(
+                top.student,
+                examName,
+                top.subjects,
+                top.total,
+                top.maxTotal,
+                top.pct,
+                top.grade.grade,
+                1,
+                school
+              );
+            }}
           >
-            <Printer className="w-4 h-4 mr-1.5" />Generate Result Cards
+            <Printer className="w-4 h-4 mr-1.5" />Print Top Result Card
           </Button>
         </div>
       </div>
@@ -208,6 +227,7 @@ const CERT_TYPES = [
 
 export function CertificatesModule() {
   const { toast } = useToast();
+  const { school } = useAppStore();
   const [selected, setSelected] = useState<typeof CERT_TYPES[0] | null>(null);
   const [selectedStudent, setSelectedStudent] = useState(STUDENTS[0]);
 
@@ -324,11 +344,14 @@ export function CertificatesModule() {
             <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
             <Button className="bg-primary hover:bg-primary/90"
               onClick={() => {
-                toast({ title: "Certificate Issued", description: `CERT-2026-005 for ${selectedStudent.name}.` });
+                if (!selected) return;
+                const certNo = `CERT-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
+                toast({ title: "Certificate Issued ✓", description: `${certNo} for ${selectedStudent.name}. Opening PDF...` });
+                printCertificate(selectedStudent, selected.type, certNo, school);
                 setSelected(null);
               }}
             >
-              <Printer className="w-4 h-4 mr-1.5" />Issue & Print
+              <Printer className="w-4 h-4 mr-1.5" />Issue & Print (PDF)
             </Button>
           </DialogFooter>
         </DialogContent>
