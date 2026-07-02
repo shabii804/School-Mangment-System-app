@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/tabs";
 import {
   UserPlus, Shield, Database, Palette, Calendar, DollarSign,
-  KeyRound, Download, Upload, Moon, Sun, Building2,
+  KeyRound, Download, Upload, Moon, Sun, Building2, Trash2, Image as ImageIcon,
 } from "lucide-react";
 import { useAppStore } from "@/lib/sms-store";
 import { useToast } from "@/hooks/use-toast";
@@ -141,13 +141,53 @@ export function UsersModule() {
 
 export function SettingsModule() {
   const { toast } = useToast();
-  const { isDark, toggleTheme } = useAppStore();
+  const { isDark, toggleTheme, school, updateSchool, setLogo } = useAppStore();
   const [autoBackup, setAutoBackup] = useState(true);
   const [lateFine, setLateFine] = useState("500");
   const [dueDate, setDueDate] = useState("10");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Local form state synced with store
+  const [form, setForm] = useState({
+    name: school.name,
+    tagline: school.tagline,
+    address: school.address,
+    phone: school.phone,
+    email: school.email,
+    session: school.session,
+  });
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please upload an image file (PNG, JPG, SVG).", variant: "destructive" });
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 500KB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLogo(reader.result as string);
+      toast({ title: "Logo Updated ✓", description: "School logo saved and will appear across the app." });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = () => {
+    setLogo(null);
+    toast({ title: "Logo Removed", description: "Reverted to default EduDesk icon." });
+  };
+
+  const saveSchoolInfo = () => {
+    updateSchool(form);
+    toast({ title: "School Information Saved ✓", description: "Changes are now reflected across the app." });
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fade-in">
       <Tabs defaultValue="school">
         <TabsList className="grid w-full max-w-2xl grid-cols-6">
           <TabsTrigger value="school">School</TabsTrigger>
@@ -158,30 +198,62 @@ export function SettingsModule() {
           <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
 
-        {/* School info */}
+        {/* School info — with logo upload */}
         <TabsContent value="school">
           <Card className="border-0 shadow-sm glass-card">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><Building2 className="w-4 h-4 text-primary" />School Information</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div><Label>School Name</Label><Input defaultValue="Greenwood Public School" /></div>
-              <div><Label>Phone</Label><Input defaultValue="+92 21 1234567" /></div>
-              <div className="col-span-2"><Label>Address</Label><Input defaultValue="123 Education Road, Karachi, Pakistan" /></div>
-              <div><Label>Email</Label><Input defaultValue="info@greenwood.edu" /></div>
-              <div><Label>Website</Label><Input defaultValue="www.greenwood.edu" /></div>
-              <div><Label>Academic Session Start</Label><Input type="date" defaultValue="2026-04-01" /></div>
-              <div><Label>Academic Session End</Label><Input type="date" defaultValue="2027-03-31" /></div>
-              <div className="col-span-2">
-                <Label>School Logo</Label>
-                <div className="mt-2 flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                    <Building2 className="w-8 h-8 text-primary-foreground" />
+            <CardContent className="space-y-5">
+              {/* Logo upload section */}
+              <div className="rounded-xl border-2 border-dashed border-border/60 p-5 bg-muted/20">
+                <div className="flex items-center gap-5">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shadow-lg shrink-0">
+                    {school.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={school.logo} alt="School logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <Building2 className="w-10 h-10 text-primary-foreground" />
+                    )}
                   </div>
-                  <Button variant="outline" size="sm"><Upload className="w-4 h-4 mr-1.5" />Upload New Logo</Button>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm">School Logo</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">PNG, JPG or SVG • Max 500KB • Square recommended</p>
+                    <div className="flex gap-2 mt-3">
+                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="w-3.5 h-3.5 mr-1.5" />Upload Logo
+                      </Button>
+                      {school.logo && (
+                        <Button variant="outline" size="sm" onClick={removeLogo} className="text-red-600 hover:text-red-700">
+                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />Remove
+                        </Button>
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="col-span-2">
-                <Button className="bg-primary hover:bg-primary/90" onClick={() => toast({ title: "Settings Saved", description: "School information updated." })}>Save Changes</Button>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>School Name</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+                <div><Label>Tagline</Label><Input value={form.tagline} onChange={e => setForm({...form, tagline: e.target.value})} /></div>
+                <div className="col-span-2"><Label>Address</Label><Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+                <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+                <div><Label>Email</Label><Input value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
+                <div><Label>Academic Session</Label><Input value={form.session} onChange={e => setForm({...form, session: e.target.value})} /></div>
+                <div><Label>Website</Label><Input defaultValue="www.greenwood.edu" /></div>
               </div>
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+                <p className="font-medium text-primary flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" />Live Preview</p>
+                <p className="text-muted-foreground mt-1">
+                  Your school name &ldquo;{form.name}&rdquo; and logo appear on the sidebar, dashboard hero, receipts, certificates, and salary slips.
+                </p>
+              </div>
+              <Button className="bg-primary hover:bg-primary/90" onClick={saveSchoolInfo}>Save Changes</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -330,11 +402,16 @@ export function SettingsModule() {
         <TabsContent value="about">
           <Card className="border-0 shadow-sm glass-card">
             <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mx-auto">
-                <Building2 className="w-8 h-8 text-primary-foreground" />
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mx-auto overflow-hidden ring-2 ring-primary/20 shadow-lg">
+                {school.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Building2 className="w-10 h-10 text-primary-foreground" />
+                )}
               </div>
-              <p className="font-bold text-lg mt-3">EduDesk</p>
-              <p className="text-sm text-muted-foreground">School Management System v1.0</p>
+              <p className="font-bold text-lg mt-3">{school.name}</p>
+              <p className="text-sm text-muted-foreground">EduDesk SMS v1.0 • Session {school.session}</p>
               <p className="text-xs text-muted-foreground mt-1">Built with React + Tauri v2 + Rust + SQLite</p>
               <div className="grid grid-cols-3 gap-3 mt-6">
                 <div className="rounded-lg bg-muted/30 p-3">

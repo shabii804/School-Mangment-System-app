@@ -304,3 +304,38 @@ export const EXPENSE_BREAKDOWN = [
   { name: "Transport", value: STAFF.filter(s => s.department === "Transport").reduce((s, t) => s + t.monthlySalary, 0), color: "#EC4899" },
   { name: "Housekeeping", value: STAFF.filter(s => s.department === "Housekeeping").reduce((s, t) => s + t.monthlySalary, 0), color: "#14B8A6" },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// Today's schedule (timetable for currently-running period)
+// ─────────────────────────────────────────────────────────────
+export const TODAY_SCHEDULE = [
+  { time: "08:00", period: "P1", subject: "Mathematics", teacher: "Ms. Sadia", class: "Grade 9-A", room: "R-201", status: "completed" },
+  { time: "08:45", period: "P2", subject: "Physics", teacher: "Ms. Sadia", class: "Grade 9-A", room: "Lab-1", status: "completed" },
+  { time: "09:30", period: "P3", subject: "English", teacher: "Ms. Ayesha", class: "Grade 7-A", room: "R-105", status: "in-progress" },
+  { time: "10:30", period: "Break", subject: "Morning Break", teacher: "—", class: "—", room: "—", status: "break" },
+  { time: "10:45", period: "P4", subject: "Chemistry", teacher: "Mr. Imran", class: "Grade 9-A", room: "Lab-2", status: "upcoming" },
+  { time: "11:30", period: "P5", subject: "Urdu", teacher: "Ms. Hina", class: "Grade 5-A", room: "R-103", status: "upcoming" },
+  { time: "12:15", period: "P6", subject: "Computer", teacher: "Mr. Kamran", class: "Grade 7-A", room: "Lab-3", status: "upcoming" },
+];
+
+// ─────────────────────────────────────────────────────────────
+// Upcoming birthdays (next 7 days)
+// ─────────────────────────────────────────────────────────────
+export const UPCOMING_BIRTHDAYS = [
+  { name: "Ahmed Khan", class: "Grade 5-A", date: "Today", age: 11, avatar: "AK" },
+  { name: "Fatima Ali", class: "Grade 3-B", date: "Tomorrow", age: 9, avatar: "FA" },
+  { name: "Hamza Sheikh", class: "Grade 8-A", date: "Fri, Jul 4", age: 13, avatar: "HS" },
+  { name: "Zainab Malik", class: "Grade 1-A", date: "Sat, Jul 5", age: 7, avatar: "ZM" },
+  { name: "Bilal Ahmed", class: "Grade 6-B", date: "Mon, Jul 7", age: 12, avatar: "BA" },
+];
+
+// ─────────────────────────────────────────────────────────────
+// Pending tasks for today
+// ─────────────────────────────────────────────────────────────
+export const PENDING_TASKS = [
+  { id: "T1", title: "Mark attendance for Grade 10-A", module: "attendance" as const, priority: "high" as const, dueIn: "30 min" },
+  { id: "T2", title: "Collect fee from 3 defaulters", module: "defaulters" as const, priority: "high" as const, dueIn: "2 hours" },
+  { id: "T3", title: "Generate July salary slips", module: "salary" as const, priority: "medium" as const, dueIn: "Today" },
+  { id: "T4", title: "Issue bonafide certificate for Ayesha", module: "certificates" as const, priority: "medium" as const, dueIn: "Today" },
+  { id: "T5", title: "Enter mid-term English marks", module: "results" as const, priority: "low" as const, dueIn: "Tomorrow" },
+];

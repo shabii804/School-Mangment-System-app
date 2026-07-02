@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore, type Role } from "@/lib/sms-store";
-import { Bell, Search, Moon, Sun, ChevronDown } from "lucide-react";
+import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,65 +17,117 @@ const ROLE_LABELS: Record<Role, { label: string; color: string }> = {
   teacher: { label: "Teacher", color: "bg-purple-500/15 text-purple-600" },
 };
 
-const MODULE_TITLES: Record<string, string> = {
-  dashboard: "Dashboard",
-  students: "Student Management",
-  teachers: "Teacher Management",
-  staff: "Staff Management",
-  classes: "Class Management",
-  timetable: "Timetable",
-  attendance: "Attendance",
-  salary: "Salary & Fine Management",
-  fees: "Fee Collection",
-  defaulters: "Fee Defaulters",
-  results: "Examination & Results",
-  certificates: "Certificates",
-  reports: "Reports",
-  analytics: "Analytics",
-  users: "User Management",
-  settings: "Settings",
+const MODULE_TITLES: Record<string, { title: string; subtitle: string }> = {
+  dashboard: { title: "Dashboard", subtitle: "School overview at a glance" },
+  students: { title: "Student Management", subtitle: "Admissions, profiles, and enrollment" },
+  teachers: { title: "Teacher Management", subtitle: "Teaching staff and assignments" },
+  staff: { title: "Staff Management", subtitle: "Non-teaching employees" },
+  classes: { title: "Class Management", subtitle: "Classes, sections, and subjects" },
+  timetable: { title: "Timetable", subtitle: "Weekly class schedules" },
+  attendance: { title: "Attendance", subtitle: "Students, teachers, and staff" },
+  salary: { title: "Salary & Fine Management", subtitle: "Payroll with attendance deductions" },
+  fees: { title: "Fee Collection", subtitle: "Collect fees and print receipts" },
+  defaulters: { title: "Fee Defaulters", subtitle: "Students with outstanding fees" },
+  results: { title: "Examination & Results", subtitle: "Marks, grades, and result cards" },
+  certificates: { title: "Certificates", subtitle: "Issue official school documents" },
+  reports: { title: "Reports", subtitle: "Printable reports and exports" },
+  analytics: { title: "Analytics", subtitle: "Trends and performance insights" },
+  users: { title: "User Management", subtitle: "Accounts and role permissions" },
+  settings: { title: "Settings", subtitle: "School configuration" },
+};
+
+const NOTIF_COLORS: Record<string, string> = {
+  fee: "bg-emerald-500",
+  attendance: "bg-primary",
+  admission: "bg-purple-500",
+  salary: "bg-accent",
+  system: "bg-muted-foreground",
+  birthday: "bg-pink-500",
 };
 
 export function Topbar() {
-  const { role, setRole, userName, activeModule, isDark, toggleTheme, setSearchQuery } = useAppStore();
+  const {
+    role, setRole, userName, activeModule, isDark, toggleTheme,
+    setCommandOpen, notifications, markNotificationRead, markAllNotificationsRead, unreadCount,
+  } = useAppStore();
+
   const roleInfo = ROLE_LABELS[role];
+  const meta = MODULE_TITLES[activeModule] || { title: "Dashboard", subtitle: "" };
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const unread = unreadCount();
 
   return (
     <header className="sticky top-0 z-30 glass-card border-b border-border/40">
       <div className="px-6 py-3 flex items-center gap-4">
-        {/* Title */}
+        {/* Title block */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-bold text-foreground leading-tight">{MODULE_TITLES[activeModule]}</h2>
-          <p className="text-xs text-muted-foreground">{today}</p>
+          <h2 className="text-lg font-bold text-foreground leading-tight">{meta.title}</h2>
+          <p className="text-xs text-muted-foreground truncate">{meta.subtitle} • {today}</p>
         </div>
 
-        {/* Search */}
-        <div className="relative w-72 hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search students, receipts, IDs... (Ctrl+K)"
-            className="pl-9 bg-background/60 border-border/50 h-9 text-sm"
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        {/* Command palette trigger */}
+        <button
+          onClick={() => setCommandOpen(true)}
+          className="hidden md:flex items-center gap-2 w-72 h-9 px-3 rounded-md border border-border/50 bg-background/60 hover:bg-background hover:border-primary/30 transition-colors text-sm text-muted-foreground"
+        >
+          <Search className="w-4 h-4" />
+          <span className="flex-1 text-left">Search anything...</span>
+          <kbd className="flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border/60 bg-muted/40 text-[10px] font-mono">
+            <Command className="w-2.5 h-2.5" />K
+          </kbd>
+        </button>
 
         {/* Theme toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleTheme}
-          className="h-9 w-9"
-          aria-label="Toggle theme"
-        >
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9" aria-label="Toggle theme">
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Notifications">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Notifications">
+              <Bell className="w-4 h-4" />
+              {unread > 0 && (
+                <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                  {unread}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 p-0">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
+              <span className="text-sm font-semibold">Notifications</span>
+              <button onClick={markAllNotificationsRead} className="text-[10px] text-primary hover:underline">
+                Mark all read
+              </button>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.map(n => (
+                <button
+                  key={n.id}
+                  onClick={() => markNotificationRead(n.id)}
+                  className={cn(
+                    "w-full flex items-start gap-3 p-3 border-b border-border/30 hover:bg-muted/40 text-left transition-colors",
+                    !n.read && "bg-primary/5"
+                  )}
+                >
+                  <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", NOTIF_COLORS[n.type])} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{n.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.description}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-[10px] text-muted-foreground/70">{n.time}</p>
+                      {n.action && (
+                        <span className="text-[10px] text-primary font-medium">{n.action.label} →</span>
+                      )}
+                    </div>
+                  </div>
+                  {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />}
+                </button>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Role switcher + user */}
         <DropdownMenu>

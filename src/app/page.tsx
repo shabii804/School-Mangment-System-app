@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAppStore } from "@/lib/sms-store";
 import { Sidebar } from "@/components/sms/Sidebar";
 import { Topbar } from "@/components/sms/Topbar";
+import { CommandPalette } from "@/components/sms/CommandPalette";
 import { DashboardModule } from "@/components/sms/modules/Dashboard";
 import { StudentsModule } from "@/components/sms/modules/Students";
 import { TeachersModule, StaffModule } from "@/components/sms/modules/TeachersStaff";
@@ -16,7 +17,7 @@ import { ReportsModule, AnalyticsModule } from "@/components/sms/modules/Reports
 import { UsersModule, SettingsModule } from "@/components/sms/modules/UsersSettings";
 
 export default function Home() {
-  const { activeModule, isDark } = useAppStore();
+  const { activeModule, isDark, setCommandOpen } = useAppStore();
 
   // Apply dark class to <html>
   useEffect(() => {
@@ -25,18 +26,17 @@ export default function Home() {
     }
   }, [isDark]);
 
-  // Keyboard shortcut: Ctrl+K focuses search (handled in Topbar via id)
+  // Global keyboard shortcut: Ctrl/Cmd+K opens command palette
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        const input = document.querySelector<HTMLInputElement>('input[placeholder*="Search students"]');
-        if (input) input.focus();
+        setCommandOpen(true);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [setCommandOpen]);
 
   const renderModule = () => {
     switch (activeModule) {
@@ -66,9 +66,12 @@ export default function Home() {
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar />
         <main className="flex-1 p-6 overflow-x-hidden">
-          {renderModule()}
+          <div key={activeModule} className="fade-in">
+            {renderModule()}
+          </div>
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

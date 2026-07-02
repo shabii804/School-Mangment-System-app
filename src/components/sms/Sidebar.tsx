@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useAppStore, type ModuleKey } from "@/lib/sms-store";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, GraduationCap as Logo,
-  type LucideIcon,
+  ChevronLeft, ChevronRight, type LucideIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -44,9 +45,8 @@ const GROUP_LABELS: Record<NavItem["group"], string> = {
 };
 
 export function Sidebar() {
-  const activeModule = useAppStore((s) => s.activeModule);
-  const setActiveModule = useAppStore((s) => s.setActiveModule);
-  const role = useAppStore((s) => s.role);
+  const { activeModule, setActiveModule, role, school } = useAppStore();
+  const [collapsed, setCollapsed] = useState(false);
 
   // Filter nav items by role
   const visibleItems = NAV_ITEMS.filter(item => {
@@ -59,17 +59,35 @@ export function Sidebar() {
   const groups: NavItem["group"][] = ["main", "operations", "finance", "academics", "system"];
 
   return (
-    <aside className="sidebar-bg w-64 shrink-0 h-screen sticky top-0 overflow-y-auto flex flex-col">
-      {/* Logo / Brand */}
-      <div className="px-5 py-5 border-b border-border/40">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md">
-            <Logo className="w-5 h-5 text-primary-foreground" />
+    <aside className={cn(
+      "sidebar-bg h-screen sticky top-0 overflow-y-auto flex flex-col transition-all duration-200 shrink-0",
+      collapsed ? "w-16" : "w-64"
+    )}>
+      {/* Brand header */}
+      <div className="px-3 py-4 border-b border-border/40">
+        <div className="flex items-center gap-2.5">
+          {/* Logo */}
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shrink-0 overflow-hidden">
+            {school.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
+            ) : (
+              <Logo className="w-5 h-5 text-primary-foreground" />
+            )}
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-base leading-tight text-foreground">EduDesk</h1>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">School Management</p>
-          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0 fade-in">
+              <h1 className="font-bold text-sm leading-tight text-foreground truncate">{school.name}</h1>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">SMS v1.0</p>
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted/60 transition-colors"
+            aria-label="Collapse sidebar"
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
@@ -80,9 +98,11 @@ export function Sidebar() {
           if (items.length === 0) return null;
           return (
             <div key={group}>
-              <p className="px-3 mb-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                {GROUP_LABELS[group]}
-              </p>
+              {!collapsed && (
+                <p className="px-3 mb-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {GROUP_LABELS[group]}
+                </p>
+              )}
               <div className="space-y-0.5">
                 {items.map(item => {
                   const Icon = item.icon;
@@ -91,15 +111,17 @@ export function Sidebar() {
                     <button
                       key={item.key}
                       onClick={() => setActiveModule(item.key)}
+                      title={collapsed ? item.label : undefined}
                       className={cn(
                         "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-left transition-all",
                         isActive
                           ? "nav-item-active"
-                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                        collapsed && "justify-center px-2"
                       )}
                     >
                       <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : "")} />
-                      <span className="truncate">{item.label}</span>
+                      {!collapsed && <span className="truncate">{item.label}</span>}
                     </button>
                   );
                 })}
@@ -109,12 +131,19 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-border/40 mt-auto">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>v1.0 • Offline Ready</span>
-        </div>
+      {/* Footer status */}
+      <div className="px-3 py-3 border-t border-border/40 mt-auto">
+        {!collapsed ? (
+          <div className="flex items-center gap-2 text-xs">
+            <div className="relative">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75" />
+            </div>
+            <span className="text-muted-foreground">Online • Offline-ready</span>
+          </div>
+        ) : (
+          <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto" />
+        )}
       </div>
     </aside>
   );

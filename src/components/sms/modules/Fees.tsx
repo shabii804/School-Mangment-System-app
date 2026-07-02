@@ -247,7 +247,7 @@ export function FeesModule() {
 }
 
 export function DefaultersModule() {
-  const { students } = useAppStore();
+  const { students, setActiveModule, setSelectedStudent } = useAppStore();
   const [classFilter, setClassFilter] = useState("all");
 
   const defaulters = useMemo(() => {
@@ -338,7 +338,15 @@ export function DefaultersModule() {
                   <TableCell><Badge variant="outline" className="text-xs bg-red-500/5">{Math.ceil(d.outstandingAmount / d.monthlyFee)} month{Math.ceil(d.outstandingAmount / d.monthlyFee) > 1 ? "s" : ""}</Badge></TableCell>
                   <TableCell className="text-right"><span className="font-bold text-red-600">Rs. {d.outstandingAmount.toLocaleString()}</span></TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="outline" className="h-7 text-xs bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+                      onClick={() => {
+                        setSelectedStudent(d.id);
+                        setActiveModule("fees");
+                      }}
+                    >
                       <CheckCircle2 className="w-3 h-3 mr-1" />Collect
                     </Button>
                   </TableCell>

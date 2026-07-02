@@ -10,6 +10,26 @@ export type ModuleKey =
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
   | "reports" | "analytics" | "users" | "settings";
 
+export interface SchoolInfo {
+  name: string;
+  tagline: string;
+  address: string;
+  phone: string;
+  email: string;
+  logo: string | null; // base64 data URL
+  session: string;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  type: "fee" | "attendance" | "admission" | "salary" | "system" | "birthday";
+  read: boolean;
+  action?: { module: ModuleKey; label: string };
+}
+
 interface AppState {
   // Auth
   role: Role;
@@ -19,6 +39,11 @@ interface AppState {
   // Navigation
   activeModule: ModuleKey;
   setActiveModule: (m: ModuleKey) => void;
+
+  // School branding
+  school: SchoolInfo;
+  updateSchool: (patch: Partial<SchoolInfo>) => void;
+  setLogo: (logo: string | null) => void;
 
   // Data
   students: Student[];
@@ -35,6 +60,20 @@ interface AppState {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
 
+  // Command palette
+  commandOpen: boolean;
+  setCommandOpen: (open: boolean) => void;
+
+  // Notifications
+  notifications: Notification[];
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  unreadCount: () => number;
+
+  // Selected student for cross-module navigation
+  selectedStudentId: string | null;
+  setSelectedStudent: (id: string | null) => void;
+
   // Actions
   addStudent: (s: Student) => void;
   collectFee: (studentId: string, amount: number, mode: "Cash" | "Cheque" | "Bank Transfer", feeType: string) => void;
@@ -47,6 +86,40 @@ const ROLE_NAMES: Record<Role, string> = {
   teacher: "Ms. Sadia (Teacher)",
 };
 
+const DEFAULT_SCHOOL: SchoolInfo = {
+  name: "Greenwood Public School",
+  tagline: "Knowledge • Character • Excellence",
+  address: "123 Education Road, Karachi, Pakistan",
+  phone: "+92 21 1234567",
+  email: "info@greenwood.edu",
+  logo: null,
+  session: "2026–27",
+};
+
+// Load persisted school info from localStorage (client-side only)
+function loadSchool(): SchoolInfo {
+  if (typeof window === "undefined") return DEFAULT_SCHOOL;
+  try {
+    const raw = window.localStorage.getItem("edudesk_school");
+    if (raw) return { ...DEFAULT_SCHOOL, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULT_SCHOOL;
+}
+
+function saveSchool(s: SchoolInfo) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem("edudesk_school", JSON.stringify(s)); } catch {}
+}
+
+const INITIAL_NOTIFICATIONS: Notification[] = [
+  { id: "N1", title: "3 Fee Defaulters Today", description: "Rs. 9,000 outstanding across 3 students", time: "5 min ago", type: "fee", read: false, action: { module: "defaulters", label: "View List" } },
+  { id: "N2", title: "Attendance Pending", description: "Grade 10-A attendance not marked yet", time: "1 hour ago", type: "attendance", read: false, action: { module: "attendance", label: "Mark Now" } },
+  { id: "N3", title: "Salary Slips Due", description: "July 2026 payroll needs to be finalized", time: "2 hours ago", type: "salary", read: false, action: { module: "salary", label: "Process" } },
+  { id: "N4", title: "New Admission", description: "Zara Sheikh joined Nursery-A", time: "Yesterday", type: "admission", read: true, action: { module: "students", label: "View Profile" } },
+  { id: "N5", title: "Backup Completed", description: "Automatic daily backup saved (4.2 MB)", time: "Yesterday", type: "system", read: true },
+  { id: "N6", title: "Birthday Today 🎂", description: "Ahmed Khan (Grade 5-A) celebrates today", time: "Today", type: "birthday", read: false, action: { module: "students", label: "Greet" } },
+];
+
 export const useAppStore = create<AppState>((set, get) => ({
   role: "admin",
   setRole: (role) => set({ role, userName: ROLE_NAMES[role] }),
@@ -54,6 +127,18 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   activeModule: "dashboard",
   setActiveModule: (m) => set({ activeModule: m }),
+
+  school: loadSchool(),
+  updateSchool: (patch) => {
+    const next = { ...get().school, ...patch };
+    saveSchool(next);
+    set({ school: next });
+  },
+  setLogo: (logo) => {
+    const next = { ...get().school, logo };
+    saveSchool(next);
+    set({ school: next });
+  },
 
   students: STUDENTS,
   teachers: TEACHERS,
@@ -66,6 +151,21 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   searchQuery: "",
   setSearchQuery: (q) => set({ searchQuery: q }),
+
+  commandOpen: false,
+  setCommandOpen: (open) => set({ commandOpen: open }),
+
+  notifications: INITIAL_NOTIFICATIONS,
+  markNotificationRead: (id) => set((s) => ({
+    notifications: s.notifications.map(n => n.id === id ? { ...n, read: true } : n),
+  })),
+  markAllNotificationsRead: () => set((s) => ({
+    notifications: s.notifications.map(n => ({ ...n, read: true })),
+  })),
+  unreadCount: () => get().notifications.filter(n => !n.read).length,
+
+  selectedStudentId: null,
+  setSelectedStudent: (id) => set({ selectedStudentId: id }),
 
   addStudent: (s) => set((state) => ({ students: [s, ...state.students] })),
 
