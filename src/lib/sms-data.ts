@@ -1,0 +1,306 @@
+// Demo data store for the School Management System
+// All data is in-memory mock data for the desktop app simulation
+
+export type Role = "admin" | "accountant" | "teacher";
+
+export type StudentStatus = "Active" | "Left";
+export interface Student {
+  id: string;
+  rollNo: string;
+  name: string;
+  fatherName: string;
+  fatherPhone: string;
+  class: string;
+  section: string;
+  gender: "Male" | "Female";
+  dob: string;
+  admissionDate: string;
+  monthlyFee: number;
+  status: StudentStatus;
+  photo?: string;
+  attendancePct: number;
+  feePaidThisMonth: boolean;
+  outstandingAmount: number;
+}
+
+export interface Teacher {
+  id: string;
+  name: string;
+  cnic: string;
+  designation: string;
+  qualification: string;
+  subjects: string[];
+  classes: string[];
+  monthlySalary: number;
+  joiningDate: string;
+  phone: string;
+  gender: "Male" | "Female";
+  attendance: { present: number; late: number; halfDay: number; absent: number; leave: number };
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  cnic: string;
+  department: string;
+  designation: string;
+  monthlySalary: number;
+  joiningDate: string;
+  phone: string;
+  attendance: { present: number; late: number; halfDay: number; absent: number; leave: number };
+}
+
+export interface FeeCollection {
+  id: string;
+  receiptNo: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  date: string;
+  amount: number;
+  mode: "Cash" | "Cheque" | "Bank Transfer";
+  feeType: string;
+}
+
+export interface TimetableSlot {
+  day: string;
+  period: number;
+  subject: string;
+  teacher: string;
+  room: string;
+}
+
+export interface Exam {
+  id: string;
+  name: string;
+  type: "Monthly" | "Mid-Term" | "Final";
+  startDate: string;
+  endDate: string;
+  classes: string[];
+}
+
+export interface Activity {
+  id: string;
+  timestamp: string;
+  user: string;
+  action: string;
+  description: string;
+  type: "fee" | "attendance" | "admission" | "salary" | "certificate" | "system";
+}
+
+// ─────────────────────────────────────────────────────────────
+// Classes & subjects
+// ─────────────────────────────────────────────────────────────
+export const CLASSES = [
+  { name: "Playgroup", sections: ["A", "B"], monthlyFee: 1500 },
+  { name: "Nursery", sections: ["A", "B"], monthlyFee: 1800 },
+  { name: "KG", sections: ["A", "B"], monthlyFee: 2000 },
+  { name: "Grade 1", sections: ["A", "B", "C"], monthlyFee: 2200 },
+  { name: "Grade 2", sections: ["A", "B"], monthlyFee: 2400 },
+  { name: "Grade 3", sections: ["A", "B"], monthlyFee: 2600 },
+  { name: "Grade 4", sections: ["A", "B"], monthlyFee: 2800 },
+  { name: "Grade 5", sections: ["A", "B"], monthlyFee: 3000 },
+  { name: "Grade 6", sections: ["A", "B"], monthlyFee: 3200 },
+  { name: "Grade 7", sections: ["A"], monthlyFee: 3500 },
+  { name: "Grade 8", sections: ["A"], monthlyFee: 3800 },
+  { name: "Grade 9", sections: ["A"], monthlyFee: 4200 },
+  { name: "Grade 10", sections: ["A"], monthlyFee: 4500 },
+];
+
+export const SUBJECTS = [
+  "English", "Urdu", "Mathematics", "Science", "Social Studies",
+  "Islamiat", "Computer", "Physics", "Chemistry", "Biology",
+];
+
+// ─────────────────────────────────────────────────────────────
+// Sample students (40 students across classes)
+// ─────────────────────────────────────────────────────────────
+const FIRST_NAMES_M = ["Ahmed", "Bilal", "Hamza", "Usman", "Ali", "Hassan", "Zain", "Omar", "Bilal", "Farhan"];
+const FIRST_NAMES_F = ["Ayesha", "Fatima", "Zainab", "Maryam", "Hira", "Sana", "Aisha", "Iqra", "Noor", "Sidra"];
+const LAST_NAMES = ["Khan", "Ahmed", "Malik", "Sheikh", "Qureshi", "Butt", "Raza", "Ali", "Hussain", "Akram"];
+
+function pick<T>(arr: T[], i: number): T {
+  return arr[i % arr.length];
+}
+
+const STUDENT_SEED: Student[] = Array.from({ length: 48 }, (_, i) => {
+  const cls = CLASSES[i % CLASSES.length];
+  const section = cls.sections[i % cls.sections.length];
+  const isMale = i % 2 === 0;
+  const name = `${isMale ? pick(FIRST_NAMES_M, i) : pick(FIRST_NAMES_F, i)} ${pick(LAST_NAMES, i)}`;
+  const fatherName = `${pick(FIRST_NAMES_M, i + 3)} ${pick(LAST_NAMES, i)}`;
+  const feePaid = (i % 5) !== 0; // 80% have paid
+  return {
+    id: `SCH-2026-${String(i + 1).padStart(4, "0")}`,
+    rollNo: String((i % 30) + 1).padStart(2, "0"),
+    name,
+    fatherName,
+    fatherPhone: `+92 3${String(10000000 + i * 12345).slice(0, 8)}`,
+    class: cls.name,
+    section,
+    gender: isMale ? "Male" : "Female",
+    dob: `${2014 + (i % 6)}-0${(i % 9) + 1}-1${i % 9}`,
+    admissionDate: `${2024 + (i % 2)}-0${(i % 9) + 1}-1${i % 9}`,
+    monthlyFee: cls.monthlyFee,
+    status: i < 45 ? "Active" : "Left",
+    attendancePct: 78 + (i % 22),
+    feePaidThisMonth: feePaid,
+    outstandingAmount: feePaid ? 0 : cls.monthlyFee + (i % 3 === 0 ? cls.monthlyFee : 0),
+  };
+});
+
+export const STUDENTS: Student[] = STUDENT_SEED;
+
+// ─────────────────────────────────────────────────────────────
+// Teachers
+// ─────────────────────────────────────────────────────────────
+export const TEACHERS: Teacher[] = [
+  { id: "T-001", name: "Ms. Sadia Rahman", cnic: "42101-1234567-8", designation: "Senior Teacher", qualification: "M.Sc Mathematics", subjects: ["Mathematics", "Physics"], classes: ["Grade 9", "Grade 10"], monthlySalary: 55000, joiningDate: "2019-03-15", phone: "+92 300 1234567", gender: "Female", attendance: { present: 22, late: 1, halfDay: 0, absent: 2, leave: 1 } },
+  { id: "T-002", name: "Mr. Imran Yousuf", cnic: "42101-2345678-9", designation: "Science Teacher", qualification: "M.Sc Chemistry", subjects: ["Chemistry", "Physics"], classes: ["Grade 8", "Grade 9"], monthlySalary: 50000, joiningDate: "2020-08-01", phone: "+92 301 2345678", gender: "Male", attendance: { present: 24, late: 0, halfDay: 1, absent: 0, leave: 1 } },
+  { id: "T-003", name: "Ms. Ayesha Khan", cnic: "42101-3456789-0", designation: "English Teacher", qualification: "M.A English", subjects: ["English"], classes: ["Grade 6", "Grade 7", "Grade 8"], monthlySalary: 48000, joiningDate: "2021-01-10", phone: "+92 302 3456789", gender: "Female", attendance: { present: 23, late: 2, halfDay: 0, absent: 1, leave: 0 } },
+  { id: "T-004", name: "Mr. Kamran Akhtar", cnic: "42101-4567890-1", designation: "Computer Teacher", qualification: "BSCS", subjects: ["Computer"], classes: ["Grade 5", "Grade 6", "Grade 7"], monthlySalary: 45000, joiningDate: "2022-04-20", phone: "+92 303 4567890", gender: "Male", attendance: { present: 26, late: 0, halfDay: 0, absent: 0, leave: 0 } },
+  { id: "T-005", name: "Ms. Hina Aslam", cnic: "42101-5678901-2", designation: "Urdu Teacher", qualification: "M.A Urdu", subjects: ["Urdu", "Islamiat"], classes: ["Grade 3", "Grade 4", "Grade 5"], monthlySalary: 42000, joiningDate: "2020-09-12", phone: "+92 304 5678901", gender: "Female", attendance: { present: 21, late: 1, halfDay: 0, absent: 3, leave: 1 } },
+  { id: "T-006", name: "Mr. Faisal Mahmood", cnic: "42101-6789012-3", designation: "Class Teacher", qualification: "B.Ed", subjects: ["Science", "Social Studies"], classes: ["Grade 1", "Grade 2"], monthlySalary: 38000, joiningDate: "2023-03-01", phone: "+92 305 6789012", gender: "Male", attendance: { present: 25, late: 0, halfDay: 1, absent: 0, leave: 0 } },
+  { id: "T-007", name: "Ms. Rabia Noor", cnic: "42101-7890123-4", designation: "Primary Teacher", qualification: "B.Ed", subjects: ["English", "Mathematics"], classes: ["Playgroup", "Nursery", "KG"], monthlySalary: 35000, joiningDate: "2021-08-15", phone: "+92 306 7890123", gender: "Female", attendance: { present: 24, late: 0, halfDay: 0, absent: 1, leave: 1 } },
+];
+
+// ─────────────────────────────────────────────────────────────
+// Staff
+// ─────────────────────────────────────────────────────────────
+export const STAFF: Staff[] = [
+  { id: "ST-001", name: "Mr. Tariq Mehmood", cnic: "42101-1111111-1", department: "Administration", designation: "Office Manager", monthlySalary: 40000, joiningDate: "2018-06-01", phone: "+92 310 1111111", attendance: { present: 25, late: 0, halfDay: 0, absent: 1, leave: 0 } },
+  { id: "ST-002", name: "Ms. Nargis Bibi", cnic: "42101-2222222-2", department: "Accounts", designation: "Accountant", monthlySalary: 38000, joiningDate: "2019-02-10", phone: "+92 311 2222222", attendance: { present: 26, late: 0, halfDay: 0, absent: 0, leave: 0 } },
+  { id: "ST-003", name: "Mr. Akram Khan", cnic: "42101-3333333-3", department: "Security", designation: "Security Guard", monthlySalary: 25000, joiningDate: "2020-01-05", phone: "+92 312 3333333", attendance: { present: 26, late: 0, halfDay: 0, absent: 0, leave: 0 } },
+  { id: "ST-004", name: "Mr. Salim Shah", cnic: "42101-4444444-4", department: "Transport", designation: "Driver", monthlySalary: 28000, joiningDate: "2021-07-20", phone: "+92 313 4444444", attendance: { present: 22, late: 2, halfDay: 0, absent: 2, leave: 0 } },
+  { id: "ST-005", name: "Ms. Farzana Begum", cnic: "42101-5555555-5", department: "Housekeeping", designation: "Janitor", monthlySalary: 22000, joiningDate: "2022-03-15", phone: "+92 314 5555555", attendance: { present: 25, late: 1, halfDay: 0, absent: 0, leave: 0 } },
+];
+
+// ─────────────────────────────────────────────────────────────
+// Fee Collections (last 30 days)
+// ─────────────────────────────────────────────────────────────
+export const FEE_COLLECTIONS: FeeCollection[] = Array.from({ length: 38 }, (_, i) => {
+  const student = STUDENTS[i % STUDENTS.length];
+  const daysAgo = i % 30;
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return {
+    id: `FC-${String(i + 1).padStart(4, "0")}`,
+    receiptNo: `RCPT-202607${String(daysAgo).padStart(2, "0")}-${String(i + 1).padStart(3, "0")}`,
+    studentId: student.id,
+    studentName: student.name,
+    class: student.class,
+    date: date.toISOString().split("T")[0],
+    amount: student.monthlyFee,
+    mode: i % 4 === 0 ? "Cheque" : i % 7 === 0 ? "Bank Transfer" : "Cash",
+    feeType: i % 10 === 0 ? "Exam Fee" : "Monthly Tuition",
+  };
+});
+
+// ─────────────────────────────────────────────────────────────
+// Activities
+// ─────────────────────────────────────────────────────────────
+export const ACTIVITIES: Activity[] = [
+  { id: "A1", timestamp: "2026-07-02 09:42", user: "Nargis Bibi", action: "Fee Collected", description: "Rs. 3,000 from Ahmed Khan (Grade 5-A)", type: "fee" },
+  { id: "A2", timestamp: "2026-07-02 09:15", user: "Ms. Sadia", action: "Attendance Marked", description: "Grade 10-A — 28 present, 2 absent", type: "attendance" },
+  { id: "A3", timestamp: "2026-07-02 08:50", user: "Admin", action: "Student Admitted", description: "New admission: Zara Sheikh (Nursery-A)", type: "admission" },
+  { id: "A4", timestamp: "2026-07-01 16:30", user: "Nargis Bibi", action: "Salary Slip Generated", description: "July 2026 — Mr. Imran Yousuf", type: "salary" },
+  { id: "A5", timestamp: "2026-07-01 14:20", user: "Admin", action: "Certificate Issued", description: "Bonafide — Ayesha Khan (Grade 8-A)", type: "certificate" },
+  { id: "A6", timestamp: "2026-07-01 11:05", user: "Ms. Ayesha", action: "Marks Entered", description: "Mid-Term English — Grade 7-A", type: "system" },
+  { id: "A7", timestamp: "2026-06-30 17:45", user: "Admin", action: "Backup Created", description: "Automatic daily backup — 4.2 MB", type: "system" },
+];
+
+// ─────────────────────────────────────────────────────────────
+// Timetable (Grade 9-A sample)
+// ─────────────────────────────────────────────────────────────
+export const TIMETABLE: Record<string, TimetableSlot[]> = {
+  "Grade 9-A": [
+    { day: "Monday", period: 1, subject: "Mathematics", teacher: "Ms. Sadia", room: "R-201" },
+    { day: "Monday", period: 2, subject: "Physics", teacher: "Ms. Sadia", room: "Lab-1" },
+    { day: "Monday", period: 3, subject: "English", teacher: "Ms. Ayesha", room: "R-201" },
+    { day: "Monday", period: 4, subject: "Chemistry", teacher: "Mr. Imran", room: "Lab-2" },
+    { day: "Monday", period: 5, subject: "Urdu", teacher: "Ms. Hina", room: "R-201" },
+    { day: "Monday", period: 6, subject: "Computer", teacher: "Mr. Kamran", room: "Lab-3" },
+    { day: "Tuesday", period: 1, subject: "English", teacher: "Ms. Ayesha", room: "R-201" },
+    { day: "Tuesday", period: 2, subject: "Mathematics", teacher: "Ms. Sadia", room: "R-201" },
+    { day: "Tuesday", period: 3, subject: "Islamiat", teacher: "Ms. Hina", room: "R-201" },
+    { day: "Tuesday", period: 4, subject: "Physics", teacher: "Ms. Sadia", room: "Lab-1" },
+    { day: "Tuesday", period: 5, subject: "Chemistry", teacher: "Mr. Imran", room: "Lab-2" },
+    { day: "Tuesday", period: 6, subject: "Computer", teacher: "Mr. Kamran", room: "Lab-3" },
+    { day: "Wednesday", period: 1, subject: "Mathematics", teacher: "Ms. Sadia", room: "R-201" },
+    { day: "Wednesday", period: 2, subject: "Chemistry", teacher: "Mr. Imran", room: "Lab-2" },
+    { day: "Wednesday", period: 3, subject: "English", teacher: "Ms. Ayesha", room: "R-201" },
+    { day: "Wednesday", period: 4, subject: "Physics", teacher: "Ms. Sadia", room: "Lab-1" },
+    { day: "Wednesday", period: 5, subject: "Urdu", teacher: "Ms. Hina", room: "R-201" },
+    { day: "Wednesday", period: 6, subject: "Computer", teacher: "Mr. Kamran", room: "Lab-3" },
+    { day: "Thursday", period: 1, subject: "English", teacher: "Ms. Ayesha", room: "R-201" },
+    { day: "Thursday", period: 2, subject: "Mathematics", teacher: "Ms. Sadia", room: "R-201" },
+    { day: "Thursday", period: 3, subject: "Physics", teacher: "Ms. Sadia", room: "Lab-1" },
+    { day: "Thursday", period: 4, subject: "Chemistry", teacher: "Mr. Imran", room: "Lab-2" },
+    { day: "Thursday", period: 5, subject: "Islamiat", teacher: "Ms. Hina", room: "R-201" },
+    { day: "Thursday", period: 6, subject: "Computer", teacher: "Mr. Kamran", room: "Lab-3" },
+    { day: "Friday", period: 1, subject: "Mathematics", teacher: "Ms. Sadia", room: "R-201" },
+    { day: "Friday", period: 2, subject: "English", teacher: "Ms. Ayesha", room: "R-201" },
+    { day: "Friday", period: 3, subject: "Chemistry", teacher: "Mr. Imran", room: "Lab-2" },
+    { day: "Friday", period: 4, subject: "Urdu", teacher: "Ms. Hina", room: "R-201" },
+    { day: "Saturday", period: 1, subject: "Physics", teacher: "Ms. Sadia", room: "Lab-1" },
+    { day: "Saturday", period: 2, subject: "Mathematics", teacher: "Ms. Sadia", room: "R-201" },
+    { day: "Saturday", period: 3, subject: "English", teacher: "Ms. Ayesha", room: "R-201" },
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────
+// Exams
+// ─────────────────────────────────────────────────────────────
+export const EXAMS: Exam[] = [
+  { id: "E1", name: "Monthly Test - July 2026", type: "Monthly", startDate: "2026-07-15", endDate: "2026-07-18", classes: ["Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"] },
+  { id: "E2", name: "Mid-Term Examination 2026", type: "Mid-Term", startDate: "2026-09-10", endDate: "2026-09-20", classes: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"] },
+  { id: "E3", name: "Final Examination 2026", type: "Final", startDate: "2026-12-01", endDate: "2026-12-15", classes: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"] },
+];
+
+// ─────────────────────────────────────────────────────────────
+// Derived stats
+// ─────────────────────────────────────────────────────────────
+export const STATS = {
+  totalStudents: STUDENTS.filter(s => s.status === "Active").length,
+  totalTeachers: TEACHERS.length,
+  totalStaff: STAFF.length,
+  todayAttendancePct: 92,
+  todayFeeCollection: 18500,
+  monthlyIncome: FEE_COLLECTIONS.reduce((s, f) => s + f.amount, 0),
+  pendingFees: STUDENTS.reduce((s, st) => s + st.outstandingAmount, 0),
+  defaultersCount: STUDENTS.filter(s => s.outstandingAmount > 0).length,
+};
+
+// Monthly trend data for charts
+export const FEE_TREND = [
+  { month: "Feb", collected: 142000, pending: 18000 },
+  { month: "Mar", collected: 138000, pending: 22000 },
+  { month: "Apr", collected: 155000, pending: 15000 },
+  { month: "May", collected: 148000, pending: 19000 },
+  { month: "Jun", collected: 162000, pending: 12000 },
+  { month: "Jul", collected: STATS.monthlyIncome, pending: STATS.pendingFees },
+];
+
+export const STUDENT_GROWTH = [
+  { month: "Aug", students: 412 },
+  { month: "Sep", students: 418 },
+  { month: "Oct", students: 425 },
+  { month: "Nov", students: 431 },
+  { month: "Dec", students: 428 },
+  { month: "Jan", students: 442 },
+  { month: "Feb", students: 448 },
+  { month: "Mar", students: 451 },
+  { month: "Apr", students: 455 },
+  { month: "May", students: 460 },
+  { month: "Jun", students: 462 },
+  { month: "Jul", students: STATS.totalStudents },
+];
+
+export const EXPENSE_BREAKDOWN = [
+  { name: "Teaching", value: TEACHERS.reduce((s, t) => s + t.monthlySalary, 0), color: "#15857A" },
+  { name: "Administration", value: STAFF.filter(s => s.department === "Administration").reduce((s, t) => s + t.monthlySalary, 0), color: "#FF6A3B" },
+  { name: "Accounts", value: STAFF.filter(s => s.department === "Accounts").reduce((s, t) => s + t.monthlySalary, 0), color: "#6366F1" },
+  { name: "Security", value: STAFF.filter(s => s.department === "Security").reduce((s, t) => s + t.monthlySalary, 0), color: "#EAB308" },
+  { name: "Transport", value: STAFF.filter(s => s.department === "Transport").reduce((s, t) => s + t.monthlySalary, 0), color: "#EC4899" },
+  { name: "Housekeeping", value: STAFF.filter(s => s.department === "Housekeeping").reduce((s, t) => s + t.monthlySalary, 0), color: "#14B8A6" },
+];

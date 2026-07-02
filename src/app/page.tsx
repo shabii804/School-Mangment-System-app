@@ -1,0 +1,74 @@
+"use client";
+
+import { useEffect } from "react";
+import { useAppStore } from "@/lib/sms-store";
+import { Sidebar } from "@/components/sms/Sidebar";
+import { Topbar } from "@/components/sms/Topbar";
+import { DashboardModule } from "@/components/sms/modules/Dashboard";
+import { StudentsModule } from "@/components/sms/modules/Students";
+import { TeachersModule, StaffModule } from "@/components/sms/modules/TeachersStaff";
+import { ClassesModule, TimetableModule } from "@/components/sms/modules/ClassesTimetable";
+import { AttendanceModule } from "@/components/sms/modules/Attendance";
+import { FeesModule, DefaultersModule } from "@/components/sms/modules/Fees";
+import { SalaryModule } from "@/components/sms/modules/Salary";
+import { ResultsModule, CertificatesModule } from "@/components/sms/modules/ResultsCertificates";
+import { ReportsModule, AnalyticsModule } from "@/components/sms/modules/ReportsAnalytics";
+import { UsersModule, SettingsModule } from "@/components/sms/modules/UsersSettings";
+
+export default function Home() {
+  const { activeModule, isDark } = useAppStore();
+
+  // Apply dark class to <html>
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", isDark);
+    }
+  }, [isDark]);
+
+  // Keyboard shortcut: Ctrl+K focuses search (handled in Topbar via id)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>('input[placeholder*="Search students"]');
+        if (input) input.focus();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const renderModule = () => {
+    switch (activeModule) {
+      case "dashboard": return <DashboardModule />;
+      case "students": return <StudentsModule />;
+      case "teachers": return <TeachersModule />;
+      case "staff": return <StaffModule />;
+      case "classes": return <ClassesModule />;
+      case "timetable": return <TimetableModule />;
+      case "attendance": return <AttendanceModule />;
+      case "fees": return <FeesModule />;
+      case "defaulters": return <DefaultersModule />;
+      case "salary": return <SalaryModule />;
+      case "results": return <ResultsModule />;
+      case "certificates": return <CertificatesModule />;
+      case "reports": return <ReportsModule />;
+      case "analytics": return <AnalyticsModule />;
+      case "users": return <UsersModule />;
+      case "settings": return <SettingsModule />;
+      default: return <DashboardModule />;
+    }
+  };
+
+  return (
+    <div className="app-bg min-h-screen flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Topbar />
+        <main className="flex-1 p-6 overflow-x-hidden">
+          {renderModule()}
+        </main>
+      </div>
+    </div>
+  );
+}
