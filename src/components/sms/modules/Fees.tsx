@@ -38,6 +38,8 @@ export function FeesModule() {
   const [includeTuition, setIncludeTuition] = useState(true);
   const [includeHostel, setIncludeHostel] = useState(false);
   const [includeAdmission, setIncludeAdmission] = useState(false);
+  const [customAmount, setCustomAmount] = useState<string>(""); // manual entry
+  const [useCustom, setUseCustom] = useState(false);
   const [mode, setMode] = useState<"Cash" | "Cheque" | "Bank Transfer">("Cash");
 
   const filtered = useMemo(() => {
@@ -66,18 +68,24 @@ export function FeesModule() {
     setIncludeTuition(true);
     setIncludeHostel(s.isHosteller);
     setIncludeAdmission(false);
+    setUseCustom(false);
+    setCustomAmount("");
   };
 
   const tuitionAmt = includeTuition ? selected?.monthlyFee || 0 : 0;
   const hostelAmt = includeHostel && selected?.isHosteller ? HOSTEL_FEE : 0;
   const admissionAmt = includeAdmission ? (selected?.monthlyFee || 0) * 3 : 0;
-  const total = tuitionAmt + hostelAmt + admissionAmt;
+  const checkboxTotal = tuitionAmt + hostelAmt + admissionAmt;
+  const customAmt = useCustom && customAmount ? parseInt(customAmount) || 0 : 0;
+  const total = useCustom ? customAmt : checkboxTotal;
 
-  const feeTypeLabel = [
-    includeTuition && "Tuition",
-    includeHostel && "Hostel",
-    includeAdmission && "Admission",
-  ].filter(Boolean).join(" + ") || "Tuition";
+  const feeTypeLabel = useCustom
+    ? "Manual Entry"
+    : [
+        includeTuition && "Tuition",
+        includeHostel && "Hostel",
+        includeAdmission && "Admission",
+      ].filter(Boolean).join(" + ") || "Tuition";
 
   const submit = async () => {
     if (!selected) return;
@@ -90,7 +98,9 @@ export function FeesModule() {
       total,
       mode,
       feeTypeLabel,
-      { tuition: tuitionAmt || undefined, hostel: hostelAmt || undefined, admission: admissionAmt || undefined }
+      useCustom
+        ? undefined // no breakdown for manual entry
+        : { tuition: tuitionAmt || undefined, hostel: hostelAmt || undefined, admission: admissionAmt || undefined }
     );
 
     // Find the just-created collection (most recent)
@@ -103,9 +113,9 @@ export function FeesModule() {
       date: new Date().toISOString().split("T")[0],
       amount: total,
       mode,
-      tuition: tuitionAmt || undefined,
-      hostel: hostelAmt || undefined,
-      admission: admissionAmt || undefined,
+      tuition: useCustom ? undefined : (tuitionAmt || undefined),
+      hostel: useCustom ? undefined : (hostelAmt || undefined),
+      admission: useCustom ? undefined : (admissionAmt || undefined),
       feeType: feeTypeLabel,
     };
 
@@ -302,79 +312,140 @@ export function FeesModule() {
 
               {/* Fee breakdown — checkboxes for combined collection */}
               <div className="space-y-2">
-                <label className="text-xs font-medium">Select Fees to Collect</label>
-                <div className="space-y-1.5">
-                  {/* Tuition */}
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium">Select Fees to Collect</label>
                   <button
                     type="button"
-                    onClick={() => setIncludeTuition(!includeTuition)}
+                    onClick={() => setUseCustom(!useCustom)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
-                      includeTuition ? "border-primary bg-primary/5" : "border-border/40 hover:border-primary/30"
+                      "text-[10px] px-2 py-0.5 rounded-full border transition-all",
+                      useCustom
+                        ? "bg-accent/10 text-accent border-accent/30"
+                        : "bg-muted text-muted-foreground border-border/40 hover:border-accent/30"
                     )}
                   >
-                    <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                      includeTuition ? "bg-primary border-primary" : "border-border")}>
-                      {includeTuition && <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />}
-                    </div>
-                    <div className="flex-1 flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-primary" />
-                      <div className="text-left">
-                        <p className="text-sm font-medium">Tuition Fee</p>
-                        <p className="text-[10px] text-muted-foreground">Monthly</p>
-                      </div>
-                    </div>
-                    <p className="font-bold text-sm">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                    {useCustom ? "✓ Manual Entry" : "Manual Entry"}
                   </button>
+                </div>
 
-                  {/* Hostel — only if hosteller */}
-                  {selected.isHosteller && (
+                {!useCustom && (
+                  <div className="space-y-1.5">
+                    {/* Tuition */}
                     <button
                       type="button"
-                      onClick={() => setIncludeHostel(!includeHostel)}
+                      onClick={() => setIncludeTuition(!includeTuition)}
                       className={cn(
                         "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
-                        includeHostel ? "border-accent bg-accent/5" : "border-border/40 hover:border-accent/30"
+                        includeTuition ? "border-primary bg-primary/5" : "border-border/40 hover:border-primary/30"
                       )}
                     >
                       <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                        includeHostel ? "bg-accent border-accent" : "border-border")}>
-                        {includeHostel && <CheckCircle2 className="w-3.5 h-3.5 text-accent-foreground" />}
+                        includeTuition ? "bg-primary border-primary" : "border-border")}>
+                        {includeTuition && <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />}
                       </div>
                       <div className="flex-1 flex items-center gap-2">
-                        <Home className="w-4 h-4 text-accent" />
+                        <BookOpen className="w-4 h-4 text-primary" />
                         <div className="text-left">
-                          <p className="text-sm font-medium">Hostel Fee</p>
-                          <p className="text-[10px] text-muted-foreground">Monthly (boarding + meals)</p>
+                          <p className="text-sm font-medium">Tuition Fee</p>
+                          <p className="text-[10px] text-muted-foreground">Monthly</p>
                         </div>
                       </div>
-                      <p className="font-bold text-sm">Rs. {HOSTEL_FEE.toLocaleString()}</p>
+                      <p className="font-bold text-sm">Rs. {selected.monthlyFee.toLocaleString()}</p>
                     </button>
-                  )}
 
-                  {/* Admission */}
-                  <button
-                    type="button"
-                    onClick={() => setIncludeAdmission(!includeAdmission)}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
-                      includeAdmission ? "border-purple-500 bg-purple-500/5" : "border-border/40 hover:border-purple-500/30"
+                    {/* Hostel — only if hosteller */}
+                    {selected.isHosteller && (
+                      <button
+                        type="button"
+                        onClick={() => setIncludeHostel(!includeHostel)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+                          includeHostel ? "border-accent bg-accent/5" : "border-border/40 hover:border-accent/30"
+                        )}
+                      >
+                        <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                          includeHostel ? "bg-accent border-accent" : "border-border")}>
+                          {includeHostel && <CheckCircle2 className="w-3.5 h-3.5 text-accent-foreground" />}
+                        </div>
+                        <div className="flex-1 flex items-center gap-2">
+                          <Home className="w-4 h-4 text-accent" />
+                          <div className="text-left">
+                            <p className="text-sm font-medium">Hostel Fee</p>
+                            <p className="text-[10px] text-muted-foreground">Monthly (boarding + meals)</p>
+                          </div>
+                        </div>
+                        <p className="font-bold text-sm">Rs. {HOSTEL_FEE.toLocaleString()}</p>
+                      </button>
                     )}
-                  >
-                    <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                      includeAdmission ? "bg-purple-500 border-purple-500" : "border-border")}>
-                      {includeAdmission && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <div className="flex-1 flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-purple-500" />
-                      <div className="text-left">
-                        <p className="text-sm font-medium">Admission Fee</p>
-                        <p className="text-[10px] text-muted-foreground">One-time (3 × monthly)</p>
+
+                    {/* Admission */}
+                    <button
+                      type="button"
+                      onClick={() => setIncludeAdmission(!includeAdmission)}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+                        includeAdmission ? "border-purple-500 bg-purple-500/5" : "border-border/40 hover:border-purple-500/30"
+                      )}
+                    >
+                      <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                        includeAdmission ? "bg-purple-500 border-purple-500" : "border-border")}>
+                        {includeAdmission && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
                       </div>
+                      <div className="flex-1 flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-purple-500" />
+                        <div className="text-left">
+                          <p className="text-sm font-medium">Admission Fee</p>
+                          <p className="text-[10px] text-muted-foreground">One-time (3 × monthly)</p>
+                        </div>
+                      </div>
+                      <p className="font-bold text-sm">Rs. {(selected.monthlyFee * 3).toLocaleString()}</p>
+                    </button>
+                  </div>
+                )}
+
+                {/* Manual amount entry */}
+                {useCustom && (
+                  <div className="rounded-lg border-2 border-accent/30 bg-accent/5 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-accent" />
+                      <p className="text-sm font-medium text-accent">Manual Amount Entry</p>
                     </div>
-                    <p className="font-bold text-sm">Rs. {(selected.monthlyFee * 3).toLocaleString()}</p>
-                  </button>
-                </div>
+                    <p className="text-[10px] text-muted-foreground">Enter any custom amount (e.g., partial payment, fine, or other charge)</p>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">Rs.</span>
+                      <Input
+                        type="number"
+                        value={customAmount}
+                        onChange={(e) => setCustomAmount(e.target.value)}
+                        placeholder="0"
+                        className="pl-10 text-lg font-bold h-12"
+                        autoFocus
+                      />
+                    </div>
+                    {/* Quick amount buttons */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {[500, 1000, 1500, 2000, 3000, 5000].map(amt => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => setCustomAmount(String(amt))}
+                          className="px-2 py-1 text-[10px] rounded-md border border-border/40 bg-background hover:bg-accent/10 hover:border-accent/30 transition-colors"
+                        >
+                          {amt.toLocaleString()}
+                        </button>
+                      ))}
+                      {selected.outstandingAmount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomAmount(String(selected.outstandingAmount))}
+                          className="px-2 py-1 text-[10px] rounded-md border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+                        >
+                          Full Outstanding ({selected.outstandingAmount.toLocaleString()})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Total */}
@@ -384,9 +455,15 @@ export function FeesModule() {
                   <p className="text-2xl font-bold text-primary">Rs. {total.toLocaleString()}</p>
                 </div>
                 <div className="space-y-0.5 text-[10px] text-muted-foreground">
-                  {tuitionAmt > 0 && <div className="flex justify-between"><span>Tuition:</span><span>Rs. {tuitionAmt.toLocaleString()}</span></div>}
-                  {hostelAmt > 0 && <div className="flex justify-between"><span>Hostel:</span><span>Rs. {hostelAmt.toLocaleString()}</span></div>}
-                  {admissionAmt > 0 && <div className="flex justify-between"><span>Admission:</span><span>Rs. {admissionAmt.toLocaleString()}</span></div>}
+                  {useCustom ? (
+                    <div className="flex justify-between"><span>Manual Entry:</span><span>Rs. {customAmt.toLocaleString()}</span></div>
+                  ) : (
+                    <>
+                      {tuitionAmt > 0 && <div className="flex justify-between"><span>Tuition:</span><span>Rs. {tuitionAmt.toLocaleString()}</span></div>}
+                      {hostelAmt > 0 && <div className="flex justify-between"><span>Hostel:</span><span>Rs. {hostelAmt.toLocaleString()}</span></div>}
+                      {admissionAmt > 0 && <div className="flex justify-between"><span>Admission:</span><span>Rs. {admissionAmt.toLocaleString()}</span></div>}
+                    </>
+                  )}
                 </div>
               </div>
 

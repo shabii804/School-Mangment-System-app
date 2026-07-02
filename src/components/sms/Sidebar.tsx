@@ -60,7 +60,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "sidebar-bg h-screen sticky top-0 overflow-y-auto flex flex-col transition-all duration-200 shrink-0",
+      "sidebar-bg h-screen overflow-y-auto overflow-x-hidden flex flex-col transition-all duration-200 shrink-0 z-40",
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Brand header */}

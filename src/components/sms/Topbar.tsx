@@ -57,7 +57,7 @@ export function Topbar() {
   const unread = unreadCount();
 
   return (
-    <header className="sticky top-0 z-30 glass-card border-b border-border/40">
+    <header className="shrink-0 z-30 glass-card border-b border-border/40">
       <div className="px-6 py-3 flex items-center gap-4">
         {/* Title block */}
         <div className="flex-1 min-w-0">

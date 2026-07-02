@@ -23,14 +23,14 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search, Plus, Phone, Eye, Filter, UserCheck, Users, UserPlus, IdCard,
-  QrCode, Printer, GraduationCap, Mail,
+  QrCode, Printer, GraduationCap, Mail, Receipt as ReceiptIcon,
 } from "lucide-react";
 import { CLASSES, type Student } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
-import { printStudentIDCard } from "@/lib/pdf-service";
+import { printStudentIDCard, printFeeReceipt } from "@/lib/pdf-service";
 
 export function StudentsModule() {
-  const { students, searchQuery, addStudent, school } = useAppStore();
+  const { students, searchQuery, addStudent, school, feeCollections } = useAppStore();
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Student | null>(null);
@@ -326,6 +326,7 @@ export function StudentsModule() {
                       <Card className="border-0 shadow-sm bg-muted/30"><CardContent className="p-3">
                         <p className="text-xs text-muted-foreground">Monthly Fee</p>
                         <p className="text-lg font-bold">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                        {selected.isHosteller && <p className="text-[10px] text-accent mt-0.5">+ Rs. 3,500 hostel</p>}
                       </CardContent></Card>
                       <Card className="border-0 shadow-sm bg-muted/30"><CardContent className="p-3">
                         <p className="text-xs text-muted-foreground">Outstanding</p>
@@ -335,6 +336,44 @@ export function StudentsModule() {
                         <p className="text-xs text-muted-foreground">This Month</p>
                         <p className="text-lg font-bold text-emerald-600">{selected.feePaidThisMonth ? "Paid" : "Pending"}</p>
                       </CardContent></Card>
+                    </div>
+                    {/* Fee History */}
+                    <div className="rounded-lg border border-border/40 overflow-hidden">
+                      <div className="px-3 py-2 bg-muted/40 border-b border-border/30 flex items-center justify-between">
+                        <p className="text-xs font-semibold flex items-center gap-1.5">
+                          <ReceiptIcon className="w-3.5 h-3.5 text-primary" /> Fee Payment History
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{feeCollections.filter(f => f.studentId === selected.id).length} receipts</p>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto">
+                        {feeCollections.filter(f => f.studentId === selected.id).length === 0 ? (
+                          <div className="p-6 text-center text-xs text-muted-foreground">
+                            No fee payments recorded yet.
+                          </div>
+                        ) : (
+                          feeCollections.filter(f => f.studentId === selected.id).map(f => (
+                            <div key={f.id} className="flex items-center gap-3 p-2.5 border-b border-border/20 hover:bg-muted/30 last:border-0">
+                              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                <ReceiptIcon className="w-3.5 h-3.5 text-emerald-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-mono text-muted-foreground">{f.receiptNo}</p>
+                                <p className="text-[10px] text-muted-foreground">{f.date} • {f.feeType} • {f.mode}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-sm text-emerald-600">Rs. {f.amount.toLocaleString()}</p>
+                              </div>
+                              <button
+                                onClick={() => printFeeReceipt(f, selected, school)}
+                                className="text-muted-foreground hover:text-primary transition-colors p-1"
+                                title="Reprint Receipt"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
                   </TabsContent>
                   <TabsContent value="attendance" className="mt-4">

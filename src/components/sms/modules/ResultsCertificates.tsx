@@ -13,13 +13,14 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { EXAMS, STUDENTS, SUBJECTS } from "@/lib/sms-data";
+import { EXAMS, STUDENTS, SUBJECTS, TEACHERS } from "@/lib/sms-data";
 import {
   FileText, Plus, Printer, Award, BookOpen, GraduationCap, CheckCircle2,
+  Star, Trophy, Medal, User, Users as UsersIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/lib/sms-store";
-import { printCertificate, printResultCard } from "@/lib/pdf-service";
+import { printCertificate, printResultCard, printTeacherCertificate, printStudentAward } from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
 
 const GRADE_BANDS = [
@@ -216,37 +217,112 @@ export function ResultsModule() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// CERTIFICATES MODULE
+// CERTIFICATES MODULE — Students + Teachers
 // ─────────────────────────────────────────────────────────────
-const CERT_TYPES = [
-  { type: "School Leaving Certificate", icon: GraduationCap, color: "bg-red-500/10 text-red-600", desc: "Issued when a student leaves the school" },
-  { type: "Character Certificate", icon: Award, color: "bg-primary/10 text-primary", desc: "Certifies good moral character" },
-  { type: "Bonafide Certificate", icon: CheckCircle2, color: "bg-emerald-500/10 text-emerald-600", desc: "Confirms current enrollment" },
-  { type: "Fee Paid Certificate", icon: FileText, color: "bg-accent/10 text-accent", desc: "Certifies all fees cleared" },
+const STUDENT_CERT_TYPES = [
+  { type: "School Leaving Certificate", icon: GraduationCap, color: "bg-red-500/10 text-red-600", desc: "Issued when a student leaves", category: "standard" },
+  { type: "Character Certificate", icon: Award, color: "bg-primary/10 text-primary", desc: "Certifies good moral character", category: "standard" },
+  { type: "Bonafide Certificate", icon: CheckCircle2, color: "bg-emerald-500/10 text-emerald-600", desc: "Confirms current enrollment", category: "standard" },
+  { type: "Fee Paid Certificate", icon: FileText, color: "bg-accent/10 text-accent", desc: "Certifies all fees cleared", category: "standard" },
+  { type: "Best Student Award", icon: Medal, color: "bg-yellow-500/10 text-yellow-600", desc: "Outstanding academic performance", category: "award" },
+  { type: "Student of the Year", icon: Trophy, color: "bg-purple-500/10 text-purple-600", desc: "Annual excellence recognition", category: "award" },
+];
+
+const TEACHER_CERT_TYPES = [
+  { type: "Experience Certificate", icon: FileText, color: "bg-primary/10 text-primary", desc: "Employment tenure verification", category: "standard" },
+  { type: "Appreciation Certificate", icon: Award, color: "bg-emerald-500/10 text-emerald-600", desc: "Recognizes valuable service", category: "standard" },
+  { type: "Best Teacher Award", icon: Medal, color: "bg-yellow-500/10 text-yellow-600", desc: "Outstanding teaching dedication", category: "award" },
+  { type: "Teacher of the Year", icon: Trophy, color: "bg-purple-500/10 text-purple-600", desc: "Annual excellence recognition", category: "award" },
 ];
 
 export function CertificatesModule() {
   const { toast } = useToast();
   const { school } = useAppStore();
-  const [selected, setSelected] = useState<typeof CERT_TYPES[0] | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState(STUDENTS[0]);
+  const [recipientType, setRecipientType] = useState<"student" | "teacher">("student");
+  const [selectedCert, setSelectedCert] = useState<{ type: string; category: string } | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState(STUDENTS[0].id);
+  const [selectedTeacherId, setSelectedTeacherId] = useState(TEACHERS[0].id);
+
+  const certTypes = recipientType === "student" ? STUDENT_CERT_TYPES : TEACHER_CERT_TYPES;
+  const selectedStudent = STUDENTS.find(s => s.id === selectedStudentId) || STUDENTS[0];
+  const selectedTeacher = TEACHERS.find(t => t.id === selectedTeacherId) || TEACHERS[0];
+
+  const openCert = (cert: { type: string; category: string }) => {
+    setSelectedCert(cert);
+  };
+
+  const issueAndPrint = () => {
+    if (!selectedCert) return;
+    const certNo = `CERT-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
+    const recipientName = recipientType === "student" ? selectedStudent.name : selectedTeacher.name;
+    toast({ title: "Certificate Issued ✓", description: `${certNo} for ${recipientName}. Opening PDF...` });
+
+    if (recipientType === "student") {
+      if (selectedCert.category === "award") {
+        printStudentAward(selectedStudent, selectedCert.type, certNo, school);
+      } else {
+        printCertificate(selectedStudent, selectedCert.type, certNo, school);
+      }
+    } else {
+      printTeacherCertificate(selectedTeacher, selectedCert.type, certNo, school);
+    }
+    setSelectedCert(null);
+  };
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Generate official school certificates with auto-filled student data and school letterhead.</p>
+    <div className="space-y-4 fade-in">
+      <p className="text-sm text-muted-foreground">Generate official school certificates with auto-filled data, school letterhead, and QR-ready PDF output.</p>
 
-      {/* Certificate types */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {CERT_TYPES.map(ct => {
+      {/* Recipient type toggle */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setRecipientType("student")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+            recipientType === "student" ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/40 text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <UsersIcon className="w-4 h-4" />Student Certificates
+        </button>
+        <button
+          onClick={() => setRecipientType("teacher")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+            recipientType === "teacher" ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/40 text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <User className="w-4 h-4" />Teacher Certificates
+        </button>
+      </div>
+
+      {/* Certificate types grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {certTypes.map(ct => {
           const Icon = ct.icon;
           return (
-            <Card key={ct.type} className="border-0 shadow-sm glass-card hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setSelected(ct); setSelectedStudent(STUDENTS[0]); }}>
-              <CardContent className="p-4 text-center">
-                <div className={cn("w-12 h-12 rounded-xl mx-auto flex items-center justify-center", ct.color)}>
-                  <Icon className="w-6 h-6" />
+            <Card
+              key={ct.type}
+              className="border-0 shadow-sm glass-card card-hover cursor-pointer relative overflow-hidden"
+              onClick={() => openCert(ct)}
+            >
+              {ct.category === "award" && (
+                <div className="absolute top-0 right-0 bg-accent/10 text-accent text-[9px] px-2 py-0.5 rounded-bl-lg font-semibold">
+                  AWARD
                 </div>
-                <p className="font-semibold text-sm mt-3">{ct.type}</p>
-                <p className="text-xs text-muted-foreground mt-1">{ct.desc}</p>
+              )}
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", ct.color)}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{ct.type}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{ct.desc}</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="w-full mt-3 h-7 text-xs">
+                  <Printer className="w-3 h-3 mr-1" />Generate
+                </Button>
               </CardContent>
             </Card>
           );
@@ -262,22 +338,23 @@ export function CertificatesModule() {
               <TableRow className="border-border/40">
                 <TableHead>Cert #</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Student</TableHead>
+                <TableHead>Recipient</TableHead>
                 <TableHead>Issue Date</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {[
-                { no: "CERT-2026-001", type: "Bonafide", student: "Ayesha Khan", date: "2026-07-01" },
-                { no: "CERT-2026-002", type: "Character", student: "Hamza Sheikh", date: "2026-06-28" },
-                { no: "CERT-2026-003", type: "Fee Paid", student: "Fatima Ali", date: "2026-06-25" },
-                { no: "CERT-2026-004", type: "School Leaving", student: "Bilal Ahmed", date: "2026-06-20" },
+                { no: "CERT-2026-001", type: "Bonafide", recipient: "Ayesha Khan (Student)", date: "2026-07-01" },
+                { no: "CERT-2026-002", type: "Character", recipient: "Hamza Sheikh (Student)", date: "2026-06-28" },
+                { no: "CERT-2026-003", type: "Experience", recipient: "Ms. Sadia Rahman (Teacher)", date: "2026-06-25" },
+                { no: "CERT-2026-004", type: "Best Teacher Award", recipient: "Mr. Imran Yousuf (Teacher)", date: "2026-06-20" },
+                { no: "CERT-2026-005", type: "Student of the Year", recipient: "Fatima Ali (Student)", date: "2026-06-18" },
               ].map(c => (
                 <TableRow key={c.no} className="border-border/30 hover:bg-muted/30">
                   <TableCell className="font-mono text-xs">{c.no}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{c.type}</Badge></TableCell>
-                  <TableCell className="text-sm">{c.student}</TableCell>
+                  <TableCell className="text-sm">{c.recipient}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{c.date}</TableCell>
                   <TableCell className="text-right">
                     <Button size="sm" variant="ghost" className="h-7 text-xs"><Printer className="w-3 h-3 mr-1" />Reprint</Button>
@@ -289,68 +366,95 @@ export function CertificatesModule() {
         </CardContent>
       </Card>
 
-      {/* Generate dialog */}
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-2xl">
+      {/* Generate dialog with recipient selector */}
+      <Dialog open={!!selectedCert} onOpenChange={(o) => !o && setSelectedCert(null)}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Award className="w-5 h-5 text-primary" />{selected?.type}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              {selectedCert?.type}
+              {selectedCert?.category === "award" && (
+                <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-0 ml-2">AWARD</Badge>
+              )}
+            </DialogTitle>
           </DialogHeader>
-          {selected && (
+          {selectedCert && (
             <div className="space-y-4 py-2">
-              {/* Certificate preview */}
-              <div className="rounded-lg border-2 border-primary/30 p-6 bg-white relative">
+              {/* Recipient selector */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium">
+                  Select {recipientType === "student" ? "Student" : "Teacher"}
+                </label>
+                {recipientType === "student" ? (
+                  <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {STUDENTS.filter(s => s.status === "Active").map(s => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name} • {s.class}-{s.section} • {s.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {TEACHERS.map(t => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name} • {t.designation} • {t.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {/* Preview card */}
+              <div className="rounded-lg border-2 border-primary/30 p-4 bg-card relative">
                 <div className="absolute inset-0 border border-primary/10 m-1.5 rounded pointer-events-none" />
                 <div className="text-center relative">
                   <div className="flex items-center justify-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                      <GraduationCap className="w-6 h-6 text-primary-foreground" />
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center overflow-hidden">
+                      {school.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={school.logo} alt="logo" className="w-full h-full object-cover" />
+                      ) : (
+                        <GraduationCap className="w-5 h-5 text-primary-foreground" />
+                      )}
                     </div>
                     <div>
-                      <p className="font-bold text-base text-primary">Greenwood Public School</p>
-                      <p className="text-[10px] text-muted-foreground">123 Education Road, Karachi • +92 21 1234567</p>
+                      <p className="font-bold text-sm text-primary">{school.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{school.address}</p>
                     </div>
                   </div>
-                  <div className="border-t-2 border-b-2 border-primary/20 py-3 my-3">
-                    <p className="text-lg font-bold text-primary uppercase tracking-wide">{selected.type}</p>
+                  <div className="border-t-2 border-b-2 border-primary/20 py-2 my-2">
+                    <p className="text-base font-bold text-primary uppercase tracking-wide">{selectedCert.type}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">Certificate No: <span className="font-mono font-medium text-foreground">CERT-2026-005</span></p>
-                  <p className="text-sm leading-relaxed text-foreground">
-                    This is to certify that <span className="font-bold underline">{selectedStudent.name}</span>,
-                    S/o / D/o <span className="font-bold underline">{selectedStudent.fatherName}</span>,
-                    is a bona fide student of this institution, currently studying in class
-                    <span className="font-bold underline"> {selectedStudent.class}-{selectedStudent.section}</span>,
-                    bearing Roll No. <span className="font-bold underline">{selectedStudent.rollNo}</span>,
-                    Student ID <span className="font-mono underline">{selectedStudent.id}</span>.
+                  {selectedCert.category === "award" && (
+                    <div className="my-2">
+                      <Star className="w-6 h-6 mx-auto text-accent fill-accent" />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mb-2">Proudly presented to</p>
+                  <p className="text-lg font-bold text-foreground underline">
+                    {recipientType === "student" ? selectedStudent.name : selectedTeacher.name}
                   </p>
-                  <p className="text-sm leading-relaxed text-foreground mt-3">
-                    This certificate is issued on <span className="underline">{new Date().toLocaleDateString("en-GB")}</span> for the purpose of
-                    official school records.
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {recipientType === "student"
+                      ? `Class ${selectedStudent.class}-${selectedStudent.section} • Roll #${selectedStudent.rollNo}`
+                      : `${selectedTeacher.designation} • Since ${selectedTeacher.joiningDate.slice(0, 4)}`}
                   </p>
-                  <div className="flex justify-between items-end mt-8 text-xs">
-                    <div className="text-center">
-                      <div className="border-t border-foreground/30 w-32 mt-8" />
-                      <p className="mt-1 text-muted-foreground">Clerk</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="border-t border-foreground/30 w-32 mt-8" />
-                      <p className="mt-1 text-muted-foreground">Principal</p>
-                    </div>
-                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Certificate No: <span className="font-mono">CERT-2026-XXX</span> • {new Date().toLocaleDateString("en-GB")}
+                  </p>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90"
-              onClick={() => {
-                if (!selected) return;
-                const certNo = `CERT-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
-                toast({ title: "Certificate Issued ✓", description: `${certNo} for ${selectedStudent.name}. Opening PDF...` });
-                printCertificate(selectedStudent, selected.type, certNo, school);
-                setSelected(null);
-              }}
-            >
+            <Button variant="outline" onClick={() => setSelectedCert(null)}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={issueAndPrint}>
               <Printer className="w-4 h-4 mr-1.5" />Issue & Print (PDF)
             </Button>
           </DialogFooter>

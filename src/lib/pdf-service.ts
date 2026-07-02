@@ -850,3 +850,274 @@ export function printFeeCollectionReport(
   drawFooter(doc, school);
   openPDF(doc, `fee-report-${new Date().toISOString().split("T")[0]}.pdf`);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 8. TEACHER / STAFF CERTIFICATE (A4 portrait)
+// Supports: Experience Certificate, Best Teacher Award, Teacher of the Year
+// ─────────────────────────────────────────────────────────────
+export function printTeacherCertificate(
+  teacher: { id: string; name: string; designation: string; qualification: string; joiningDate: string; subjects?: string[]; classes?: string[] },
+  certType: string,
+  certNo: string,
+  school: SchoolInfo
+) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+
+  // Decorative border
+  doc.setDrawColor(21, 133, 122);
+  doc.setLineWidth(1.5);
+  doc.rect(8, 8, pageWidth - 16, pageHeight - 16);
+  doc.setLineWidth(0.3);
+  doc.rect(11, 11, pageWidth - 22, pageHeight - 22);
+
+  // Award-style golden border for awards
+  const isAward = certType.includes("Award") || certType.includes("Year") || certType.includes("Best");
+  if (isAward) {
+    doc.setDrawColor(255, 106, 59);
+    doc.setLineWidth(0.8);
+    doc.roundedRect(14, 14, pageWidth - 28, pageHeight - 28, 2, 2, "S");
+  }
+
+  // Logo centered at top
+  let logoY = 20;
+  if (school.logo) {
+    try {
+      const format = school.logo.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(school.logo, format, pageWidth / 2 - 12, logoY, 24, 24);
+      logoY += 28;
+    } catch {}
+  }
+
+  // School name
+  doc.setTextColor(21, 133, 122);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text(school.name, pageWidth / 2, logoY + 5, { align: "center" });
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(80, 80, 80);
+  doc.text(school.address, pageWidth / 2, logoY + 11, { align: "center" });
+  doc.text(`Phone: ${school.phone}  •  Email: ${school.email}`, pageWidth / 2, logoY + 15, { align: "center" });
+
+  // Divider
+  doc.setDrawColor(21, 133, 122);
+  doc.setLineWidth(0.8);
+  doc.line(margin, logoY + 22, pageWidth - margin, logoY + 22);
+  doc.setLineWidth(0.3);
+  doc.line(margin, logoY + 24, pageWidth - margin, logoY + 24);
+
+  // Award badge for awards
+  if (isAward) {
+    doc.setFillColor(255, 106, 59);
+    doc.circle(pageWidth / 2, logoY + 38, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("★", pageWidth / 2, logoY + 41, { align: "center" });
+  }
+
+  // Certificate title
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(isAward ? 20 : 22);
+  doc.setFont("helvetica", "bold");
+  doc.text(certType.toUpperCase(), pageWidth / 2, logoY + (isAward ? 56 : 38), { align: "center" });
+
+  // Certificate number
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Certificate No: ${certNo}`, pageWidth / 2, logoY + (isAward ? 62 : 44), { align: "center" });
+  doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}`, pageWidth / 2, logoY + (isAward ? 66 : 48), { align: "center" });
+
+  // Body
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  const bodyY = logoY + (isAward ? 80 : 60);
+
+  // Calculate years of experience
+  const joinDate = new Date(teacher.joiningDate);
+  const now = new Date();
+  const years = Math.max(1, now.getFullYear() - joinDate.getFullYear());
+
+  let bodyText = "";
+  if (certType === "Experience Certificate") {
+    bodyText = `This is to certify that ${teacher.name} has been serving this institution as ${teacher.designation} since ${new Date(teacher.joiningDate).toLocaleDateString("en-GB")}, comprising a period of approximately ${years} year(s).`;
+    if (teacher.subjects && teacher.subjects.length > 0) {
+      bodyText += ` During this tenure, ${teacher.name} has been teaching ${teacher.subjects.join(", ")}${teacher.classes && teacher.classes.length > 0 ? ` to ${teacher.classes.join(", ")}` : ""}.`;
+    }
+    bodyText += ` ${teacher.name} holds the qualification of ${teacher.qualification}.`;
+  } else if (certType === "Best Teacher Award") {
+    bodyText = `This is to proudly certify that ${teacher.name}, ${teacher.designation}, has been awarded the Best Teacher Award for outstanding dedication, exemplary teaching, and commitment to student success during the academic session ${school.session}.`;
+  } else if (certType === "Teacher of the Year") {
+    bodyText = `This is to certify that ${teacher.name}, ${teacher.designation}, has been honored as Teacher of the Year ${now.getFullYear()} for exceptional contributions to education, innovative teaching methods, and consistent excellence in academic delivery.`;
+  } else if (certType === "Appreciation Certificate") {
+    bodyText = `This certificate of appreciation is proudly presented to ${teacher.name}, ${teacher.designation}, in recognition of valuable contributions, dedication, and loyal service to ${school.name}.`;
+  } else {
+    bodyText = `This is to certify that ${teacher.name} is a valued member of the teaching staff at ${school.name}, holding the position of ${teacher.designation} since ${new Date(teacher.joiningDate).toLocaleDateString("en-GB")}.`;
+  }
+
+  const splitBody = doc.splitTextToSize(bodyText, pageWidth - 2 * margin - 10);
+  doc.text(splitBody, pageWidth / 2, bodyY, { align: "center", lineHeightFactor: 1.6 });
+
+  const bodyEndY = bodyY + splitBody.length * 7;
+
+  // Additional commendation for awards
+  if (isAward) {
+    doc.setFontSize(10);
+    doc.setTextColor(21, 133, 122);
+    doc.setFont("helvetica", "italic");
+    doc.text("We extend our heartfelt congratulations and best wishes for continued success.", pageWidth / 2, bodyEndY + 12, { align: "center" });
+  }
+
+  // Signatures
+  const signY = bodyEndY + (isAward ? 30 : 25);
+  doc.setDrawColor(80, 80, 80);
+  doc.setLineWidth(0.3);
+  doc.line(margin + 10, signY, margin + 70, signY);
+  doc.line(pageWidth - margin - 70, signY, pageWidth - margin - 10, signY);
+
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text("Teacher Signature", margin + 40, signY + 5, { align: "center" });
+  doc.text("Principal", pageWidth - margin - 40, signY + 5, { align: "center" });
+
+  drawFooter(doc, school);
+  openPDF(doc, `${certType.replace(/\s/g, "-")}-${teacher.id}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9. STUDENT AWARD CERTIFICATE (A4 portrait)
+// Supports: Best Student Award, Student of the Year
+// ─────────────────────────────────────────────────────────────
+export function printStudentAward(
+  student: Student,
+  certType: string,
+  certNo: string,
+  school: SchoolInfo
+) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+
+  // Decorative border
+  doc.setDrawColor(21, 133, 122);
+  doc.setLineWidth(1.5);
+  doc.rect(8, 8, pageWidth - 16, pageHeight - 16);
+  doc.setLineWidth(0.3);
+  doc.rect(11, 11, pageWidth - 22, pageHeight - 22);
+
+  // Golden award border
+  doc.setDrawColor(255, 106, 59);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(14, 14, pageWidth - 28, pageHeight - 28, 2, 2, "S");
+
+  // Logo
+  let logoY = 20;
+  if (school.logo) {
+    try {
+      const format = school.logo.includes("image/png") ? "PNG" : "JPEG";
+      doc.addImage(school.logo, format, pageWidth / 2 - 12, logoY, 24, 24);
+      logoY += 28;
+    } catch {}
+  }
+
+  doc.setTextColor(21, 133, 122);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text(school.name, pageWidth / 2, logoY + 5, { align: "center" });
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(80, 80, 80);
+  doc.text(school.address, pageWidth / 2, logoY + 11, { align: "center" });
+
+  // Divider
+  doc.setDrawColor(21, 133, 122);
+  doc.setLineWidth(0.8);
+  doc.line(margin, logoY + 22, pageWidth - margin, logoY + 22);
+
+  // Award star badge
+  doc.setFillColor(255, 106, 59);
+  doc.circle(pageWidth / 2, logoY + 38, 8, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("★", pageWidth / 2, logoY + 41, { align: "center" });
+
+  // Title
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(22);
+  doc.setFont("helvetica", "bold");
+  doc.text(certType.toUpperCase(), pageWidth / 2, logoY + 56, { align: "center" });
+
+  // "Proudly Presented To"
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(100, 100, 100);
+  doc.text("Proudly Presented To", pageWidth / 2, logoY + 66, { align: "center" });
+
+  // Student name (large)
+  doc.setTextColor(21, 133, 122);
+  doc.setFontSize(24);
+  doc.setFont("helvetica", "bold");
+  doc.text(student.name, pageWidth / 2, logoY + 76, { align: "center" });
+
+  // Underline under name
+  const nameWidth = doc.getTextWidth(student.name) * 1.2;
+  doc.setDrawColor(255, 106, 59);
+  doc.setLineWidth(0.5);
+  doc.line(pageWidth / 2 - nameWidth / 2, logoY + 79, pageWidth / 2 + nameWidth / 2, logoY + 79);
+
+  // Body
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+
+  const bodyY = logoY + 90;
+  let bodyText = "";
+  if (certType === "Best Student Award") {
+    bodyText = `of Class ${student.class}-${student.section}, bearing Roll No. ${student.rollNo}, Student ID ${student.id}, in recognition of outstanding academic performance, exemplary conduct, and active participation in school activities during the academic session ${school.session}.`;
+  } else if (certType === "Student of the Year") {
+    bodyText = `of Class ${student.class}-${student.section}, bearing Roll No. ${student.rollNo}, Student ID ${student.id}, for achieving excellence in academics (${student.attendancePct}% attendance), leadership, and overall contribution to the school community during ${school.session}.`;
+  } else {
+    bodyText = `of Class ${student.class}-${student.section}, for outstanding achievements and contributions to ${school.name}.`;
+  }
+
+  const splitBody = doc.splitTextToSize(bodyText, pageWidth - 2 * margin - 10);
+  doc.text(splitBody, pageWidth / 2, bodyY, { align: "center", lineHeightFactor: 1.6 });
+
+  const bodyEndY = bodyY + splitBody.length * 7;
+
+  // Commendation
+  doc.setFontSize(10);
+  doc.setTextColor(21, 133, 122);
+  doc.setFont("helvetica", "italic");
+  doc.text("We extend our heartfelt congratulations and best wishes for a bright future.", pageWidth / 2, bodyEndY + 12, { align: "center" });
+
+  // Certificate number + date
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Certificate No: ${certNo}  •  Date: ${new Date().toLocaleDateString("en-GB")}`, pageWidth / 2, bodyEndY + 22, { align: "center" });
+
+  // Signatures
+  const signY = bodyEndY + 38;
+  doc.setDrawColor(80, 80, 80);
+  doc.setLineWidth(0.3);
+  doc.line(margin + 10, signY, margin + 70, signY);
+  doc.line(pageWidth - margin - 70, signY, pageWidth - margin - 10, signY);
+
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text("Class Teacher", margin + 40, signY + 5, { align: "center" });
+  doc.text("Principal", pageWidth - margin - 40, signY + 5, { align: "center" });
+
+  drawFooter(doc, school);
+  openPDF(doc, `${certType.replace(/\s/g, "-")}-${student.id}.pdf`);
+}
