@@ -25,7 +25,7 @@ import {
   Search, Plus, Phone, Eye, Filter, UserCheck, Users, UserPlus,
   QrCode, Printer, GraduationCap, Mail, Upload, Trash2, MapPin, Heart,
   AlertCircle, Bus, Siblings, Home, Calendar, Droplet, Globe, Briefcase,
-  User, UserCircle, Stethoscope, FileText, X, DollarSign,
+  User, UserCircle, Stethoscope, FileText, X, DollarSign, Edit, ArrowUpCircle,
 } from "lucide-react";
 import { CLASSES, type Student } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ const EMPTY_FORM = {
 };
 
 export function StudentsModule() {
-  const { students, searchQuery, addStudent, school, feeCollections } = useAppStore();
+  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections } = useAppStore();
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Student | null>(null);
@@ -56,6 +56,14 @@ export function StudentsModule() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formSection, setFormSection] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Edit / Delete / Promote state
+  const [editStudent, setEditStudent] = useState<Student | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Student>>({});
+  const [deleteConfirm, setDeleteConfirm] = useState<Student | null>(null);
+  const [promoteTarget, setPromoteTarget] = useState<Student | null>(null);
+  const [promoteClass, setPromoteClass] = useState("");
+  const [promoteSection, setPromoteSection] = useState("A");
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -480,7 +488,20 @@ export function StudentsModule() {
                     <Badge variant={s.status === "Active" ? "default" : "secondary"} className="text-[10px]">{s.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Eye className="w-3.5 h-3.5" /></Button>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View"
+                        onClick={(e) => { e.stopPropagation(); setSelected(s); }}
+                      ><Eye className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-primary" title="Edit"
+                        onClick={(e) => { e.stopPropagation(); setEditStudent(s); setEditForm(s); }}
+                      ><Edit className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" title="Promote"
+                        onClick={(e) => { e.stopPropagation(); setPromoteTarget(s); setPromoteClass(s.class); setPromoteSection(s.section); }}
+                      ><ArrowUpCircle className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" title="Delete"
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(s); }}
+                      ><Trash2 className="w-3.5 h-3.5" /></Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -720,6 +741,136 @@ export function StudentsModule() {
           )}
         </DrawerContent>
       </Drawer>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editStudent} onOpenChange={(o) => !o && setEditStudent(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Edit className="w-5 h-5 text-primary" />Edit Student</DialogTitle>
+          </DialogHeader>
+          {editStudent && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2"><Label>Name</Label><Input value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} /></div>
+                <div><Label>Class</Label>
+                  <Select value={editForm.class || ""} onValueChange={v => setEditForm({...editForm, class: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Section</Label>
+                  <Select value={editForm.section || "A"} onValueChange={v => setEditForm({...editForm, section: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Father's Name</Label><Input value={editForm.fatherName || ""} onChange={e => setEditForm({...editForm, fatherName: e.target.value})} /></div>
+                <div><Label>Father's Phone</Label><Input value={editForm.fatherPhone || ""} onChange={e => setEditForm({...editForm, fatherPhone: e.target.value})} /></div>
+                <div><Label>Monthly Fee</Label><Input type="number" value={editForm.monthlyFee || 0} onChange={e => setEditForm({...editForm, monthlyFee: Number(e.target.value)})} /></div>
+                <div><Label>Blood Group</Label>
+                  <Select value={editForm.bloodGroup || "A+"} onValueChange={v => setEditForm({...editForm, bloodGroup: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{BLOOD_GROUPS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Address</Label><Input value={editForm.address || ""} onChange={e => setEditForm({...editForm, address: e.target.value})} /></div>
+                <div className="flex items-center gap-3 pt-2">
+                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editForm.isHosteller || false} onChange={e => setEditForm({...editForm, isHosteller: e.target.checked})} className="w-4 h-4 accent-accent" /> Hosteller</label>
+                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editForm.transport || false} onChange={e => setEditForm({...editForm, transport: e.target.checked})} className="w-4 h-4 accent-primary" /> Transport</label>
+                </div>
+                <div><Label>Status</Label>
+                  <Select value={editForm.status || "Active"} onValueChange={(v: any) => setEditForm({...editForm, status: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Left">Left</SelectItem></SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditStudent(null)}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => {
+              if (editStudent) {
+                updateStudent(editStudent.id, editForm);
+                setEditStudent(null);
+              }
+            }}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600"><Trash2 className="w-5 h-5" />Delete Student?</DialogTitle>
+          </DialogHeader>
+          {deleteConfirm && (
+            <div className="py-2">
+              <p className="text-sm text-muted-foreground">Are you sure you want to permanently delete:</p>
+              <div className="mt-3 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                <p className="font-semibold text-sm">{deleteConfirm.name}</p>
+                <p className="text-xs text-muted-foreground">{deleteConfirm.id} • {deleteConfirm.class}-{deleteConfirm.section}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">⚠️ This action cannot be undone. All fee receipts and attendance records for this student will remain in the system for audit purposes.</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => {
+              if (deleteConfirm) {
+                deleteStudent(deleteConfirm.id);
+                setDeleteConfirm(null);
+              }
+            }}><Trash2 className="w-4 h-4 mr-1.5" />Delete Permanently</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Promote dialog */}
+      <Dialog open={!!promoteTarget} onOpenChange={(o) => !o && setPromoteTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-emerald-600" />Promote Student</DialogTitle>
+          </DialogHeader>
+          {promoteTarget && (
+            <div className="space-y-3 py-2">
+              <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <p className="font-semibold text-sm">{promoteTarget.name}</p>
+                <p className="text-xs text-muted-foreground">Current: {promoteTarget.class}-{promoteTarget.section} • Roll #{promoteTarget.rollNo}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Promote to Class</Label>
+                  <Select value={promoteClass} onValueChange={setPromoteClass}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Section</Label>
+                  <Select value={promoteSection} onValueChange={setPromoteSection}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+                <p className="font-medium text-primary">What happens on promote:</p>
+                <p className="text-muted-foreground mt-1">• Student moves to new class & section<br/>• New roll number auto-assigned<br/>• Monthly fee updated to new class rate<br/>• All historical records preserved</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoteTarget(null)}>Cancel</Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => {
+              if (promoteTarget) {
+                const newFee = CLASSES.find(c => c.name === promoteClass)?.monthlyFee ?? promoteTarget.monthlyFee;
+                updateStudent(promoteTarget.id, { class: promoteClass, section: promoteSection, monthlyFee: newFee });
+                setPromoteTarget(null);
+              }
+            }}><ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote Student</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

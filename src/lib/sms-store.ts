@@ -94,6 +94,15 @@ interface AppState {
 
   // Actions
   addStudent: (s: Student) => void;
+  updateStudent: (id: string, patch: Partial<Student>) => void;
+  deleteStudent: (id: string) => void;
+  promoteStudent: (id: string, newClass: string, newSection: string) => void;
+  addTeacher: (t: Teacher) => void;
+  updateTeacher: (id: string, patch: Partial<Teacher>) => void;
+  deleteTeacher: (id: string) => void;
+  addStaff: (s: Staff) => void;
+  updateStaff: (id: string, patch: Partial<Staff>) => void;
+  deleteStaff: (id: string) => void;
   collectFee: (studentId: string, amount: number, mode: "Cash" | "Cheque" | "Bank Transfer", feeType: string, breakdown?: { tuition?: number; admission?: number; hostel?: number }) => void;
   markAttendance: (studentIds: string[], status: "Present" | "Absent" | "Late" | "Leave") => void;
 }
@@ -225,6 +234,40 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSelectedStudent: (id) => set({ selectedStudentId: id }),
 
   addStudent: (s) => set((state) => ({ students: [s, ...state.students] })),
+
+  updateStudent: (id, patch) => set((state) => ({
+    students: state.students.map(s => s.id === id ? { ...s, ...patch } : s),
+  })),
+
+  deleteStudent: (id) => set((state) => ({
+    students: state.students.filter(s => s.id !== id),
+  })),
+
+  promoteStudent: (id, newClass, newSection) => set((state) => ({
+    students: state.students.map(s =>
+      s.id === id ? { ...s, class: newClass, section: newSection, rollNo: String(Math.floor(Math.random() * 30) + 1).padStart(2, "0") } : s
+    ),
+  })),
+
+  addTeacher: (t) => set((state) => ({ teachers: [t, ...state.teachers] })),
+
+  updateTeacher: (id, patch) => set((state) => ({
+    teachers: state.teachers.map(t => t.id === id ? { ...t, ...patch } : t),
+  })),
+
+  deleteTeacher: (id) => set((state) => ({
+    teachers: state.teachers.filter(t => t.id !== id),
+  })),
+
+  addStaff: (s) => set((state) => ({ staff: [s, ...state.staff] })),
+
+  updateStaff: (id, patch) => set((state) => ({
+    staff: state.staff.map(s => s.id === id ? { ...s, ...patch } : s),
+  })),
+
+  deleteStaff: (id) => set((state) => ({
+    staff: state.staff.filter(s => s.id !== id),
+  })),
 
   collectFee: (studentId, amount, mode, feeType, breakdown) => {
     const state = get();
