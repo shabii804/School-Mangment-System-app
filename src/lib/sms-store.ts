@@ -20,6 +20,19 @@ export interface SchoolInfo {
   session: string;
 }
 
+export interface FeeStructureConfig {
+  // Per-class tuition fees (class name → monthly tuition)
+  classFees: Record<string, number>;
+  // Global hostel fee (applied to all hostellers)
+  hostelFee: number;
+  // Admission fee = multiplier × monthly tuition
+  admissionMultiplier: number;
+  // Late payment fine (flat, after due date)
+  lateFee: number;
+  // Fee due date (day of month, 1-28)
+  dueDate: number;
+}
+
 export interface Notification {
   id: string;
   title: string;
@@ -44,6 +57,11 @@ interface AppState {
   school: SchoolInfo;
   updateSchool: (patch: Partial<SchoolInfo>) => void;
   setLogo: (logo: string | null) => void;
+
+  // Fee structure config
+  feeStructure: FeeStructureConfig;
+  updateFeeStructure: (patch: Partial<FeeStructureConfig>) => void;
+  setClassFee: (className: string, amount: number) => void;
 
   // Data
   students: Student[];
@@ -96,6 +114,33 @@ const DEFAULT_SCHOOL: SchoolInfo = {
   session: "2026–27",
 };
 
+const DEFAULT_FEE_STRUCTURE: FeeStructureConfig = {
+  classFees: {
+    "Playgroup": 1500, "Nursery": 1800, "KG": 2000,
+    "Grade 1": 2200, "Grade 2": 2400, "Grade 3": 2600,
+    "Grade 4": 2800, "Grade 5": 3000, "Grade 6": 3200,
+    "Grade 7": 3500, "Grade 8": 3800, "Grade 9": 4200, "Grade 10": 4500,
+  },
+  hostelFee: 3500,
+  admissionMultiplier: 3,
+  lateFee: 200,
+  dueDate: 10,
+};
+
+function loadFeeStructure(): FeeStructureConfig {
+  if (typeof window === "undefined") return DEFAULT_FEE_STRUCTURE;
+  try {
+    const raw = window.localStorage.getItem("edudesk_fees");
+    if (raw) return { ...DEFAULT_FEE_STRUCTURE, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULT_FEE_STRUCTURE;
+}
+
+function saveFeeStructure(fs: FeeStructureConfig) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem("edudesk_fees", JSON.stringify(fs)); } catch {}
+}
+
 // Load persisted school info from localStorage (client-side only)
 function loadSchool(): SchoolInfo {
   if (typeof window === "undefined") return DEFAULT_SCHOOL;
@@ -138,6 +183,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     const next = { ...get().school, logo };
     saveSchool(next);
     set({ school: next });
+  },
+
+  feeStructure: loadFeeStructure(),
+  updateFeeStructure: (patch) => {
+    const next = { ...get().feeStructure, ...patch };
+    saveFeeStructure(next);
+    set({ feeStructure: next });
+  },
+  setClassFee: (className, amount) => {
+    const next = { ...get().feeStructure, classFees: { ...get().feeStructure.classFees, [className]: amount } };
+    saveFeeStructure(next);
+    set({ feeStructure: next });
   },
 
   students: STUDENTS,

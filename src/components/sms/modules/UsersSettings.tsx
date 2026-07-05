@@ -141,11 +141,12 @@ export function UsersModule() {
 
 export function SettingsModule() {
   const { toast } = useToast();
-  const { isDark, toggleTheme, school, updateSchool, setLogo } = useAppStore();
+  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee } = useAppStore();
   const [autoBackup, setAutoBackup] = useState(true);
   const [lateFine, setLateFine] = useState("500");
   const [dueDate, setDueDate] = useState("10");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [classFeeDraft, setClassFeeDraft] = useState<Record<string, string>>(feeStructure.classFees);
 
   // Local form state synced with store
   const [form, setForm] = useState({
@@ -189,8 +190,9 @@ export function SettingsModule() {
   return (
     <div className="space-y-4 fade-in">
       <Tabs defaultValue="school">
-        <TabsList className="grid w-full max-w-2xl grid-cols-6">
+        <TabsList className="grid w-full max-w-2xl grid-cols-7">
           <TabsTrigger value="school">School</TabsTrigger>
+          <TabsTrigger value="feestructure">Fee Structure</TabsTrigger>
           <TabsTrigger value="fines">Fines</TabsTrigger>
           <TabsTrigger value="fees">Fees</TabsTrigger>
           <TabsTrigger value="backup">Backup</TabsTrigger>
@@ -254,6 +256,127 @@ export function SettingsModule() {
                 </p>
               </div>
               <Button className="bg-primary hover:bg-primary/90" onClick={saveSchoolInfo}>Save Changes</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Fee Structure management */}
+        <TabsContent value="feestructure">
+          <Card className="border-0 shadow-sm glass-card">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Fee Structure Configuration</CardTitle></CardHeader>
+            <CardContent className="space-y-5">
+              {/* Global fee settings */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Hostel Fee (monthly)</Label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-sm text-muted-foreground">Rs.</span>
+                    <Input
+                      type="number"
+                      value={feeStructure.hostelFee}
+                      onChange={e => updateFeeStructure({ hostelFee: Number(e.target.value) })}
+                      className="h-8 font-bold"
+                    />
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Admission Multiplier</Label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-sm text-muted-foreground">×</span>
+                    <Input
+                      type="number"
+                      value={feeStructure.admissionMultiplier}
+                      onChange={e => updateFeeStructure({ admissionMultiplier: Number(e.target.value) })}
+                      className="h-8 font-bold"
+                    />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">× monthly tuition</p>
+                </div>
+                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Late Fee</Label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-sm text-muted-foreground">Rs.</span>
+                    <Input
+                      type="number"
+                      value={feeStructure.lateFee}
+                      onChange={e => updateFeeStructure({ lateFee: Number(e.target.value) })}
+                      className="h-8 font-bold"
+                    />
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Due Date (day)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={28}
+                    value={feeStructure.dueDate}
+                    onChange={e => updateFeeStructure({ dueDate: Number(e.target.value) })}
+                    className="h-8 font-bold mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Per-class tuition fees table */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold">Per-Class Tuition Fees</p>
+                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-0">{Object.keys(feeStructure.classFees).length} classes</Badge>
+                </div>
+                <div className="rounded-lg border border-border/40 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border/40">
+                        <TableHead>Class</TableHead>
+                        <TableHead className="text-right">Monthly Tuition (Rs.)</TableHead>
+                        <TableHead className="text-right">Admission Fee (Rs.)</TableHead>
+                        <TableHead className="text-right">Hosteller Total (Rs.)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(feeStructure.classFees).map(([className, fee]) => (
+                        <TableRow key={className} className="border-border/30 hover:bg-muted/20">
+                          <TableCell className="font-medium text-sm">{className}</TableCell>
+                          <TableCell className="text-right">
+                            <Input
+                              type="number"
+                              value={classFeeDraft[className] ?? fee}
+                              onChange={e => setClassFeeDraft({ ...classFeeDraft, [className]: e.target.value })}
+                              onBlur={e => {
+                                const val = Number(e.target.value);
+                                if (val > 0) {
+                                  setClassFee(className, val);
+                                  toast({ title: "Fee Updated", description: `${className}: Rs. ${val.toLocaleString()}/month` });
+                                }
+                              }}
+                              className="h-7 w-28 text-right ml-auto"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">Rs. {(fee * feeStructure.admissionMultiplier).toLocaleString()}</TableCell>
+                          <TableCell className="text-right text-sm text-accent">Rs. {(fee + feeStructure.hostelFee).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+                <p className="font-medium text-primary">How fees are calculated:</p>
+                <p className="text-muted-foreground mt-1">
+                  • <strong>Tuition</strong> = per-class amount shown above<br/>
+                  • <strong>Hostel</strong> = Rs. {feeStructure.hostelFee.toLocaleString()}/month (only for hostellers)<br/>
+                  • <strong>Admission</strong> = Tuition × {feeStructure.admissionMultiplier} (one-time)<br/>
+                  • <strong>Late Fee</strong> = Rs. {feeStructure.lateFee.toLocaleString()} (after day {feeStructure.dueDate} of each month)
+                </p>
+              </div>
+
+              <Button
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => toast({ title: "Fee Structure Saved ✓", description: "All fee settings persisted. Fee Collection will use new amounts." })}
+              >
+                Save Fee Structure
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

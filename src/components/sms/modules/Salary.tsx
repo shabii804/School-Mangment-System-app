@@ -22,7 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/lib/sms-store";
-import { printSalarySlip } from "@/lib/pdf-service";
+import { printSalarySlip, printPayrollBatch } from "@/lib/pdf-service";
 
 const WORKING_DAYS = 26;
 const LATE_FINE = 500;
@@ -107,7 +107,14 @@ export function SalaryModule() {
           </SelectContent>
         </Select>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><FileDown className="w-4 h-4 mr-1.5" />Export</Button>
+          <Button variant="outline" size="sm"
+            onClick={() => {
+              toast({ title: "Generating payroll batch PDF...", description: `${allEmployees.length} employees • ${month}` });
+              printPayrollBatch(allEmployees, month, school);
+            }}
+          >
+            <FileDown className="w-4 h-4 mr-1.5" />Payroll Summary PDF
+          </Button>
           <Button size="sm" className="bg-primary hover:bg-primary/90"
             onClick={() => toast({ title: "All Salary Slips Generated", description: `${allEmployees.length} slips for ${month}.` })}
           >

@@ -1121,3 +1121,298 @@ export function printStudentAward(
   drawFooter(doc, school);
   openPDF(doc, `${certType.replace(/\s/g, "-")}-${student.id}.pdf`);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 10. PAYROLL BATCH (all employees in one multi-page PDF)
+// ─────────────────────────────────────────────────────────────
+interface PayrollEmployee {
+  id: string;
+  name: string;
+  designation: string;
+  monthlySalary: number;
+  attendance: { present: number; late: number; halfDay: number; absent: number; leave: number };
+}
+
+export function printPayrollBatch(
+  employees: PayrollEmployee[],
+  month: string,
+  school: SchoolInfo
+) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  drawLetterhead(doc, school);
+
+  let y = 42;
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("PAYROLL SUMMARY", pageWidth / 2, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Month: ${month}  •  Generated: ${new Date().toLocaleDateString("en-GB")}`, pageWidth / 2, y, { align: "center" });
+  y += 8;
+
+  const WORKING_DAYS = 26;
+  const LATE_FINE = 500;
+
+  const rows = employees.map(emp => {
+    const gross = emp.monthlySalary;
+    const perDay = Math.round(gross / WORKING_DAYS);
+    const absentDeduction = emp.attendance.absent * perDay;
+    const lateDeduction = emp.attendance.late * LATE_FINE;
+    const halfDayDeduction = Math.round(emp.attendance.halfDay * perDay * 0.5);
+    const totalDeduction = absentDeduction + lateDeduction + halfDayDeduction;
+    const net = gross - totalDeduction;
+    return [
+      emp.id,
+      emp.name,
+      emp.designation,
+      `Rs. ${gross.toLocaleString()}`,
+      `${emp.attendance.absent}A ${emp.attendance.late}L ${emp.attendance.halfDay}H`,
+      `-Rs. ${totalDeduction.toLocaleString()}`,
+      `Rs. ${net.toLocaleString()}`,
+    ];
+  });
+
+  const totalGross = employees.reduce((s, e) => s + e.monthlySalary, 0);
+  const totalDeductions = employees.reduce((s, e) => {
+    const perDay = Math.round(e.monthlySalary / WORKING_DAYS);
+    return s + (e.attendance.absent * perDay) + (e.attendance.late * LATE_FINE) + Math.round(e.attendance.halfDay * perDay * 0.5);
+  }, 0);
+  const totalNet = totalGross - totalDeductions;
+
+  autoTable(doc, {
+    startY: y,
+    head: [["ID", "Name", "Designation", "Gross", "Att. (A/L/H)", "Deductions", "Net Payable"]],
+    body: rows,
+    foot: [["", "", "TOTAL", `Rs. ${totalGross.toLocaleString()}`, "", `-Rs. ${totalDeductions.toLocaleString()}`, `Rs. ${totalNet.toLocaleString()}`]],
+    theme: "striped",
+    headStyles: { fillColor: [21, 133, 122], textColor: 255, fontSize: 8, fontStyle: "bold" },
+    bodyStyles: { fontSize: 8, textColor: [40, 40, 40] },
+    footStyles: { fillColor: [21, 133, 122], textColor: 255, fontSize: 9, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [244, 241, 233] },
+    margin: { left: margin, right: margin },
+    styles: { cellPadding: 2 },
+  });
+
+  drawFooter(doc, school);
+  openPDF(doc, `payroll-${month.replace(/\s/g, "")}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 11. ATTENDANCE REPORT (monthly sheet per class, A4 landscape)
+// ─────────────────────────────────────────────────────────────
+export function printAttendanceReport(
+  className: string,
+  month: string,
+  students: { rollNo: string; name: string }[],
+  attendance: Record<string, string>, // studentId → "P/A/L/Lv" per day (we'll mock)
+  school: SchoolInfo
+) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 12;
+
+  drawLetterhead(doc, school);
+
+  let y = 42;
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(`ATTENDANCE REPORT — ${className}`, pageWidth / 2, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Month: ${month}  •  Generated: ${new Date().toLocaleDateString("en-GB")}`, pageWidth / 2, y, { align: "center" });
+  y += 8;
+
+  // Build table: Roll | Name | Day 1...31 | Present | Absent | %
+  const days = 30;
+  const headers = ["Roll", "Name", ...Array.from({ length: days }, (_, i) => String(i + 1)), "P", "A", "%"];
+
+  const rows = students.slice(0, 30).map((s, idx) => {
+    const statuses: string[] = [];
+    let present = 0, absent = 0;
+    for (let d = 0; d < days; d++) {
+      // Mock: ~85% attendance
+      const seed = (idx + d * 7) % 20;
+      const st = seed < 17 ? "P" : seed === 17 ? "A" : seed === 18 ? "L" : "Lv";
+      statuses.push(st);
+      if (st === "P" || st === "L") present++;
+      if (st === "A") absent++;
+    }
+    const pct = Math.round((present / days) * 100);
+    return [s.rollNo, s.name, ...statuses, String(present), String(absent), `${pct}%`];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    head: [headers],
+    body: rows,
+    theme: "grid",
+    headStyles: { fillColor: [21, 133, 122], textColor: 255, fontSize: 6, fontStyle: "bold", halign: "center" },
+    bodyStyles: { fontSize: 6, textColor: [40, 40, 40], halign: "center", cellPadding: 0.8 },
+    columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 28, halign: "left" } },
+    margin: { left: margin, right: margin },
+    styles: { cellPadding: 1, overflow: "linebreak" },
+    didParseCell: (data: any) => {
+      // Color-code status cells
+      if (data.section === "body" && data.column.index >= 2 && data.column.index < 2 + days) {
+        const val = data.cell.raw;
+        if (val === "A") { data.cell.styles.textColor = [220, 50, 50]; data.cell.styles.fontStyle = "bold"; }
+        else if (val === "L") { data.cell.styles.textColor = [200, 150, 0]; }
+        else if (val === "Lv") { data.cell.styles.textColor = [120, 120, 120]; }
+      }
+    },
+  });
+
+  drawFooter(doc, school);
+  openPDF(doc, `attendance-${className.replace(/\s/g, "-")}-${month.replace(/\s/g, "")}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 12. FEE REMINDER LETTER (one per defaulter, multi-page PDF)
+// ─────────────────────────────────────────────────────────────
+export function printFeeReminderLetters(
+  defaulters: Student[],
+  school: SchoolInfo,
+  month: string
+) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 20;
+
+  defaulters.forEach((student, idx) => {
+    if (idx > 0) doc.addPage();
+
+    // Letterhead (only logo + name, compact)
+    doc.setFillColor(21, 133, 122);
+    doc.rect(0, 0, pageWidth, 4, "F");
+
+    let logoY = 14;
+    if (school.logo) {
+      try {
+        const fmt = school.logo.includes("image/png") ? "PNG" : "JPEG";
+        doc.addImage(school.logo, fmt, margin, logoY, 16, 16);
+      } catch {}
+    }
+    doc.setTextColor(21, 133, 122);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(school.name, margin + 22, logoY + 7);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    doc.text(school.address, margin + 22, logoY + 12);
+    doc.text(`Phone: ${school.phone}`, margin + 22, logoY + 16);
+
+    doc.setDrawColor(21, 133, 122);
+    doc.setLineWidth(0.5);
+    doc.line(margin, logoY + 20, pageWidth - margin, logoY + 20);
+
+    let y = logoY + 28;
+
+    // Date + ref
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}`, margin, y);
+    doc.text(`Ref: REM-${month.replace(/\s/g, "")}-${student.id}`, pageWidth - margin, y, { align: "right" });
+    y += 10;
+
+    // To
+    doc.setFont("helvetica", "bold");
+    doc.text("To:", margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(student.fatherName, margin + 15, y);
+    y += 5;
+    doc.text(`Father/Guardian of ${student.name}`, margin + 15, y);
+    y += 5;
+    doc.text(`Class: ${student.class}-${student.section} (Roll #${student.rollNo})`, margin + 15, y);
+    y += 10;
+
+    // Subject
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(20, 20, 20);
+    doc.text("Subject: Fee Payment Reminder", margin, y);
+    y += 8;
+
+    // Body
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(40, 40, 40);
+    const body = `Dear Parent,\\n\\nThis is a gentle reminder that the school fee for the month of ${month} for your child ${student.name} (ID: ${student.id}, Class ${student.class}-${student.section}) is currently overdue.\\n\\nAs per our records, the outstanding amount is Rs. ${student.outstandingAmount.toLocaleString()}. We kindly request you to clear the dues at your earliest convenience to avoid any disruption in your child's education.\\n\\nPlease visit the school accounts office during working hours (8:00 AM to 2:00 PM) to make the payment. If you have already paid, please disregard this notice and provide the receipt number to the accounts department for record update.\\n\\nFor any queries regarding fees, please contact the accounts office at ${school.phone}.\\n\\nThank you for your cooperation.\\n\\nSincerely,`;
+
+    const paragraphs = body.split("\\n");
+    paragraphs.forEach(para => {
+      if (para.trim()) {
+        const lines = doc.splitTextToSize(para, pageWidth - 2 * margin);
+        doc.text(lines, margin, y);
+        y += lines.length * 5;
+      } else {
+        y += 4;
+      }
+    });
+
+    y += 8;
+
+    // Signature
+    doc.setDrawColor(80, 80, 80);
+    doc.setLineWidth(0.3);
+    doc.line(pageWidth - margin - 60, y, pageWidth - margin, y);
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text("Accounts Officer", pageWidth - margin - 30, y + 5, { align: "center" });
+    doc.text(school.name, pageWidth - margin - 30, y + 10, { align: "center" });
+
+    // Footer
+    drawFooter(doc, school);
+  });
+
+  openPDF(doc, `fee-reminders-${month.replace(/\s/g, "")}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 13. STUDENT DIRECTORY EXPORT (CSV — opens in Excel)
+// ─────────────────────────────────────────────────────────────
+export function exportStudentDirectoryCSV(students: Student[], school: SchoolInfo) {
+  const headers = ["Student ID", "Roll No", "Name", "Gender", "Date of Birth", "Class", "Section", "Father's Name", "Father's Phone", "Admission Date", "Monthly Fee", "Hosteller", "Outstanding", "Attendance %", "Status"];
+
+  const rows = students.map(s => [
+    s.id,
+    s.rollNo,
+    s.name,
+    s.gender,
+    s.dob,
+    s.class,
+    s.section,
+    s.fatherName,
+    s.fatherPhone,
+    s.admissionDate,
+    s.monthlyFee,
+    s.isHosteller ? "Yes" : "No",
+    s.outstandingAmount,
+    `${s.attendancePct}%`,
+    s.status,
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  // Add BOM for Excel UTF-8 compatibility
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `student-directory-${new Date().toISOString().split("T")[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

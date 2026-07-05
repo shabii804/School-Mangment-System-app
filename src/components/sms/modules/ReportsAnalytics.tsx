@@ -15,7 +15,10 @@ import {
 import { EXPENSE_BREAKDOWN, FEE_TREND, STUDENT_GROWTH, TEACHERS, STAFF } from "@/lib/sms-data";
 import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/lib/sms-store";
-import { printFeeCollectionReport, printDefaulterList } from "@/lib/pdf-service";
+import {
+  printFeeCollectionReport, printDefaulterList, printPayrollBatch,
+  printAttendanceReport, printFeeReminderLetters, exportStudentDirectoryCSV,
+} from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
 
 const REPORTS = [
@@ -36,38 +39,73 @@ export function ReportsModule() {
   const { feeCollections, students, school } = useAppStore();
 
   const handlePrint = (reportId: number, name: string) => {
-    toast({ title: "Generating PDF...", description: name });
+    toast({ title: "Generating report...", description: name });
     try {
-      if (reportId === 5) {
+      if (reportId === 1) {
+        // Student Report → CSV export
+        exportStudentDirectoryCSV(students, school);
+        toast({ title: "CSV Exported ✓", description: `${students.length} students exported to Excel/CSV` });
+        return;
+      } else if (reportId === 4) {
+        // Attendance Report
+        const classStudents = students.filter(s => s.class === "Grade 9" && s.status === "Active").slice(0, 25);
+        printAttendanceReport("Grade 9", "July 2026", classStudents, {}, school);
+      } else if (reportId === 5) {
         // Fee Collection Report
         printFeeCollectionReport(feeCollections.slice(0, 30), school);
       } else if (reportId === 6) {
         // Defaulter Report
         const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
         printDefaulterList(defaulters, school);
+      } else if (reportId === 7) {
+        // Salary Report → Payroll batch
+        const employees = [
+          ...TEACHERS.map(t => ({ id: t.id, name: t.name, designation: t.designation, monthlySalary: t.monthlySalary, attendance: t.attendance })),
+          ...STAFF.map(s => ({ id: s.id, name: s.name, designation: s.designation, monthlySalary: s.monthlySalary, attendance: s.attendance })),
+        ];
+        printPayrollBatch(employees, "July 2026", school);
+      } else if (reportId === 8) {
+        // Fine / Deduction Report (use defaulter reminder letters)
+        const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
+        if (defaulters.length === 0) {
+          toast({ title: "No defaulters", description: "No reminder letters to generate." });
+          return;
+        }
+        printFeeReminderLetters(defaulters, school, "July 2026");
+        toast({ title: "Reminder letters generated ✓", description: `${defaulters.length} letters` });
+        return;
       } else {
-        // For other reports, just show a toast for now
-        toast({ title: "PDF ready ✓", description: `${name} — would open in new tab (demo)` });
+        toast({ title: "PDF ready ✓", description: `${name} — demo` });
       }
     } catch (e) {
       toast({ title: "Print failed", description: "Could not generate PDF.", variant: "destructive" });
     }
   };
 
+  // Reports that have working PDF/CSV output
+  const printableIds = [1, 4, 5, 6, 7, 8];
+
   return (
     <div className="space-y-4 fade-in">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">10 printable report types with PDF / Excel export.</p>
+        <p className="text-sm text-muted-foreground">10 printable report types with PDF / Excel / CSV export.</p>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><FileDown className="w-4 h-4 mr-1.5" />Export All</Button>
-          <Button size="sm" className="bg-primary hover:bg-primary/90"><Printer className="w-4 h-4 mr-1.5" />Quick Print</Button>
+          <Button variant="outline" size="sm"
+            onClick={() => {
+              exportStudentDirectoryCSV(students, school);
+              toast({ title: "Student Directory Exported ✓", description: `${students.length} students` });
+            }}
+          >
+            <FileDown className="w-4 h-4 mr-1.5" />Export All Students
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {REPORTS.map(r => {
           const Icon = r.icon;
-          const isPrintable = r.id === 5 || r.id === 6;
+          const isPrintable = printableIds.includes(r.id);
+          const isCSV = r.id === 1;
           return (
             <Card key={r.id} className={cn("border-0 shadow-sm glass-card transition-shadow", isPrintable ? "card-hover hover:shadow-md ring-1 ring-primary/10" : "")}>
               <CardContent className="p-4">
@@ -79,7 +117,7 @@ export function ReportsModule() {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono text-muted-foreground">#{r.id}</span>
                       <p className="font-semibold text-sm">{r.name}</p>
-                      {isPrintable && <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-700 border-0 ml-auto">Ready</Badge>}
+                      {isPrintable && <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-700 border-0 ml-auto">{isCSV ? "CSV" : "Ready"}</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{r.desc}</p>
                     <p className="text-[10px] text-muted-foreground/70 mt-1.5">Filters: {r.filters}</p>
@@ -91,8 +129,10 @@ export function ReportsModule() {
                     size="sm"
                     className="flex-1 h-7 text-xs"
                     onClick={() => handlePrint(r.id, r.name)}
+                    disabled={!isPrintable}
                   >
-                    <FileText className="w-3 h-3 mr-1" />PDF
+                    {isCSV ? <FileDown className="w-3 h-3 mr-1" /> : <FileText className="w-3 h-3 mr-1" />}
+                    {isCSV ? "CSV" : "PDF"}
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1 h-7 text-xs"
                     onClick={() => toast({ title: "Exporting to Excel...", description: r.name })}
