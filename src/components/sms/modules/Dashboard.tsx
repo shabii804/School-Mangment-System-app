@@ -56,53 +56,66 @@ export function DashboardModule() {
   return (
     <div className="space-y-6 fade-in">
       {/* Welcome hero with school logo */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/70 p-6 text-primary-foreground animated-gradient">
-        <div className="absolute inset-0 opacity-20 pattern-grid" />
-        <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 p-6 text-primary-foreground animated-gradient shadow-lg">
+        <div className="absolute inset-0 opacity-10 pattern-grid" />
+        <div className="absolute top-0 right-0 w-72 h-72 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+        <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-white/5 rounded-full blur-3xl translate-y-1/2" />
         <div className="relative flex items-start gap-5">
           {/* Logo */}
-          <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center overflow-hidden ring-2 ring-white/30 shrink-0">
+          <div className="w-20 h-20 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center overflow-hidden ring-4 ring-white/20 shadow-xl shrink-0">
             {school.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
             ) : (
-              <School className="w-8 h-8 text-primary-foreground" />
+              <School className="w-10 h-10 text-primary-foreground" />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <p className="text-xs opacity-90">Assalam-o-Alaikum, welcome back 👋</p>
-              <Badge className="bg-white/20 text-primary-foreground border-0 text-[10px]">
-                <Sparkles className="w-2.5 h-2.5 mr-1" /> Session {school.session}
-              </Badge>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 font-medium">
+                <Sparkles className="w-2.5 h-2.5 inline mr-1" />Session {school.session}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/20 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                {new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+              </span>
             </div>
-            <h2 className="text-2xl font-bold mt-1">{school.name}</h2>
-            <p className="text-sm opacity-80 mt-1">{school.tagline} • 13 Classes • 48 Active Students</p>
+            <h2 className="text-3xl font-bold mt-1.5 tracking-tight">{school.name}</h2>
+            <p className="text-sm opacity-80 mt-1">{school.tagline}</p>
+            {/* Inline mini stats */}
+            <div className="flex gap-4 mt-3">
+              <div className="text-center">
+                <p className="text-2xl font-bold">{STATS.totalStudents}</p>
+                <p className="text-[10px] uppercase opacity-60 tracking-wider">Students</p>
+              </div>
+              <div className="border-l border-white/20 pl-4 text-center">
+                <p className="text-2xl font-bold">{STATS.totalTeachers + STATS.totalStaff}</p>
+                <p className="text-[10px] uppercase opacity-60 tracking-wider">Staff</p>
+              </div>
+              <div className="border-l border-white/20 pl-4 text-center">
+                <p className="text-2xl font-bold">{STATS.todayAttendancePct}%</p>
+                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Att.</p>
+              </div>
+              <div className="border-l border-white/20 pl-4 text-center">
+                <p className="text-2xl font-bold">Rs. {(STATS.todayFeeCollection / 1000).toFixed(0)}K</p>
+                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Coll.</p>
+              </div>
+            </div>
+            {/* Quick action buttons */}
             <div className="flex flex-wrap gap-2 mt-4">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/20 hover:bg-white/30 text-primary-foreground border-0"
-                onClick={() => setActiveModule("fees")}
-              >
-                <Receipt className="w-4 h-4 mr-1.5" /> Collect Fee
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/10 hover:bg-white/20 text-primary-foreground border border-white/30"
-                onClick={() => setActiveModule("attendance")}
-              >
-                <ClipboardList className="w-4 h-4 mr-1.5" /> Mark Attendance
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/10 hover:bg-white/20 text-primary-foreground border border-white/30"
-                onClick={() => setActiveModule("students")}
-              >
-                <Plus className="w-4 h-4 mr-1.5" /> New Admission
-              </Button>
+              <button onClick={() => setActiveModule("fees")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium transition-all hover:scale-105">
+                <Receipt className="w-3.5 h-3.5" /> Collect Fee
+              </button>
+              <button onClick={() => setActiveModule("attendance")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all hover:scale-105 border border-white/20">
+                <ClipboardList className="w-3.5 h-3.5" /> Mark Attendance
+              </button>
+              <button onClick={() => setActiveModule("students")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all hover:scale-105 border border-white/20">
+                <Plus className="w-3.5 h-3.5" /> New Admission
+              </button>
+              <button onClick={() => setActiveModule("defaulters")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/20 hover:bg-accent/30 text-xs font-medium transition-all hover:scale-105 border border-accent/30">
+                <AlertTriangle className="w-3.5 h-3.5" /> {STATS.defaultersCount} Defaulters
+              </button>
             </div>
           </div>
         </div>

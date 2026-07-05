@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { TEACHERS, STAFF, SUBJECTS, CLASSES, type Teacher, type Staff } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 // ─────────────────────────────────────────────────────────────
 // TEACHERS MODULE
@@ -40,6 +41,7 @@ const EMPTY_TEACHER: Teacher = {
 
 export function TeachersModule() {
   const { teachers, addTeacher, updateTeacher, deleteTeacher } = useAppStore();
+  const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
   const [editTeacher, setEditTeacher] = useState<Teacher | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Teacher | null>(null);
@@ -53,7 +55,11 @@ export function TeachersModule() {
   };
 
   const handleAdd = () => {
+    if (!form.name.trim()) { toast({ title: "Name required", description: "Please enter teacher's name.", variant: "destructive" }); return; }
+    if (!form.phone.trim()) { toast({ title: "Phone required", description: "Please enter phone number.", variant: "destructive" }); return; }
+    if (form.monthlySalary <= 0) { toast({ title: "Salary required", description: "Please enter monthly salary.", variant: "destructive" }); return; }
     addTeacher(form);
+    toast({ title: "Teacher Added ✓", description: `${form.name} added as ${form.designation} • ID: ${form.id}` });
     setAddOpen(false);
   };
 
@@ -228,7 +234,7 @@ export function TeachersModule() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTeacher(null)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editTeacher) { updateTeacher(editTeacher.id, editForm); setEditTeacher(null); } }}>Save Changes</Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editTeacher) { updateTeacher(editTeacher.id, editForm); toast({ title: "Teacher Updated ✓", description: `${editForm.name || editTeacher.name}'s profile updated.` }); setEditTeacher(null); } }}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -248,7 +254,7 @@ export function TeachersModule() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => { if (deleteConfirm) { deleteTeacher(deleteConfirm.id); setDeleteConfirm(null); } }}>Delete</Button>
+            <Button variant="destructive" onClick={() => { if (deleteConfirm) { deleteTeacher(deleteConfirm.id); toast({ title: "Teacher Deleted", description: `${deleteConfirm.name} removed.`, variant: "destructive" }); setDeleteConfirm(null); } }}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -404,6 +410,7 @@ const EMPTY_STAFF: Staff = {
 
 export function StaffModule() {
   const { staff, addStaff, updateStaff, deleteStaff } = useAppStore();
+  const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<Staff | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Staff | null>(null);
@@ -516,7 +523,7 @@ export function StaffModule() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => { addStaff(form); setAddOpen(false); }} disabled={!form.name}>Add Staff</Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => { addStaff(form); toast({ title: "Staff Added ✓", description: `${form.name} added to ${form.department}` }); setAddOpen(false); }} disabled={!form.name}>Add Staff</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -534,7 +541,7 @@ export function StaffModule() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditStaff(null)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editStaff) { updateStaff(editStaff.id, editForm); setEditStaff(null); } }}>Save Changes</Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editStaff) { updateStaff(editStaff.id, editForm); toast({ title: "Staff Updated ✓", description: `${editForm.name || editStaff.name}'s profile updated.` }); setEditStaff(null); } }}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -554,7 +561,7 @@ export function StaffModule() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => { if (deleteConfirm) { deleteStaff(deleteConfirm.id); setDeleteConfirm(null); } }}>Delete</Button>
+            <Button variant="destructive" onClick={() => { if (deleteConfirm) { deleteStaff(deleteConfirm.id); toast({ title: "Staff Deleted", description: `${deleteConfirm.name} removed.`, variant: "destructive" }); setDeleteConfirm(null); } }}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

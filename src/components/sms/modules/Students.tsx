@@ -104,6 +104,13 @@ export function StudentsModule() {
   };
 
   const handleAdd = () => {
+    // Validation
+    if (!form.name.trim()) { toast({ title: "Name required", description: "Please enter student's full name.", variant: "destructive" }); return; }
+    if (!form.fatherName.trim()) { toast({ title: "Father's name required", description: "Please enter father's name.", variant: "destructive" }); return; }
+    if (!form.fatherPhone.trim()) { toast({ title: "Phone required", description: "Please enter father's phone number.", variant: "destructive" }); return; }
+    if (form.fatherPhone && !/^[\+]?[\d\s\-]{10,15}$/.test(form.fatherPhone)) { toast({ title: "Invalid phone", description: "Phone must be 10-15 digits.", variant: "destructive" }); return; }
+    if (form.cnic && !/^[\d]{5}-?[\d]{7}-?[\d]$/.test(form.cnic)) { toast({ title: "Invalid CNIC", description: "CNIC format: 42101-1234567-1", variant: "destructive" }); return; }
+
     const cls = CLASSES.find(c => c.name === form.class);
     const monthlyFee = cls?.monthlyFee ?? 2000;
     const hostelFee = form.isHosteller ? 3500 : 0;
@@ -149,6 +156,7 @@ export function StudentsModule() {
       outstandingAmount: monthlyFee + hostelFee,
     };
     addStudent(newStudent);
+    toast({ title: "Student Admitted ✓", description: `${newStudent.name} admitted to ${newStudent.class}-${newStudent.section} • ID: ${newStudent.id}` });
     setAddOpen(false);
     setForm(EMPTY_FORM);
     setFormSection(0);
@@ -209,6 +217,7 @@ export function StudentsModule() {
       const newFee = CLASSES.find(c => c.name === bulkClass)?.monthlyFee;
       updateStudent(id, { class: bulkClass, section: bulkSection, ...(newFee ? { monthlyFee: newFee } : {}) });
     });
+    toast({ title: "Bulk Promote Complete ✓", description: `${selectedIds.size} students promoted to ${bulkClass}-${bulkSection}` });
     setSelectedIds(new Set());
     setBulkPromoteOpen(false);
   };
@@ -1003,6 +1012,7 @@ export function StudentsModule() {
             <Button className="bg-primary hover:bg-primary/90" onClick={() => {
               if (editStudent) {
                 updateStudent(editStudent.id, editForm);
+                toast({ title: "Student Updated ✓", description: `${editForm.name || editStudent.name}'s profile has been updated.` });
                 setEditStudent(null);
               }
             }}>Save Changes</Button>
@@ -1031,6 +1041,7 @@ export function StudentsModule() {
             <Button variant="destructive" onClick={() => {
               if (deleteConfirm) {
                 deleteStudent(deleteConfirm.id);
+                toast({ title: "Student Deleted", description: `${deleteConfirm.name} has been removed from the system.`, variant: "destructive" });
                 setDeleteConfirm(null);
               }
             }}><Trash2 className="w-4 h-4 mr-1.5" />Delete Permanently</Button>
@@ -1076,6 +1087,7 @@ export function StudentsModule() {
               if (promoteTarget) {
                 const newFee = CLASSES.find(c => c.name === promoteClass)?.monthlyFee ?? promoteTarget.monthlyFee;
                 updateStudent(promoteTarget.id, { class: promoteClass, section: promoteSection, monthlyFee: newFee });
+                toast({ title: "Student Promoted ✓", description: `${promoteTarget.name} → ${promoteClass}-${promoteSection} • Fee: Rs. ${newFee.toLocaleString()}/month` });
                 setPromoteTarget(null);
               }
             }}><ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote Student</Button>
