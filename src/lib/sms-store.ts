@@ -8,7 +8,7 @@ import {
 export type ModuleKey =
   | "dashboard" | "students" | "teachers" | "staff" | "classes" | "timetable"
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
-  | "reports" | "analytics" | "users" | "settings";
+  | "reports" | "analytics" | "users" | "settings" | "ledger";
 
 export interface SchoolInfo {
   name: string;
@@ -31,6 +31,37 @@ export interface FeeStructureConfig {
   lateFee: number;
   // Fee due date (day of month, 1-28)
   dueDate: number;
+}
+
+export interface StudentDocument {
+  id: string;
+  studentId: string;
+  name: string;
+  type: "Birth Certificate" | "Photo" | "Transfer Certificate" | "Report Card" | "Medical Record" | "Other";
+  uploadDate: string;
+  dataUrl: string; // base64
+  size: number; // bytes
+}
+
+export interface CommunicationLog {
+  id: string;
+  studentId: string;
+  type: "Phone Call" | "Meeting" | "SMS" | "Email" | "Note";
+  date: string;
+  direction: "Incoming" | "Outgoing";
+  subject: string;
+  notes: string;
+  user: string;
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  type: "Income" | "Expense";
+  category: string;
+  description: string;
+  amount: number;
+  mode: "Cash" | "Bank" | "Cheque";
 }
 
 export interface Notification {
@@ -69,6 +100,9 @@ interface AppState {
   staff: Staff[];
   feeCollections: FeeCollection[];
   activities: Activity[];
+  documents: StudentDocument[];
+  commLogs: CommunicationLog[];
+  transactions: Transaction[];
 
   // Theme
   isDark: boolean;
@@ -105,6 +139,18 @@ interface AppState {
   deleteStaff: (id: string) => void;
   collectFee: (studentId: string, amount: number, mode: "Cash" | "Cheque" | "Bank Transfer", feeType: string, breakdown?: { tuition?: number; admission?: number; hostel?: number }) => void;
   markAttendance: (studentIds: string[], status: "Present" | "Absent" | "Late" | "Leave") => void;
+
+  // Document vault
+  addDocument: (doc: StudentDocument) => void;
+  deleteDocument: (id: string) => void;
+
+  // Communication log
+  addCommLog: (log: CommunicationLog) => void;
+  deleteCommLog: (id: string) => void;
+
+  // Transactions (income/expense ledger)
+  addTransaction: (t: Transaction) => void;
+  deleteTransaction: (id: string) => void;
 }
 
 const ROLE_NAMES: Record<Role, string> = {
@@ -319,4 +365,25 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     set({ activities: [newActivity, ...state.activities] });
   },
+
+  documents: [],
+  addDocument: (doc) => set((state) => ({ documents: [doc, ...state.documents] })),
+  deleteDocument: (id) => set((state) => ({ documents: state.documents.filter(d => d.id !== id) })),
+
+  commLogs: [],
+  addCommLog: (log) => set((state) => ({ commLogs: [log, ...state.commLogs] })),
+  deleteCommLog: (id) => set((state) => ({ commLogs: state.commLogs.filter(l => l.id !== id) })),
+
+  transactions: [
+    { id: "TX-001", date: "2026-07-01", type: "Income", category: "Fee Collection", description: "Monthly tuition fees — July", amount: 185000, mode: "Cash" },
+    { id: "TX-002", date: "2026-07-01", type: "Expense", category: "Salary", description: "Teaching staff salaries — June", amount: 313000, mode: "Bank" },
+    { id: "TX-003", date: "2026-06-28", type: "Expense", category: "Utilities", description: "Electricity bill — June", amount: 18000, mode: "Cheque" },
+    { id: "TX-004", date: "2026-06-25", type: "Expense", category: "Maintenance", description: "Building repair — Block A", amount: 12000, mode: "Cash" },
+    { id: "TX-005", date: "2026-06-20", type: "Income", category: "Admission Fee", description: "New admissions — 3 students", amount: 22500, mode: "Cash" },
+    { id: "TX-006", date: "2026-06-15", type: "Expense", category: "Stationery", description: "Office supplies + exam papers", amount: 8500, mode: "Cash" },
+    { id: "TX-007", date: "2026-06-10", type: "Expense", category: "Transport", description: "Bus fuel + maintenance", amount: 22000, mode: "Cash" },
+    { id: "TX-008", date: "2026-06-05", type: "Income", category: "Hostel Fee", description: "Hostel fees — 12 students", amount: 42000, mode: "Cash" },
+  ],
+  addTransaction: (t) => set((state) => ({ transactions: [t, ...state.transactions] })),
+  deleteTransaction: (id) => set((state) => ({ transactions: state.transactions.filter(t => t.id !== id) })),
 }));

@@ -15,6 +15,7 @@ import { SalaryModule } from "@/components/sms/modules/Salary";
 import { ResultsModule, CertificatesModule } from "@/components/sms/modules/ResultsCertificates";
 import { ReportsModule, AnalyticsModule } from "@/components/sms/modules/ReportsAnalytics";
 import { UsersModule, SettingsModule } from "@/components/sms/modules/UsersSettings";
+import { LedgerModule } from "@/components/sms/modules/Ledger";
 
 export default function Home() {
   const { activeModule, isDark, setCommandOpen } = useAppStore();
@@ -56,6 +57,7 @@ export default function Home() {
       case "analytics": return <AnalyticsModule />;
       case "users": return <UsersModule />;
       case "settings": return <SettingsModule />;
+      case "ledger": return <LedgerModule />;
       default: return <DashboardModule />;
     }
   };

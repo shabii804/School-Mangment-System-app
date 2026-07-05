@@ -48,7 +48,7 @@ const EMPTY_FORM = {
 };
 
 export function StudentsModule() {
-  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections } = useAppStore();
+  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog } = useAppStore();
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Student | null>(null);
@@ -64,6 +64,19 @@ export function StudentsModule() {
   const [promoteTarget, setPromoteTarget] = useState<Student | null>(null);
   const [promoteClass, setPromoteClass] = useState("");
   const [promoteSection, setPromoteSection] = useState("A");
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkPromoteOpen, setBulkPromoteOpen] = useState(false);
+  const [bulkClass, setBulkClass] = useState("");
+  const [bulkSection, setBulkSection] = useState("A");
+
+  // Document upload
+  const [docType, setDocType] = useState<string>("Birth Certificate");
+  const docFileRef = useRef<HTMLInputElement>(null);
+
+  // Communication log
+  const [commForm, setCommForm] = useState({ type: "Phone Call", direction: "Outgoing", subject: "", notes: "" });
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -138,6 +151,61 @@ export function StudentsModule() {
 
   const printIDCard = async (s: Student) => {
     try { await printStudentIDCard(s, school); } catch {}
+  };
+
+  // Document upload handler
+  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selected) return;
+    if (file.size > 2 * 1024 * 1024) return; // 2MB limit
+    const reader = new FileReader();
+    reader.onload = () => {
+      addDocument({
+        id: `DOC-${Date.now()}`,
+        studentId: selected.id,
+        name: file.name,
+        type: docType as any,
+        uploadDate: new Date().toISOString().split("T")[0],
+        dataUrl: reader.result as string,
+        size: file.size,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Communication log handler
+  const handleAddComm = () => {
+    if (!selected || !commForm.subject) return;
+    addCommLog({
+      id: `COMM-${Date.now()}`,
+      studentId: selected.id,
+      type: commForm.type as any,
+      date: new Date().toISOString().replace("T", " ").slice(0, 16),
+      direction: commForm.direction as any,
+      subject: commForm.subject,
+      notes: commForm.notes,
+      user: "Admin",
+    });
+    setCommForm({ type: "Phone Call", direction: "Outgoing", subject: "", notes: "" });
+  };
+
+  // Bulk selection helpers
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map(s => s.id)));
+  };
+  const handleBulkPromote = () => {
+    selectedIds.forEach(id => {
+      const newFee = CLASSES.find(c => c.name === bulkClass)?.monthlyFee;
+      updateStudent(id, { class: bulkClass, section: bulkSection, ...(newFee ? { monthlyFee: newFee } : {}) });
+    });
+    setSelectedIds(new Set());
+    setBulkPromoteOpen(false);
   };
 
   const formSections = [
@@ -357,12 +425,26 @@ export function StudentsModule() {
         </CardContent></Card>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 fade-in">
+          <Badge className="bg-primary text-primary-foreground">{selectedIds.size} selected</Badge>
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setBulkClass(filtered[0]?.class || "Grade 1"); setBulkPromoteOpen(true); }}>
+            <ArrowUpCircle className="w-3.5 h-3.5 mr-1" />Bulk Promote
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>Clear Selection</Button>
+        </div>
+      )}
+
       {/* Table */}
       <Card className="border-0 shadow-sm glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border/40">
+                <TableHead className="w-10">
+                  <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} className="w-4 h-4 accent-primary cursor-pointer" />
+                </TableHead>
                 <TableHead className="w-12">Roll</TableHead>
                 <TableHead>Student ID</TableHead>
                 <TableHead>Name</TableHead>
@@ -376,7 +458,10 @@ export function StudentsModule() {
             </TableHeader>
             <TableBody>
               {filtered.slice(0, 30).map(s => (
-                <TableRow key={s.id} className="border-border/30 hover:bg-muted/30 cursor-pointer" onClick={() => setSelected(s)}>
+                <TableRow key={s.id} className={cn("border-border/30 hover:bg-muted/30 cursor-pointer", selectedIds.has(s.id) && "bg-primary/5")} onClick={() => setSelected(s)}>
+                  <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" checked={selectedIds.has(s.id)} onChange={() => toggleSelect(s.id)} className="w-4 h-4 accent-primary cursor-pointer" />
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{s.rollNo}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
                   <TableCell>
@@ -531,7 +616,7 @@ export function StudentsModule() {
             {/* Tabbed content */}
             <div className="p-6">
               <Tabs defaultValue="overview">
-                <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 h-10 mb-4">
+                <TabsList className="grid w-full grid-cols-5 md:grid-cols-9 h-10 mb-4">
                   <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
                   <TabsTrigger value="parents" className="text-xs">Parents</TabsTrigger>
                   <TabsTrigger value="academic" className="text-xs">Academic</TabsTrigger>
@@ -539,6 +624,8 @@ export function StudentsModule() {
                   <TabsTrigger value="fees" className="text-xs">Fees</TabsTrigger>
                   <TabsTrigger value="attendance" className="text-xs">Attend.</TabsTrigger>
                   <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
+                  <TabsTrigger value="documents" className="text-xs">Docs</TabsTrigger>
+                  <TabsTrigger value="communication" className="text-xs">Comm.</TabsTrigger>
                 </TabsList>
 
                 {/* Overview */}
@@ -723,6 +810,93 @@ export function StudentsModule() {
                     <p className="text-xs mt-1">Results will appear here after the next exam is graded.</p>
                   </div>
                 </TabsContent>
+
+                {/* Documents */}
+                <TabsContent value="documents" className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Select value={docType} onValueChange={setDocType}>
+                      <SelectTrigger className="w-48 h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["Birth Certificate", "Photo", "Transfer Certificate", "Report Card", "Medical Record", "Other"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <input ref={docFileRef} type="file" accept="image/*,application/pdf" onChange={handleDocUpload} className="hidden" />
+                    <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => docFileRef.current?.click()}>
+                      <Upload className="w-3.5 h-3.5 mr-1" />Upload Document
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {documents.filter(d => d.studentId === selected.id).length === 0 ? (
+                      <div className="text-center py-10 text-sm text-muted-foreground">
+                        <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                        <p>No documents uploaded yet.</p>
+                        <p className="text-xs mt-1">Upload birth certificates, photos, transfer certificates, etc.</p>
+                      </div>
+                    ) : (
+                      documents.filter(d => d.studentId === selected.id).map(doc => (
+                        <div key={doc.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-border/30 hover:bg-muted/30">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><FileText className="w-5 h-5 text-primary" /></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{doc.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{doc.type} • {doc.uploadDate} • {(doc.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                          <a href={doc.dataUrl} download={doc.name} className="text-primary hover:text-primary/70 text-xs">Download</a>
+                          <button onClick={() => deleteDocument(doc.id)} className="text-red-600 hover:text-red-700 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+
+                {/* Communication Log */}
+                <TabsContent value="communication" className="space-y-3">
+                  {/* Add new entry */}
+                  <div className="rounded-xl border border-border/40 p-3 space-y-2 bg-muted/20">
+                    <div className="grid grid-cols-3 gap-2">
+                      <Select value={commForm.type} onValueChange={v => setCommForm({...commForm, type: v})}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{["Phone Call", "Meeting", "SMS", "Email", "Note"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <Select value={commForm.direction} onValueChange={v => setCommForm({...commForm, direction: v})}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="Outgoing">Outgoing</SelectItem><SelectItem value="Incoming">Incoming</SelectItem></SelectContent>
+                      </Select>
+                      <Input value={commForm.subject} onChange={e => setCommForm({...commForm, subject: e.target.value})} placeholder="Subject" className="h-8 text-xs" />
+                    </div>
+                    <Input value={commForm.notes} onChange={e => setCommForm({...commForm, notes: e.target.value})} placeholder="Notes / details..." className="h-8 text-xs" />
+                    <Button size="sm" className="bg-primary hover:bg-primary/90 h-7 text-xs" onClick={handleAddComm} disabled={!commForm.subject}>
+                      <Plus className="w-3 h-3 mr-1" />Add Entry
+                    </Button>
+                  </div>
+                  {/* Log entries */}
+                  <div className="space-y-2">
+                    {commLogs.filter(l => l.studentId === selected.id).length === 0 ? (
+                      <div className="text-center py-8 text-sm text-muted-foreground">
+                        <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                        <p>No communication logged yet.</p>
+                      </div>
+                    ) : (
+                      commLogs.filter(l => l.studentId === selected.id).map(log => (
+                        <div key={log.id} className="flex items-start gap-3 p-2.5 rounded-xl border border-border/30 hover:bg-muted/30">
+                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                            log.type === "Phone Call" ? "bg-primary/10" : log.type === "Meeting" ? "bg-purple-500/10" : log.type === "SMS" ? "bg-emerald-500/10" : "bg-accent/10")}>
+                            {log.type === "Phone Call" ? <Phone className="w-4 h-4 text-primary" /> : log.type === "Meeting" ? <Users className="w-4 h-4 text-purple-600" /> : log.type === "SMS" ? <Mail className="w-4 h-4 text-emerald-600" /> : <FileText className="w-4 h-4 text-accent" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">{log.subject}</p>
+                              <Badge variant="outline" className="text-[9px]">{log.type}</Badge>
+                              <Badge variant="outline" className={cn("text-[9px]", log.direction === "Incoming" ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary")}>{log.direction}</Badge>
+                            </div>
+                            {log.notes && <p className="text-xs text-muted-foreground mt-0.5">{log.notes}</p>}
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{log.date} • by {log.user}</p>
+                          </div>
+                          <button onClick={() => deleteCommLog(log.id)} className="text-red-600 hover:text-red-700 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
               </Tabs>
             </div>
           </div>
@@ -855,6 +1029,43 @@ export function StudentsModule() {
                 setPromoteTarget(null);
               }
             }}><ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote Student</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Promote dialog */}
+      <Dialog open={bulkPromoteOpen} onOpenChange={setBulkPromoteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-emerald-600" />Bulk Promote Students</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+              <p className="text-sm font-semibold">{selectedIds.size} students selected for promotion</p>
+              <p className="text-xs text-muted-foreground mt-1">All selected students will be moved to the new class & section. Monthly fee will be auto-updated.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Promote to Class</Label>
+                <Select value={bulkClass} onValueChange={setBulkClass}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Section</Label>
+                <Select value={bulkSection} onValueChange={setBulkSection}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkPromoteOpen(false)}>Cancel</Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleBulkPromote}>
+              <ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote {selectedIds.size} Students
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

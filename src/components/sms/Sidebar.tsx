@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, GraduationCap as Logo,
-  ChevronLeft, ChevronRight, type LucideIcon,
+  ChevronLeft, ChevronRight, BookOpen, type LucideIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -28,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "fees", label: "Fee Collection", icon: DollarSign, group: "finance" },
   { key: "defaulters", label: "Defaulters", icon: AlertTriangle, group: "finance" },
   { key: "salary", label: "Salary & Fine", icon: Wallet, group: "finance" },
+  { key: "ledger", label: "Income & Expense", icon: BookOpen, group: "finance" },
   { key: "results", label: "Results", icon: FileText, group: "academics" },
   { key: "certificates", label: "Certificates", icon: Award, group: "academics" },
   { key: "reports", label: "Reports", icon: BarChart3, group: "academics" },
@@ -51,7 +52,7 @@ export function Sidebar() {
   // Filter nav items by role
   const visibleItems = NAV_ITEMS.filter(item => {
     if (role === "admin") return true;
-    if (role === "accountant") return ["dashboard", "students", "teachers", "staff", "classes", "attendance", "fees", "defaulters", "salary", "reports", "settings"].includes(item.key);
+    if (role === "accountant") return ["dashboard", "students", "teachers", "staff", "classes", "attendance", "fees", "defaulters", "salary", "ledger", "reports", "settings"].includes(item.key);
     if (role === "teacher") return ["dashboard", "students", "classes", "timetable", "attendance", "results", "reports"].includes(item.key);
     return true;
   });

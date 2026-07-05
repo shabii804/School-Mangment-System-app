@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, Search, ArrowRight,
-  Receipt, type LucideIcon,
+  Receipt, BookOpen, type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +40,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   analytics: LineChart,
   users: UserPlus,
   settings: Settings,
+  ledger: BookOpen,
 };
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
@@ -59,6 +60,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   analytics: "Analytics",
   users: "User Management",
   settings: "Settings",
+  ledger: "Income & Expense",
 };
 
 export function CommandPalette() {

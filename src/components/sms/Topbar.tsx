@@ -34,6 +34,7 @@ const MODULE_TITLES: Record<string, { title: string; subtitle: string }> = {
   analytics: { title: "Analytics", subtitle: "Trends and performance insights" },
   users: { title: "User Management", subtitle: "Accounts and role permissions" },
   settings: { title: "Settings", subtitle: "School configuration" },
+  ledger: { title: "Income & Expense Ledger", subtitle: "Financial transactions and P&L" },
 };
 
 const NOTIF_COLORS: Record<string, string> = {
