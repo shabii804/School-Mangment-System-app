@@ -72,30 +72,31 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "sidebar-bg h-screen overflow-y-auto overflow-x-hidden flex flex-col transition-all duration-200 shrink-0 z-40",
+      "h-screen overflow-y-auto overflow-x-hidden flex flex-col transition-all duration-200 shrink-0 z-40",
+      "bg-[oklch(0.18_0.02_200)] text-white border-r border-white/5",
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Brand header */}
-      <div className="px-3 py-4 border-b border-border/40">
+      <div className="px-3 py-4 border-b border-white/10">
         <div className="flex items-center gap-2.5">
           {/* Logo */}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shrink-0 overflow-hidden">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shrink-0 overflow-hidden ring-1 ring-white/10">
             {school.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
             ) : (
-              <Logo className="w-5 h-5 text-primary-foreground" />
+              <Logo className="w-5 h-5 text-white" />
             )}
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0 fade-in">
-              <h1 className="font-bold text-sm leading-tight text-foreground truncate">{school.name}</h1>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">SMS v1.0</p>
+              <h1 className="font-bold text-sm leading-tight text-white truncate">{school.name}</h1>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">SMS v1.0</p>
             </div>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted/60 transition-colors"
+            className="text-white/50 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
             aria-label="Collapse sidebar"
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -111,7 +112,7 @@ export function Sidebar() {
           return (
             <div key={group}>
               {!collapsed && (
-                <p className="px-3 mb-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="px-3 mb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">
                   {GROUP_LABELS[group]}
                 </p>
               )}
@@ -125,14 +126,14 @@ export function Sidebar() {
                       onClick={() => setActiveModule(item.key)}
                       title={collapsed ? item.label : undefined}
                       className={cn(
-                        "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-left transition-all",
+                        "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold text-left transition-all",
                         isActive
-                          ? "nav-item-active"
-                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                          ? "bg-primary text-white shadow-md shadow-primary/20"
+                          : "text-white/60 hover:bg-white/10 hover:text-white",
                         collapsed && "justify-center px-2"
                       )}
                     >
-                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : "")} />
+                      <Icon className={cn("w-[18px] h-[18px] shrink-0", isActive ? "text-white" : "text-white/50")} strokeWidth={2.2} />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </button>
                   );
@@ -144,17 +145,17 @@ export function Sidebar() {
       </nav>
 
       {/* Footer status */}
-      <div className="px-3 py-3 border-t border-border/40 mt-auto">
+      <div className="px-3 py-3 border-t border-white/10 mt-auto">
         {!collapsed ? (
           <div className="flex items-center gap-2 text-xs">
             <div className="relative">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75" />
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+              <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
             </div>
-            <span className="text-muted-foreground">Online • Offline-ready</span>
+            <span className="text-white/50 font-medium">Online • Offline-ready</span>
           </div>
         ) : (
-          <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto" />
+          <div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto" />
         )}
       </div>
     </aside>
