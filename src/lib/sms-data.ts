@@ -568,3 +568,58 @@ export const SCHOOL_EVENTS: SchoolEvent[] = [
   { id: "EV-009", title: "Eid-ul-Adha Holiday", type: "Holiday", date: "2026-07-18", description: "Eid holidays — school closed for 3 days", color: "bg-emerald-500" },
   { id: "EV-010", title: "Final Examinations", type: "Exam", date: "2026-12-01", description: "Final exams for all classes", color: "bg-red-500" },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// DISCIPLINE DATA
+// ─────────────────────────────────────────────────────────────
+export interface Incident {
+  id: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  date: string;
+  type: "Late Arrival" | "Absence" | "Misbehavior" | "Bullying" | "Academic" | "Uniform Violation" | "Other";
+  severity: "Low" | "Medium" | "High";
+  description: string;
+  action: string;
+  reportedBy: string;
+  status: "Open" | "Resolved" | "Escalated";
+  parentNotified: boolean;
+}
+
+export const INCIDENTS: Incident[] = [
+  { id: "INC-001", studentId: "SCH-2026-0001", studentName: "Ahmed Khan", class: "Playgroup-A", date: "2026-07-01", type: "Late Arrival", severity: "Low", description: "Arrived 20 minutes late without prior notice", action: "Verbal warning", reportedBy: "Ms. Sadia", status: "Resolved", parentNotified: true },
+  { id: "INC-002", studentId: "SCH-2026-0005", studentName: "Maryam Sheikh", class: "Grade 1-A", date: "2026-06-28", type: "Misbehavior", severity: "Medium", description: "Disrupting class during lecture, talking repeatedly", action: "Detention + parent meeting", reportedBy: "Mr. Faisal", status: "Open", parentNotified: true },
+  { id: "INC-003", studentId: "SCH-2026-0014", studentName: "Omar Khan", class: "Grade 3-A", date: "2026-06-25", type: "Bullying", severity: "High", description: "Involved in physical altercation with classmate", action: "Suspension (2 days) + counseling", reportedBy: "Mr. Imran", status: "Escalated", parentNotified: true },
+  { id: "INC-004", studentId: "SCH-2026-0027", studentName: "Aisha Malik", class: "Grade 5-A", date: "2026-06-20", type: "Uniform Violation", severity: "Low", description: "Not wearing proper school uniform", action: "Note in diary", reportedBy: "Ms. Hina", status: "Resolved", parentNotified: false },
+  { id: "INC-005", studentId: "SCH-2026-0033", studentName: "Bilal Ahmed", class: "Grade 6-B", date: "2026-06-18", type: "Academic", severity: "Medium", description: "Consistently not submitting homework", action: "Parent meeting scheduled", reportedBy: "Mr. Kamran", status: "Open", parentNotified: true },
+  { id: "INC-006", studentId: "SCH-2026-0040", studentName: "Noor Fatima", class: "Grade 8-A", date: "2026-06-15", type: "Absence", severity: "Low", description: "Absent for 3 consecutive days without notice", action: "Phone call to parents", reportedBy: "Ms. Ayesha", status: "Resolved", parentNotified: true },
+];
+
+// ─────────────────────────────────────────────────────────────
+// ALUMNI DATA
+// ─────────────────────────────────────────────────────────────
+export interface Alumnus {
+  id: string;
+  name: string;
+  graduationYear: string;
+  lastClass: string;
+  currentStatus: "Studying" | "Employed" | "Business" | "Unknown";
+  institution: string;
+  profession: string;
+  email: string;
+  phone: string;
+  donationAmount: number;
+  photo?: string;
+}
+
+export const ALUMNI: Alumnus[] = [
+  { id: "ALM-2024-001", name: "Hassan Raza", graduationYear: "2024", lastClass: "Grade 10", currentStatus: "Studying", institution: "NED University", profession: "Engineering Student", email: "hassan@email.com", phone: "+92 300 1112222", donationAmount: 5000 },
+  { id: "ALM-2024-002", name: "Ayesha Siddiqui", graduationYear: "2024", lastClass: "Grade 10", currentStatus: "Studying", institution: "Dow Medical College", profession: "Medical Student", email: "ayesha.s@email.com", phone: "+92 301 2223333", donationAmount: 0 },
+  { id: "ALM-2023-001", name: "Usman Ghani", graduationYear: "2023", lastClass: "Grade 10", currentStatus: "Employed", institution: "Systems Ltd", profession: "Software Developer", email: "usman@email.com", phone: "+92 302 3334444", donationAmount: 10000 },
+  { id: "ALM-2023-002", name: "Fatima Zahra", graduationYear: "2023", lastClass: "Grade 10", currentStatus: "Studying", institution: "LUMS", profession: "BBA Student", email: "fatima.z@email.com", phone: "+92 303 4445555", donationAmount: 2500 },
+  { id: "ALM-2022-001", name: "Ali Hamza", graduationYear: "2022", lastClass: "Grade 10", currentStatus: "Business", institution: "—", profession: "Family Business (Textile)", email: "ali.hamza@email.com", phone: "+92 304 5556666", donationAmount: 15000 },
+  { id: "ALM-2022-002", name: "Zainab Imran", graduationYear: "2022", lastClass: "Grade 10", currentStatus: "Employed", institution: "Engro Corp", profession: "Marketing Executive", email: "zainab@email.com", phone: "+92 305 6667777", donationAmount: 5000 },
+  { id: "ALM-2021-001", name: "Bilal Maqbool", graduationYear: "2021", lastClass: "Grade 10", currentStatus: "Employed", institution: "PAF", profession: "Pilot Officer", email: "bilal.m@email.com", phone: "+92 306 7778888", donationAmount: 20000 },
+  { id: "ALM-2020-001", name: "Sara Tanveer", graduationYear: "2020", lastClass: "Grade 10", currentStatus: "Employed", institution: "Standard Chartered", profession: "Banking Officer", email: "sara.t@email.com", phone: "+92 307 8889999", donationAmount: 7500 },
+];

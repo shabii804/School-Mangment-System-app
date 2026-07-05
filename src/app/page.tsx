@@ -18,6 +18,7 @@ import { UsersModule, SettingsModule } from "@/components/sms/modules/UsersSetti
 import { LedgerModule } from "@/components/sms/modules/Ledger";
 import { ExamModule } from "@/components/sms/modules/ExamModule";
 import { LibraryModule, TransportModule, HostelModule, InventoryModule, EventsModule } from "@/components/sms/modules/NewModules";
+import { DisciplineModule, AlumniModule, ParentModule } from "@/components/sms/modules/DisciplineAlumni";
 
 export default function Home() {
   const { activeModule, isDark, setCommandOpen } = useAppStore();
@@ -66,6 +67,9 @@ export default function Home() {
       case "hostel": return <HostelModule />;
       case "inventory": return <InventoryModule />;
       case "events": return <EventsModule />;
+      case "discipline": return <DisciplineModule />;
+      case "alumni": return <AlumniModule />;
+      case "parent": return <ParentModule />;
       default: return <DashboardModule />;
     }
   };

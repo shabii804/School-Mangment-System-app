@@ -9,7 +9,8 @@ export type ModuleKey =
   | "dashboard" | "students" | "teachers" | "staff" | "classes" | "timetable"
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
   | "reports" | "analytics" | "users" | "settings" | "ledger"
-  | "exam" | "library" | "transport" | "hostel" | "inventory" | "events";
+  | "exam" | "library" | "transport" | "hostel" | "inventory" | "events"
+  | "discipline" | "alumni" | "parent";
 
 export interface SchoolInfo {
   name: string;

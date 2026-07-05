@@ -41,6 +41,9 @@ const MODULE_TITLES: Record<string, { title: string; subtitle: string }> = {
   hostel: { title: "Hostel", subtitle: "Room allocation and mess management" },
   inventory: { title: "Inventory", subtitle: "Assets, equipment, and supplies" },
   events: { title: "Event Calendar", subtitle: "Events, holidays, and important dates" },
+  discipline: { title: "Discipline & Behavior", subtitle: "Incident logs, warnings, and parent notifications" },
+  alumni: { title: "Alumni Network", subtitle: "Graduated students, careers, and donations" },
+  parent: { title: "Parent Portal", subtitle: "Read-only student information for parents" },
 };
 
 const NOTIF_COLORS: Record<string, string> = {

@@ -8,7 +8,7 @@ import {
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, GraduationCap as Logo,
   ChevronLeft, ChevronRight, BookOpen, Bus, Home, Package, Calendar,
-  type LucideIcon,
+  Shield, type LucideIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -40,6 +40,9 @@ const NAV_ITEMS: NavItem[] = [
   { key: "hostel", label: "Hostel", icon: Home, group: "facilities" },
   { key: "inventory", label: "Inventory", icon: Package, group: "facilities" },
   { key: "events", label: "Event Calendar", icon: Calendar, group: "facilities" },
+  { key: "discipline", label: "Discipline", icon: Shield, group: "facilities" },
+  { key: "alumni", label: "Alumni", icon: Award, group: "facilities" },
+  { key: "parent", label: "Parent Portal", icon: Users, group: "facilities" },
   { key: "users", label: "User Management", icon: UserPlus, group: "system" },
   { key: "settings", label: "Settings", icon: Settings, group: "system" },
 ];
