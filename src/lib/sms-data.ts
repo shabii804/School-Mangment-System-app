@@ -8,20 +8,53 @@ export interface Student {
   id: string;
   rollNo: string;
   name: string;
-  fatherName: string;
-  fatherPhone: string;
   class: string;
   section: string;
   gender: "Male" | "Female";
   dob: string;
+  // Personal
+  cnic: string; // B-Form number for students
+  bloodGroup: string;
+  religion: string;
+  nationality: string;
+  address: string;
+  // Father
+  fatherName: string;
+  fatherCnic: string;
+  fatherPhone: string;
+  fatherOccupation: string;
+  // Mother
+  motherName: string;
+  motherPhone: string;
+  motherOccupation: string;
+  // Guardian (if parents unavailable)
+  guardianName: string;
+  guardianPhone: string;
+  guardianRelation: string;
+  primaryContact: "father" | "mother" | "guardian";
+  // Emergency
+  emergencyContact: string;
+  emergencyName: string;
+  // Medical
+  medicalConditions: string;
+  allergies: string;
+  // Academic
+  previousSchool: string;
   admissionDate: string;
   monthlyFee: number;
+  // Photo
+  photo?: string; // base64 data URL
+  // Status
   status: StudentStatus;
-  photo?: string;
   attendancePct: number;
   feePaidThisMonth: boolean;
   outstandingAmount: number;
-  isHosteller: boolean; // NEW: hosteller flag → adds hostel fee
+  isHosteller: boolean;
+  transport: boolean;
+  transportRoute?: string;
+  siblings?: string; // names of siblings in same school
+  // Backwards compat
+  fatherPhone2?: string;
 }
 
 export interface Teacher {
@@ -134,27 +167,57 @@ const STUDENT_SEED: Student[] = Array.from({ length: 48 }, (_, i) => {
   const isMale = i % 2 === 0;
   const name = `${isMale ? pick(FIRST_NAMES_M, i) : pick(FIRST_NAMES_F, i)} ${pick(LAST_NAMES, i)}`;
   const fatherName = `${pick(FIRST_NAMES_M, i + 3)} ${pick(LAST_NAMES, i)}`;
+  const motherName = `${pick(FIRST_NAMES_F, i + 5)} ${pick(LAST_NAMES, i)}`;
   const feePaid = (i % 5) !== 0; // 80% have paid
   const isHosteller = i % 4 === 0; // 25% are hostellers
+  const hasTransport = i % 3 === 0; // 33% use transport
   const tuition = cls.monthlyFee;
   const hostel = isHosteller ? 3500 : 0;
   const totalMonthly = tuition + hostel;
+  const bloodGroups = ["A+", "B+", "O+", "AB+", "A-", "B-", "O-", "AB-"];
+  const occupations = ["Engineer", "Doctor", "Teacher", "Businessman", "Government Officer", "Shopkeeper", "Carpenter", "Driver", "Accountant", "Lawyer"];
+  const religions = ["Islam", "Christianity", "Hinduism"];
+  const cities = ["Karachi", "Lahore", "Islamabad", "Faisalabad", "Rawalpindi"];
+  const streets = ["Block 4", "Block 7", "Main Blvd", "Street 12", "House #45", "Sector A"];
+  const prevSchools = ["Bright Future School", "Al-Noor Academy", "The City School", "Beaconhouse", "Government Primary", "—"];
   return {
     id: `SCH-2026-${String(i + 1).padStart(4, "0")}`,
     rollNo: String((i % 30) + 1).padStart(2, "0"),
     name,
-    fatherName,
-    fatherPhone: `+92 3${String(10000000 + i * 12345).slice(0, 8)}`,
     class: cls.name,
     section,
     gender: isMale ? "Male" : "Female",
     dob: `${2014 + (i % 6)}-0${(i % 9) + 1}-1${i % 9}`,
+    cnic: `42101-${String(100000000 + i * 1234567).slice(0, 6)}-${String((i * 3) % 10)}`,
+    bloodGroup: bloodGroups[i % bloodGroups.length],
+    religion: religions[i % religions.length],
+    nationality: "Pakistani",
+    address: `${streets[i % streets.length]}, ${cities[i % cities.length]}`,
+    fatherName,
+    fatherCnic: `42101-${String(200000000 + i * 7654321).slice(0, 6)}-${String((i * 5) % 10)}`,
+    fatherPhone: `+92 3${String(10000000 + i * 12345).slice(0, 8)}`,
+    fatherOccupation: occupations[i % occupations.length],
+    motherName,
+    motherPhone: i % 3 === 0 ? `+92 3${String(20000000 + i * 54321).slice(0, 8)}` : "",
+    motherOccupation: i % 4 === 0 ? occupations[(i + 2) % occupations.length] : "Housewife",
+    guardianName: i % 10 === 0 ? `${pick(FIRST_NAMES_M, i + 7)} ${pick(LAST_NAMES, i)}` : "",
+    guardianPhone: i % 10 === 0 ? `+92 3${String(30000000 + i * 98765).slice(0, 8)}` : "",
+    guardianRelation: i % 10 === 0 ? "Uncle" : "",
+    primaryContact: i % 10 === 0 ? "guardian" : "father",
+    emergencyContact: `+92 3${String(40000000 + i * 11111).slice(0, 8)}`,
+    emergencyName: i % 2 === 0 ? fatherName : motherName,
+    medicalConditions: i % 12 === 0 ? "Asthma" : i % 15 === 0 ? "Diabetes" : "None",
+    allergies: i % 8 === 0 ? "Peanuts" : i % 11 === 0 ? "Dust" : "None",
+    previousSchool: prevSchools[i % prevSchools.length],
     admissionDate: `${2024 + (i % 2)}-0${(i % 9) + 1}-1${i % 9}`,
     monthlyFee: cls.monthlyFee,
     status: i < 45 ? "Active" : "Left",
     attendancePct: 78 + (i % 22),
     feePaidThisMonth: feePaid,
     isHosteller,
+    transport: hasTransport,
+    transportRoute: hasTransport ? `Route ${String.fromCharCode(65 + (i % 5))} — ${["Gulshan", "Malir", "Korangi", "Nazimabad", "Saddar"][i % 5]}` : undefined,
+    siblings: i % 5 === 0 ? `${pick(FIRST_NAMES_F, i + 2)} ${pick(LAST_NAMES, i)} (Grade 3)` : "",
     outstandingAmount: feePaid ? 0 : totalMonthly + (i % 3 === 0 ? totalMonthly : 0),
   };
 });
