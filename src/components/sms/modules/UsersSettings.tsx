@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/lib/sms-store";
 import { useToast } from "@/hooks/use-toast";
+import { exportFeeStructureCSV } from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
 
 const USERS = [
@@ -371,12 +372,23 @@ export function SettingsModule() {
                 </p>
               </div>
 
-              <Button
-                className="bg-primary hover:bg-primary/90"
-                onClick={() => toast({ title: "Fee Structure Saved ✓", description: "All fee settings persisted. Fee Collection will use new amounts." })}
-              >
-                Save Fee Structure
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  className="bg-primary hover:bg-primary/90"
+                  onClick={() => toast({ title: "Fee Structure Saved ✓", description: "All fee settings persisted. Fee Collection will use new amounts." })}
+                >
+                  Save Fee Structure
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    exportFeeStructureCSV(feeStructure.classFees, feeStructure.hostelFee, feeStructure.admissionMultiplier, feeStructure.lateFee, feeStructure.dueDate);
+                    toast({ title: "Fee Structure Exported ✓", description: "CSV file downloaded — opens in Excel" });
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-1.5" />Export to Excel
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

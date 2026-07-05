@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/lib/sms-store";
-import { printCertificate, printResultCard, printTeacherCertificate, printStudentAward } from "@/lib/pdf-service";
+import { printCertificate, printResultCard, printTeacherCertificate, printStudentAward, printExamSeatingPlan } from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
 
 const GRADE_BANDS = [
@@ -73,6 +73,14 @@ export function ResultsModule() {
           </SelectContent>
         </Select>
         <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            const examName = EXAMS.find(e => e.id === selectedExam)?.name || "Exam";
+            const classStudents = STUDENTS.filter(s => s.class === selectedClass && s.status === "Active").slice(0, 20).map(s => ({ rollNo: s.rollNo, name: s.name }));
+            toast({ title: "Generating seating plan...", description: `${examName} • ${selectedClass}` });
+            printExamSeatingPlan(examName, selectedClass, "Examination Hall", classStudents, school);
+          }}>
+            <Printer className="w-4 h-4 mr-1.5" />Seating Plan
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setMarksDialog(true)}><Plus className="w-4 h-4 mr-1.5" />Enter Marks</Button>
           <Button size="sm" className="bg-primary hover:bg-primary/90"
             onClick={() => {

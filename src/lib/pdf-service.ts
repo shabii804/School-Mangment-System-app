@@ -1416,3 +1416,133 @@ export function exportStudentDirectoryCSV(students: Student[], school: SchoolInf
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 14. EXAM SEATING PLAN PDF (A4 landscape)
+// ─────────────────────────────────────────────────────────────
+export function printExamSeatingPlan(
+  examName: string,
+  className: string,
+  room: string,
+  students: { rollNo: string; name: string }[],
+  school: SchoolInfo
+) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  drawLetterhead(doc, school);
+
+  let y = 42;
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("EXAM SEATING PLAN", pageWidth / 2, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  doc.text(`${examName}  •  Class: ${className}  •  Room: ${room}  •  Date: ${new Date().toLocaleDateString("en-GB")}`, pageWidth / 2, y, { align: "center" });
+  y += 10;
+
+  // Seating arrangement — 2 columns of desks
+  const cols = 2;
+  const rowsPerCol = Math.ceil(students.length / cols);
+  const colWidth = (pageWidth - 2 * margin) / cols;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+
+  for (let col = 0; col < cols; col++) {
+    const colX = margin + col * colWidth + 10;
+    doc.setTextColor(21, 133, 122);
+    doc.text(`Column ${col + 1}`, colX, y);
+  }
+  y += 5;
+
+  for (let row = 0; row < rowsPerCol; row++) {
+    for (let col = 0; col < cols; col++) {
+      const idx = col * rowsPerCol + row;
+      if (idx >= students.length) continue;
+      const s = students[idx];
+      const colX = margin + col * colWidth + 10;
+
+      // Desk box
+      doc.setDrawColor(21, 133, 122);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(colX, y, colWidth - 20, 12, 1.5, 1.5, "S");
+      doc.setFillColor(244, 241, 233);
+      doc.roundedRect(colX, y, colWidth - 20, 12, 1.5, 1.5, "FD");
+
+      // Roll number
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(21, 133, 122);
+      doc.text(`#${s.rollNo}`, colX + 3, y + 5);
+
+      // Name
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(8);
+      const nameText = s.name.length > 25 ? s.name.substring(0, 25) + "…" : s.name;
+      doc.text(nameText, colX + 12, y + 5);
+
+      // Desk number
+      doc.setFontSize(7);
+      doc.setTextColor(120, 120, 120);
+      doc.text(`Desk ${idx + 1}`, colX + 3, y + 10);
+    }
+    y += 14;
+    if (y > doc.internal.pageSize.getHeight() - 30) {
+      doc.addPage();
+      y = 20;
+    }
+  }
+
+  // Summary
+  y += 5;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(21, 133, 122);
+  doc.text(`Total Students: ${students.length}  •  Columns: ${cols}  •  Rows: ${rowsPerCol}`, margin, y);
+
+  drawFooter(doc, school);
+  openPDF(doc, `seating-plan-${className.replace(/\s/g, "-")}-${examName.replace(/\s/g, "-")}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// 15. FEE STRUCTURE EXPORT (CSV)
+// ─────────────────────────────────────────────────────────────
+export function exportFeeStructureCSV(
+  classFees: Record<string, number>,
+  hostelFee: number,
+  admissionMultiplier: number,
+  lateFee: number,
+  dueDate: number
+) {
+  const headers = ["Class", "Monthly Tuition (Rs.)", "Admission Fee (Rs.)", "Hostel Fee (Rs.)", "Hosteller Total (Rs.)"];
+  const rows = Object.entries(classFees).map(([className, fee]) => [
+    className,
+    fee,
+    fee * admissionMultiplier,
+    hostelFee,
+    fee + hostelFee,
+  ]);
+  rows.push(["", "", "", "", ""]);
+  rows.push(["GLOBAL SETTINGS", "", "", "", ""]);
+  rows.push(["Hostel Fee (monthly)", hostelFee, "", "", ""]);
+  rows.push(["Admission Multiplier", `${admissionMultiplier}x`, "", "", ""]);
+  rows.push(["Late Fee", lateFee, "", "", ""]);
+  rows.push(["Due Date (day of month)", dueDate, "", "", ""]);
+
+  const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `fee-structure-${new Date().toISOString().split("T")[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

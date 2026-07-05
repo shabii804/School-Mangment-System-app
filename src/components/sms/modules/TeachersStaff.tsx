@@ -23,8 +23,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Phone, Mail, Wallet, GraduationCap, UserCog, BookOpen,
-  CalendarDays, Briefcase, IdCard, Edit, Trash2, Eye,
-  Building2, Award, Users as UsersIcon,
+  CalendarDays, Briefcase, IdCard, Edit, Trash2, Eye, X,
+  Building2, Award, Users as UsersIcon, User, UserCircle, DollarSign,
 } from "lucide-react";
 import { TEACHERS, STAFF, SUBJECTS, CLASSES, type Teacher, type Staff } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
@@ -253,53 +253,142 @@ export function TeachersModule() {
         </DialogContent>
       </Dialog>
 
-      {/* Profile Drawer */}
-      <Drawer open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DrawerContent className="max-h-[90vh]">
-          {selected && (
-            <>
-              <DrawerHeader className="border-b border-border/30 pb-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16 ring-2 ring-primary/20">
-                    <AvatarFallback className={cn("text-lg font-semibold", selected.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>
-                      {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <DrawerTitle className="text-xl">{selected.name}</DrawerTitle>
-                    <DrawerDescription className="flex items-center gap-2 flex-wrap mt-1.5">
-                      <Badge variant="outline">{selected.id}</Badge>
-                      <Badge variant="outline">{selected.designation}</Badge>
-                      <Badge variant="outline" className="bg-primary/5">{selected.qualification}</Badge>
-                    </DrawerDescription>
+      {/* Profile slide-in panel */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right" onClick={e => e.stopPropagation()}>
+            {/* Close button */}
+            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Gradient banner header */}
+            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-6 text-primary-foreground overflow-hidden">
+              <div className="absolute inset-0 opacity-10 pattern-grid" />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+              <div className="relative flex items-start gap-5">
+                <Avatar className="w-24 h-24 ring-4 ring-white/30 shadow-xl shrink-0">
+                  <AvatarFallback className={cn("text-3xl font-bold bg-white/20 text-white")}>
+                    {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 pt-1">
+                  <h2 className="text-2xl font-bold">{selected.name}</h2>
+                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">{selected.id}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">{selected.designation}</span>
                   </div>
+                  <p className="text-white/70 text-xs mt-2">{selected.qualification} • Joined {selected.joiningDate}</p>
                 </div>
-              </DrawerHeader>
-              <div className="p-4 overflow-y-auto">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="rounded-lg bg-muted/30 p-3"><p className="text-[10px] text-muted-foreground uppercase">CNIC</p><p className="text-sm font-medium mt-0.5">{selected.cnic}</p></div>
-                  <div className="rounded-lg bg-muted/30 p-3"><p className="text-[10px] text-muted-foreground uppercase">Phone</p><p className="text-sm font-medium mt-0.5">{selected.phone}</p></div>
-                  <div className="rounded-lg bg-muted/30 p-3"><p className="text-[10px] text-muted-foreground uppercase">Joining Date</p><p className="text-sm font-medium mt-0.5">{selected.joiningDate}</p></div>
-                  <div className="rounded-lg bg-muted/30 p-3"><p className="text-[10px] text-muted-foreground uppercase">Monthly Salary</p><p className="text-sm font-bold text-primary mt-0.5">Rs. {selected.monthlySalary.toLocaleString()}</p></div>
-                  <div className="rounded-lg bg-muted/30 p-3"><p className="text-[10px] text-muted-foreground uppercase">Subjects</p><p className="text-sm font-medium mt-0.5">{selected.subjects.join(", ")}</p></div>
-                  <div className="rounded-lg bg-muted/30 p-3"><p className="text-[10px] text-muted-foreground uppercase">Classes</p><p className="text-sm font-medium mt-0.5">{selected.classes.join(", ")}</p></div>
+              </div>
+              {/* Quick stats */}
+              <div className="relative grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/20">
+                <div>
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Salary</p>
+                  <p className="text-xl font-bold mt-0.5">Rs. {(selected.monthlySalary / 1000).toFixed(0)}K</p>
                 </div>
-                {/* Attendance summary */}
-                <div className="mt-3 rounded-lg border border-border/40 p-3">
-                  <p className="text-xs font-semibold mb-2">Attendance Summary (Current Month)</p>
-                  <div className="grid grid-cols-5 gap-2 text-center text-xs">
-                    <div className="rounded bg-emerald-500/10 p-2"><p className="font-bold text-emerald-600">{selected.attendance.present}</p><p className="text-[10px] text-muted-foreground">Present</p></div>
-                    <div className="rounded bg-yellow-500/10 p-2"><p className="font-bold text-yellow-600">{selected.attendance.late}</p><p className="text-[10px] text-muted-foreground">Late</p></div>
-                    <div className="rounded bg-orange-500/10 p-2"><p className="font-bold text-orange-600">{selected.attendance.halfDay}</p><p className="text-[10px] text-muted-foreground">Half-Day</p></div>
-                    <div className="rounded bg-red-500/10 p-2"><p className="font-bold text-red-600">{selected.attendance.absent}</p><p className="text-[10px] text-muted-foreground">Absent</p></div>
-                    <div className="rounded bg-muted p-2"><p className="font-bold text-muted-foreground">{selected.attendance.leave}</p><p className="text-[10px] text-muted-foreground">Leave</p></div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Subjects</p>
+                  <p className="text-xl font-bold mt-0.5">{selected.subjects.length}</p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Classes</p>
+                  <p className="text-xl font-bold mt-0.5">{selected.classes.length}</p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
+                  <p className="text-xl font-bold mt-0.5">
+                    {(() => {
+                      const total = selected.attendance.present + selected.attendance.late + selected.attendance.halfDay + selected.attendance.absent + selected.attendance.leave;
+                      return total > 0 ? Math.round((selected.attendance.present + selected.attendance.late * 0.75 + selected.attendance.halfDay * 0.5) / total * 100) : 100;
+                    })()}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action bar */}
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-border/30 bg-muted/20">
+              <Button size="sm" variant="outline" onClick={() => { setEditTeacher(selected); setEditForm(selected); }}>
+                <Edit className="w-3.5 h-3.5 mr-1.5" />Edit Profile
+              </Button>
+              <Button size="sm" variant="outline" className="text-red-600" onClick={() => { setDeleteConfirm(selected); }}>
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Personal info */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Personal Information</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                  <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><IdCard className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase">CNIC</p><p className="text-sm font-semibold">{selected.cnic}</p></div>
+                  </div>
+                  <div className="rounded-xl border border-border/30 p-3 bg-primary/5 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center"><Phone className="w-4 h-4 text-primary" /></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{selected.phone}</p></div>
+                  </div>
+                  <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><CalendarDays className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase">Joining Date</p><p className="text-sm font-semibold">{selected.joiningDate}</p></div>
                   </div>
                 </div>
               </div>
-            </>
-          )}
-        </DrawerContent>
-      </Drawer>
+
+              {/* Subjects & Classes */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Assignments</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                    <p className="text-[10px] text-primary font-semibold uppercase mb-2 flex items-center gap-1.5"><BookOpen className="w-3 h-3" />Subjects ({selected.subjects.length})</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selected.subjects.map(s => <Badge key={s} variant="outline" className="text-xs bg-primary/10 text-primary border-0">{s}</Badge>)}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-3">
+                    <p className="text-[10px] text-accent font-semibold uppercase mb-2 flex items-center gap-1.5"><GraduationCap className="w-3 h-3" />Classes ({selected.classes.length})</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selected.classes.map(c => <Badge key={c} variant="outline" className="text-xs bg-accent/10 text-accent border-0">{c}</Badge>)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Salary */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Salary Information</p>
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-emerald-600" /></div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Monthly Salary</p>
+                    <p className="text-xl font-bold text-emerald-600">Rs. {selected.monthlySalary.toLocaleString()}</p>
+                  </div>
+                  <div className="ml-auto text-right">
+                    <p className="text-[10px] text-muted-foreground uppercase">Per Day (26 days)</p>
+                    <p className="text-sm font-semibold">Rs. {Math.round(selected.monthlySalary / 26).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attendance summary */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Attendance Summary (Current Month)</p>
+                <div className="grid grid-cols-5 gap-2 text-center">
+                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3"><p className="text-2xl font-bold text-emerald-600">{selected.attendance.present}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Present</p></div>
+                  <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3"><p className="text-2xl font-bold text-yellow-600">{selected.attendance.late}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Late</p></div>
+                  <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 p-3"><p className="text-2xl font-bold text-orange-600">{selected.attendance.halfDay}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Half-Day</p></div>
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3"><p className="text-2xl font-bold text-red-600">{selected.attendance.absent}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Absent</p></div>
+                  <div className="rounded-xl bg-muted border border-border/30 p-3"><p className="text-2xl font-bold text-muted-foreground">{selected.attendance.leave}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Leave</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
