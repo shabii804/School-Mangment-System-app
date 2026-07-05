@@ -1546,3 +1546,99 @@ export function exportFeeStructureCSV(
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// ─────────────────────────────────────────────────────────────
+// 16. TIMETABLE PDF (A4 landscape, weekly grid)
+// ─────────────────────────────────────────────────────────────
+export function printTimetablePDF(
+  className: string,
+  slots: { day: string; period: number; subject: string; teacher: string; room: string }[],
+  school: SchoolInfo
+) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  drawLetterhead(doc, school);
+
+  let y = 42;
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text(`WEEKLY TIMETABLE — ${className}`, pageWidth / 2, y, { align: "center" });
+  y += 10;
+
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const periods = [1, 2, 3, 4, 5, 6];
+  const periodTimes = ["08:00-08:45", "08:45-09:30", "09:30-10:15", "10:30-11:15", "11:15-12:00", "12:00-12:45"];
+
+  const colWidth = (pageWidth - 2 * margin - 30) / periods.length;
+  const rowHeight = 16;
+
+  // Header row
+  doc.setFillColor(21, 133, 122);
+  doc.rect(margin, y, 30, rowHeight, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.text("Day / Period", margin + 3, y + 6);
+  doc.text("Time →", margin + 3, y + 12);
+
+  periods.forEach((p, i) => {
+    const x = margin + 30 + i * colWidth;
+    doc.rect(x, y, colWidth, rowHeight, "F");
+    doc.text(`P${p}`, x + colWidth / 2, y + 5, { align: "center" });
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text(periodTimes[i], x + colWidth / 2, y + 11, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+  });
+  y += rowHeight;
+
+  // Day rows
+  days.forEach((day, dayIdx) => {
+    const x0 = margin;
+    // Day cell
+    if (dayIdx % 2 === 0) {
+      doc.setFillColor(244, 241, 233);
+      doc.rect(x0, y, 30, rowHeight, "F");
+    }
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.rect(x0, y, 30, rowHeight, "S");
+    doc.setTextColor(20, 20, 20);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(day, x0 + 15, y + rowHeight / 2 + 1, { align: "center" });
+
+    // Period cells
+    periods.forEach((p, i) => {
+      const x = margin + 30 + i * colWidth;
+      const slot = slots.find(s => s.day === day && s.period === p);
+
+      if (dayIdx % 2 === 0) {
+        doc.setFillColor(244, 241, 233);
+        doc.rect(x, y, colWidth, rowHeight, "F");
+      }
+      doc.rect(x, y, colWidth, rowHeight, "S");
+
+      if (slot) {
+        doc.setTextColor(21, 133, 122);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(slot.subject, x + colWidth / 2, y + 5, { align: "center" });
+        doc.setTextColor(80, 80, 80);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.text(slot.teacher, x + colWidth / 2, y + 10, { align: "center" });
+        doc.setTextColor(120, 120, 120);
+        doc.text(slot.room, x + colWidth / 2, y + 14, { align: "center" });
+      }
+    });
+    y += rowHeight;
+  });
+
+  drawFooter(doc, school);
+  openPDF(doc, `timetable-${className.replace(/\s/g, "-")}.pdf`);
+}

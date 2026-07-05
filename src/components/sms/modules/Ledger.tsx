@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAppStore } from "@/lib/sms-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,10 @@ import {
   Plus, Trash2, TrendingUp, TrendingDown, Wallet, ArrowDownCircle,
   ArrowUpCircle, DollarSign, FileDown,
 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Legend, PieChart, Pie, Cell,
+} from "recharts";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,6 +45,39 @@ export function LedgerModule() {
   const totalIncome = transactions.filter(t => t.type === "Income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter(t => t.type === "Expense").reduce((s, t) => s + t.amount, 0);
   const balance = totalIncome - totalExpense;
+
+  // Chart data: group by category
+  const categoryData = useMemo(() => {
+    const incomeCats: Record<string, number> = {};
+    const expenseCats: Record<string, number> = {};
+    transactions.forEach(t => {
+      if (t.type === "Income") incomeCats[t.category] = (incomeCats[t.category] || 0) + t.amount;
+      else expenseCats[t.category] = (expenseCats[t.category] || 0) + t.amount;
+    });
+    return {
+      income: Object.entries(incomeCats).map(([name, value]) => ({ name, value })),
+      expense: Object.entries(expenseCats).map(([name, value]) => ({ name, value })),
+    };
+  }, [transactions]);
+
+  // Monthly trend
+  const monthlyData = useMemo(() => {
+    const months: Record<string, { income: number; expense: number }> = {};
+    transactions.forEach(t => {
+      const month = t.date.slice(0, 7); // YYYY-MM
+      if (!months[month]) months[month] = { income: 0, expense: 0 };
+      if (t.type === "Income") months[month].income += t.amount;
+      else months[month].expense += t.amount;
+    });
+    return Object.entries(months).sort(([a], [b]) => a.localeCompare(b)).map(([month, data]) => ({
+      month: month.slice(5) + "/" + month.slice(2, 4),
+      Income: data.income,
+      Expense: data.expense,
+      Profit: data.income - data.expense,
+    }));
+  }, [transactions]);
+
+  const PIE_COLORS = ["#15857A", "#FF6A3B", "#6366F1", "#EAB308", "#EC4899", "#14B8A6", "#8B5CF6", "#F59E0B"];
 
   const handleAdd = () => {
     if (!form.description || form.amount <= 0) return;
@@ -102,6 +139,43 @@ export function LedgerModule() {
                 <Wallet className={cn("w-6 h-6", balance >= 0 ? "text-emerald-600" : "text-red-600")} />
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Monthly Income vs Expense */}
+        <Card className="lg:col-span-2 border-0 shadow-sm glass-card">
+          <CardHeader className="pb-2"><CardTitle className="text-base">Income vs Expense Trend</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.015 95)" vertical={false} />
+                <XAxis dataKey="month" stroke="oklch(0.5 0.015 200)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="oklch(0.5 0.015 200)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v / 1000}K`} />
+                <Tooltip contentStyle={{ background: "oklch(0.99 0.005 95)", border: "1px solid oklch(0.88 0.015 95)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => `Rs. ${v.toLocaleString()}`} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="Income" fill="#15857A" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Expense" fill="#FF6A3B" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Expense breakdown pie */}
+        <Card className="border-0 shadow-sm glass-card">
+          <CardHeader className="pb-2"><CardTitle className="text-base">Expense by Category</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={categoryData.expense} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={40} paddingAngle={2}>
+                  {categoryData.expense.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ background: "oklch(0.99 0.005 95)", border: "1px solid oklch(0.88 0.015 95)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => `Rs. ${v.toLocaleString()}`} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>

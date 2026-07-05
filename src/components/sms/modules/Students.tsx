@@ -31,6 +31,7 @@ import { CLASSES, type Student } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
 import { printStudentIDCard, printFeeReceipt } from "@/lib/pdf-service";
 import { Receipt as ReceiptIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 const RELIGIONS = ["Islam", "Christianity", "Hinduism", "Sikhism", "Other"];
@@ -48,7 +49,8 @@ const EMPTY_FORM = {
 };
 
 export function StudentsModule() {
-  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog } = useAppStore();
+  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog, collectFee } = useAppStore();
+  const { toast } = useToast();
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selected, setSelected] = useState<Student | null>(null);
@@ -70,6 +72,9 @@ export function StudentsModule() {
   const [bulkPromoteOpen, setBulkPromoteOpen] = useState(false);
   const [bulkClass, setBulkClass] = useState("");
   const [bulkSection, setBulkSection] = useState("A");
+  const [bulkFeeOpen, setBulkFeeOpen] = useState(false);
+  const [bulkFeeAmount, setBulkFeeAmount] = useState(0);
+  const [bulkFeeMode, setBulkFeeMode] = useState<"Cash" | "Cheque" | "Bank Transfer">("Cash");
 
   // Document upload
   const [docType, setDocType] = useState<string>("Birth Certificate");
@@ -206,6 +211,21 @@ export function StudentsModule() {
     });
     setSelectedIds(new Set());
     setBulkPromoteOpen(false);
+  };
+
+  const handleBulkFee = () => {
+    if (bulkFeeAmount <= 0) return;
+    let count = 0;
+    selectedIds.forEach(id => {
+      const student = students.find(s => s.id === id);
+      if (student) {
+        collectFee(id, bulkFeeAmount, bulkFeeMode, "Bulk Tuition", { tuition: bulkFeeAmount });
+        count++;
+      }
+    });
+    toast({ title: "Bulk Fee Collected ✓", description: `${count} receipts generated • Rs. ${(bulkFeeAmount * count).toLocaleString()} total` });
+    setSelectedIds(new Set());
+    setBulkFeeOpen(false);
   };
 
   const formSections = [
@@ -427,10 +447,13 @@ export function StudentsModule() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 fade-in">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 fade-in flex-wrap">
           <Badge className="bg-primary text-primary-foreground">{selectedIds.size} selected</Badge>
           <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setBulkClass(filtered[0]?.class || "Grade 1"); setBulkPromoteOpen(true); }}>
             <ArrowUpCircle className="w-3.5 h-3.5 mr-1" />Bulk Promote
+          </Button>
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setBulkFeeOpen(true); setBulkFeeAmount(0); }}>
+            <DollarSign className="w-3.5 h-3.5 mr-1" />Bulk Collect Fee
           </Button>
           <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>Clear Selection</Button>
         </div>
@@ -1092,6 +1115,49 @@ export function StudentsModule() {
             <Button variant="outline" onClick={() => setBulkPromoteOpen(false)}>Cancel</Button>
             <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleBulkPromote}>
               <ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote {selectedIds.size} Students
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Fee Collection dialog */}
+      <Dialog open={bulkFeeOpen} onOpenChange={setBulkFeeOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-emerald-600" />Bulk Fee Collection</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+              <p className="text-sm font-semibold">{selectedIds.size} students selected</p>
+              <p className="text-xs text-muted-foreground mt-1">The same amount will be collected from each student. Individual receipts will be generated.</p>
+            </div>
+            <div>
+              <Label>Amount per Student (Rs.)</Label>
+              <Input type="number" value={bulkFeeAmount} onChange={e => setBulkFeeAmount(Number(e.target.value))} placeholder="0" className="text-lg font-bold h-10" />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[500, 1000, 1500, 2000, 3000, 5000].map(amt => (
+                <button key={amt} onClick={() => setBulkFeeAmount(amt)} className="px-2 py-1 text-[10px] rounded-md border border-border/40 bg-background hover:bg-primary/10 hover:border-primary/30 transition-colors">
+                  {amt.toLocaleString()}
+                </button>
+              ))}
+            </div>
+            <div>
+              <Label>Payment Mode</Label>
+              <Select value={bulkFeeMode} onValueChange={(v: any) => setBulkFeeMode(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Cheque">Cheque</SelectItem><SelectItem value="Bank Transfer">Bank Transfer</SelectItem></SelectContent>
+              </Select>
+            </div>
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+              <p className="font-medium text-primary">Summary:</p>
+              <p className="text-muted-foreground mt-1">{selectedIds.size} students × Rs. {bulkFeeAmount.toLocaleString()} = <strong className="text-foreground">Rs. {(bulkFeeAmount * selectedIds.size).toLocaleString()} total</strong></p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkFeeOpen(false)}>Cancel</Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleBulkFee} disabled={bulkFeeAmount <= 0}>
+              <DollarSign className="w-4 h-4 mr-1.5" />Collect from {selectedIds.size} Students
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -15,10 +15,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  School, Users, BookOpen, Plus, Eye, Edit, Trash2, UserCog,
+  School, Users, BookOpen, Plus, Eye, Edit, Trash2, UserCog, Printer,
 } from "lucide-react";
 import { CLASSES, SUBJECTS, TEACHERS, TIMETABLE } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
+import { printTimetablePDF } from "@/lib/pdf-service";
 
 export function ClassesModule() {
   const { students, teachers } = useAppStore();
@@ -295,6 +296,7 @@ const PERIOD_TIMES = [
 ];
 
 export function TimetableModule() {
+  const { school } = useAppStore();
   const [selectedClass, setSelectedClass] = useState("Grade 9-A");
   const slots = TIMETABLE["Grade 9-A"] || [];
 
@@ -314,7 +316,12 @@ export function TimetableModule() {
             </SelectContent>
           </Select>
         </div>
-        <Button className="bg-primary hover:bg-primary/90" size="sm"><Plus className="w-4 h-4 mr-1.5" />Edit Timetable</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => printTimetablePDF(selectedClass, TIMETABLE[selectedClass] || [], school)}>
+            <Printer className="w-4 h-4 mr-1.5" />Print Timetable
+          </Button>
+          <Button className="bg-primary hover:bg-primary/90" size="sm"><Plus className="w-4 h-4 mr-1.5" />Edit Timetable</Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-xs">
