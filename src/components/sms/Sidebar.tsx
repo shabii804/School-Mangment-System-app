@@ -8,7 +8,7 @@ import {
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, GraduationCap as Logo,
   ChevronLeft, ChevronRight, BookOpen, Bus, Home, Package, Calendar,
-  Shield, type LucideIcon,
+  Shield, Percent, type LucideIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -30,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "defaulters", label: "Defaulters", icon: AlertTriangle, group: "finance" },
   { key: "salary", label: "Salary & Fine", icon: Wallet, group: "finance" },
   { key: "ledger", label: "Income & Expense", icon: BookOpen, group: "finance" },
+  { key: "concession", label: "Concessions", icon: Percent, group: "finance" },
   { key: "results", label: "Results", icon: FileText, group: "academics" },
   { key: "exam", label: "Examinations", icon: GraduationCap, group: "academics" },
   { key: "certificates", label: "Certificates", icon: Award, group: "academics" },
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "inventory", label: "Inventory", icon: Package, group: "facilities" },
   { key: "events", label: "Event Calendar", icon: Calendar, group: "facilities" },
   { key: "discipline", label: "Discipline", icon: Shield, group: "facilities" },
+  { key: "leave", label: "Staff Leave", icon: Calendar, group: "facilities" },
   { key: "alumni", label: "Alumni", icon: Award, group: "facilities" },
   { key: "parent", label: "Parent Portal", icon: Users, group: "facilities" },
   { key: "users", label: "User Management", icon: UserPlus, group: "system" },

@@ -10,7 +10,7 @@ export type ModuleKey =
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
   | "reports" | "analytics" | "users" | "settings" | "ledger"
   | "exam" | "library" | "transport" | "hostel" | "inventory" | "events"
-  | "discipline" | "alumni" | "parent" | "sms";
+  | "discipline" | "alumni" | "parent" | "sms" | "leave" | "concession";
 
 export interface SchoolInfo {
   name: string;

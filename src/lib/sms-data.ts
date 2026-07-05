@@ -623,3 +623,98 @@ export const ALUMNI: Alumnus[] = [
   { id: "ALM-2021-001", name: "Bilal Maqbool", graduationYear: "2021", lastClass: "Grade 10", currentStatus: "Employed", institution: "PAF", profession: "Pilot Officer", email: "bilal.m@email.com", phone: "+92 306 7778888", donationAmount: 20000 },
   { id: "ALM-2020-001", name: "Sara Tanveer", graduationYear: "2020", lastClass: "Grade 10", currentStatus: "Employed", institution: "Standard Chartered", profession: "Banking Officer", email: "sara.t@email.com", phone: "+92 307 8889999", donationAmount: 7500 },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// STAFF LEAVE DATA
+// ─────────────────────────────────────────────────────────────
+export interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: "Casual" | "Sick" | "Earned" | "Maternity" | "Without Pay" | "Emergency";
+  fromDate: string;
+  toDate: string;
+  days: number;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+  appliedDate: string;
+  approvedBy?: string;
+  comments?: string;
+}
+
+export interface LeaveBalance {
+  employeeId: string;
+  employeeName: string;
+  casual: { total: number; used: number; remaining: number };
+  sick: { total: number; used: number; remaining: number };
+  earned: { total: number; used: number; remaining: number };
+}
+
+export const LEAVE_REQUESTS: LeaveRequest[] = [
+  { id: "LV-001", employeeId: "T-001", employeeName: "Ms. Sadia Rahman", type: "Casual", fromDate: "2026-07-10", toDate: "2026-07-10", days: 1, reason: "Personal work", status: "Approved", appliedDate: "2026-07-05", approvedBy: "Principal", comments: "Approved. Arrange substitute." },
+  { id: "LV-002", employeeId: "T-003", employeeName: "Ms. Ayesha Khan", type: "Sick", fromDate: "2026-07-08", toDate: "2026-07-09", days: 2, reason: "Fever and flu", status: "Approved", appliedDate: "2026-07-07", approvedBy: "Principal", comments: "Get well soon." },
+  { id: "LV-003", employeeId: "T-005", employeeName: "Ms. Hina Aslam", type: "Earned", fromDate: "2026-07-15", toDate: "2026-07-18", days: 4, reason: "Family vacation", status: "Pending", appliedDate: "2026-07-06" },
+  { id: "LV-004", employeeId: "ST-003", employeeName: "Mr. Akram Khan", type: "Emergency", fromDate: "2026-07-03", toDate: "2026-07-03", days: 1, reason: "Family emergency", status: "Approved", appliedDate: "2026-07-02", approvedBy: "Principal" },
+  { id: "LV-005", employeeId: "T-002", employeeName: "Mr. Imran Yousuf", type: "Without Pay", fromDate: "2026-08-01", toDate: "2026-08-05", days: 5, reason: "Personal travel abroad", status: "Pending", appliedDate: "2026-07-06" },
+  { id: "LV-006", employeeId: "ST-001", employeeName: "Mr. Tariq Mehmood", type: "Sick", fromDate: "2026-06-20", toDate: "2026-06-21", days: 2, reason: "Medical checkup", status: "Rejected", appliedDate: "2026-06-18", approvedBy: "Principal", comments: "Not approved during exam week." },
+];
+
+export const LEAVE_BALANCES: LeaveBalance[] = [
+  { employeeId: "T-001", employeeName: "Ms. Sadia Rahman", casual: { total: 10, used: 3, remaining: 7 }, sick: { total: 15, used: 2, remaining: 13 }, earned: { total: 20, used: 5, remaining: 15 } },
+  { employeeId: "T-002", employeeName: "Mr. Imran Yousuf", casual: { total: 10, used: 5, remaining: 5 }, sick: { total: 15, used: 1, remaining: 14 }, earned: { total: 20, used: 8, remaining: 12 } },
+  { employeeId: "T-003", employeeName: "Ms. Ayesha Khan", casual: { total: 10, used: 2, remaining: 8 }, sick: { total: 15, used: 4, remaining: 11 }, earned: { total: 20, used: 3, remaining: 17 } },
+  { employeeId: "T-004", employeeName: "Mr. Kamran Akhtar", casual: { total: 10, used: 1, remaining: 9 }, sick: { total: 15, used: 0, remaining: 15 }, earned: { total: 20, used: 2, remaining: 18 } },
+  { employeeId: "T-005", employeeName: "Ms. Hina Aslam", casual: { total: 10, used: 6, remaining: 4 }, sick: { total: 15, used: 3, remaining: 12 }, earned: { total: 20, used: 10, remaining: 10 } },
+  { employeeId: "ST-001", employeeName: "Mr. Tariq Mehmood", casual: { total: 10, used: 4, remaining: 6 }, sick: { total: 15, used: 5, remaining: 10 }, earned: { total: 20, used: 0, remaining: 20 } },
+  { employeeId: "ST-002", employeeName: "Ms. Nargis Bibi", casual: { total: 10, used: 2, remaining: 8 }, sick: { total: 15, used: 1, remaining: 14 }, earned: { total: 20, used: 5, remaining: 15 } },
+];
+
+// ─────────────────────────────────────────────────────────────
+// FEE CONCESSION / SCHOLARSHIP DATA
+// ─────────────────────────────────────────────────────────────
+export interface Concession {
+  id: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  type: "Sibling Discount" | "Staff Child" | "Merit Scholarship" | "Financial Aid" | "Early Payment" | "Full Scholarship" | "Custom";
+  percentage: number;
+  fixedAmount: number;
+  reason: string;
+  approvedBy: string;
+  status: "Active" | "Expired" | "Revoked";
+  validFrom: string;
+  validTo: string;
+  monthlySaving: number;
+}
+
+export const CONCESSIONS: Concession[] = [
+  { id: "CON-001", studentId: "SCH-2026-0005", studentName: "Maryam Sheikh", class: "Grade 1", type: "Sibling Discount", percentage: 20, fixedAmount: 0, reason: "2 siblings studying in same school", approvedBy: "Principal", status: "Active", validFrom: "2026-04-01", validTo: "2027-03-31", monthlySaving: 440 },
+  { id: "CON-002", studentId: "SCH-2026-0014", studentName: "Omar Khan", class: "Grade 3", type: "Staff Child", percentage: 50, fixedAmount: 0, reason: "Father is school teacher (T-004)", approvedBy: "Principal", status: "Active", validFrom: "2026-04-01", validTo: "2027-03-31", monthlySaving: 1400 },
+  { id: "CON-003", studentId: "SCH-2026-0027", studentName: "Aisha Malik", class: "Grade 5", type: "Merit Scholarship", percentage: 100, fixedAmount: 0, reason: "Top position in previous academic year", approvedBy: "Principal", status: "Active", validFrom: "2026-04-01", validTo: "2027-03-31", monthlySaving: 3000 },
+  { id: "CON-004", studentId: "SCH-2026-0033", studentName: "Bilal Ahmed", class: "Grade 6", type: "Financial Aid", percentage: 0, fixedAmount: 500, reason: "Father unemployed — financial hardship", approvedBy: "Principal", status: "Active", validFrom: "2026-04-01", validTo: "2027-03-31", monthlySaving: 500 },
+  { id: "CON-005", studentId: "SCH-2026-0040", studentName: "Noor Fatima", class: "Grade 8", type: "Sibling Discount", percentage: 15, fixedAmount: 0, reason: "1 sibling in same school", approvedBy: "Principal", status: "Active", validFrom: "2026-04-01", validTo: "2027-03-31", monthlySaving: 570 },
+  { id: "CON-006", studentId: "SCH-2026-0002", studentName: "Fatima Ahmed", class: "Nursery", type: "Early Payment", percentage: 5, fixedAmount: 0, reason: "Paid full year fees in advance", approvedBy: "Accountant", status: "Expired", validFrom: "2026-04-01", validTo: "2026-06-30", monthlySaving: 90 },
+];
+
+// ─────────────────────────────────────────────────────────────
+// ACADEMIC SESSIONS DATA
+// ─────────────────────────────────────────────────────────────
+export interface AcademicSession {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: "Active" | "Archived" | "Upcoming";
+  studentCount: number;
+  teacherCount: number;
+  totalFeeCollected: number;
+  totalSalaryPaid: number;
+}
+
+export const ACADEMIC_SESSIONS: AcademicSession[] = [
+  { id: "S-2026-27", name: "2026–27", startDate: "2026-04-01", endDate: "2027-03-31", status: "Active", studentCount: 45, teacherCount: 7, totalFeeCollected: 555000, totalSalaryPaid: 1878000 },
+  { id: "S-2025-26", name: "2025–26", startDate: "2025-04-01", endDate: "2026-03-31", status: "Archived", studentCount: 42, teacherCount: 6, totalFeeCollected: 504000, totalSalaryPaid: 1611000 },
+  { id: "S-2024-25", name: "2024–25", startDate: "2024-04-01", endDate: "2025-03-31", status: "Archived", studentCount: 38, teacherCount: 5, totalFeeCollected: 418000, totalSalaryPaid: 1305000 },
+  { id: "S-2027-28", name: "2027–28", startDate: "2027-04-01", endDate: "2028-03-31", status: "Upcoming", studentCount: 0, teacherCount: 0, totalFeeCollected: 0, totalSalaryPaid: 0 },
+];

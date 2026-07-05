@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore, type Role } from "@/lib/sms-store";
-import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check } from "lucide-react";
+import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check, Calendar, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,8 @@ const MODULE_TITLES: Record<string, { title: string; subtitle: string }> = {
   discipline: { title: "Discipline & Behavior", subtitle: "Incident logs, warnings, and parent notifications" },
   alumni: { title: "Alumni Network", subtitle: "Graduated students, careers, and donations" },
   parent: { title: "Parent Portal", subtitle: "Read-only student information for parents" },
+  leave: { title: "Staff Leave Management", subtitle: "Leave requests, balances, and approvals" },
+  concession: { title: "Fee Concessions & Scholarships", subtitle: "Discounts, financial aid, and merit awards" },
 };
 
 const NOTIF_COLORS: Record<string, string> = {
@@ -59,6 +61,7 @@ export function Topbar() {
   const {
     role, setRole, userName, activeModule, isDark, toggleTheme,
     setCommandOpen, notifications, markNotificationRead, markAllNotificationsRead, unreadCount,
+    school,
   } = useAppStore();
 
   const roleInfo = ROLE_LABELS[role];
@@ -74,6 +77,53 @@ export function Topbar() {
           <h2 className="text-lg font-bold text-foreground leading-tight">{meta.title}</h2>
           <p className="text-xs text-muted-foreground truncate">{meta.subtitle} • {today}</p>
         </div>
+
+        {/* Session Switcher */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-2 border-primary/20 bg-primary/5">
+              <Calendar className="w-3.5 h-3.5 text-primary" />
+              <span className="font-semibold text-primary">{school.session}</span>
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" className="w-56">
+            <DropdownMenuLabel>Academic Sessions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer bg-primary/5">
+              <div className="flex items-center gap-2 w-full">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{school.session}</p>
+                  <p className="text-[10px] text-muted-foreground">Active Session</p>
+                </div>
+                <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-600 border-0">Current</Badge>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="text-sm">2025–26</p>
+                <p className="text-[10px] text-muted-foreground">Archived • 42 students</p>
+              </div>
+              <Badge variant="outline" className="text-[9px] bg-muted text-muted-foreground border-0">Archive</Badge>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="text-sm">2024–25</p>
+                <p className="text-[10px] text-muted-foreground">Archived • 38 students</p>
+              </div>
+              <Badge variant="outline" className="text-[9px] bg-muted text-muted-foreground border-0">Archive</Badge>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer text-primary">
+              <Plus className="w-3.5 h-3.5" />
+              <span className="text-sm">Start New Session...</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Command palette trigger */}
         <button

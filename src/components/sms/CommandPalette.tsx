@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, Search, ArrowRight,
-  Receipt, BookOpen, Bus, Home, Package, Calendar, Shield,
+  Receipt, BookOpen, Bus, Home, Package, Calendar, Shield, Percent,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,8 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   discipline: Shield,
   alumni: Award,
   parent: Users,
+  leave: Calendar,
+  concession: Percent,
 };
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
@@ -80,6 +82,8 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   discipline: "Discipline",
   alumni: "Alumni",
   parent: "Parent Portal",
+  leave: "Staff Leave",
+  concession: "Fee Concessions",
 };
 
 export function CommandPalette() {
