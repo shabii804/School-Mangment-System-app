@@ -174,234 +174,160 @@ export function StudentsModule() {
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1.5" />Admit Student</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-primary" />New Student Admission</DialogTitle>
             </DialogHeader>
 
-            {/* Section tabs */}
-            <div className="flex items-center gap-2 border-b border-border/30 pb-3">
-              {formSections.map((sec, i) => {
-                const Icon = sec.icon;
-                return (
-                  <button
-                    key={sec.title}
-                    onClick={() => setFormSection(i)}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                      formSection === i ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:bg-muted"
-                    )}
-                  >
-                    <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px]",
-                      formSection === i ? "bg-white/20" : "bg-muted-foreground/20")}>
-                      {i + 1}
-                    </span>
-                    <Icon className="w-3.5 h-3.5" />
-                    {sec.title}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Section 0: Personal Info + Photo */}
-            {formSection === 0 && (
-              <div className="space-y-4 py-2">
-                {/* Photo upload */}
-                <div className="flex items-center gap-4">
-                  <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 flex items-center justify-center overflow-hidden shrink-0">
+            {/* Single-page compact form — all sections visible */}
+            <div className="space-y-3 py-1">
+              {/* Row 1: Photo + Personal */}
+              <div className="grid grid-cols-12 gap-3">
+                {/* Photo */}
+                <div className="col-span-12 md:col-span-3">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Student Photo</Label>
+                  <div className="mt-1 w-full aspect-square rounded-xl border-2 border-dashed border-border/60 bg-muted/20 flex items-center justify-center overflow-hidden relative">
                     {form.photo ? (
                       <>
                         <img src={form.photo} alt="Student" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => setForm({ ...form, photo: "" })}
-                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                        <button onClick={() => setForm({ ...form, photo: "" })} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center"><X className="w-3 h-3" /></button>
                       </>
                     ) : (
                       <User className="w-10 h-10 text-muted-foreground/40" />
                     )}
                   </div>
-                  <div className="flex-1">
-                    <Label>Student Photo</Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">Optional • PNG/JPG • Max 500KB • Used on ID card</p>
-                    <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handlePhotoUpload} className="hidden" />
-                    <div className="flex gap-2 mt-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="w-3.5 h-3.5 mr-1.5" />Upload Photo
-                      </Button>
-                      {form.photo && (
-                        <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, photo: "" })} className="text-red-600">
-                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />Remove
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handlePhotoUpload} className="hidden" />
+                  <Button type="button" variant="outline" size="sm" className="w-full mt-1.5 h-7 text-xs" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="w-3 h-3 mr-1" />Upload
+                  </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2"><Label>Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Student's full name" /></div>
+                {/* Personal fields */}
+                <div className="col-span-12 md:col-span-9 grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <div className="col-span-2 md:col-span-2"><Label className="text-xs">Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Student's full name" className="h-8" /></div>
                   <div>
-                    <Label>Gender</Label>
+                    <Label className="text-xs">Gender</Label>
                     <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                       <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Date of Birth</Label><Input type="date" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} /></div>
-                  <div><Label>CNIC / B-Form No.</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" /></div>
+                  <div><Label className="text-xs">Date of Birth</Label><Input type="date" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} className="h-8" /></div>
+                  <div><Label className="text-xs">CNIC / B-Form</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" className="h-8" /></div>
                   <div>
-                    <Label>Blood Group</Label>
+                    <Label className="text-xs">Blood Group</Label>
                     <Select value={form.bloodGroup} onValueChange={v => setForm({...form, bloodGroup: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                       <SelectContent>{BLOOD_GROUPS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label>Religion</Label>
+                    <Label className="text-xs">Religion</Label>
                     <Select value={form.religion} onValueChange={v => setForm({...form, religion: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                       <SelectContent>{RELIGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Nationality</Label><Input value={form.nationality} onChange={e => setForm({...form, nationality: e.target.value})} /></div>
+                  <div><Label className="text-xs">Nationality</Label><Input value={form.nationality} onChange={e => setForm({...form, nationality: e.target.value})} className="h-8" /></div>
                 </div>
               </div>
-            )}
 
-            {/* Section 1: Parents */}
-            {formSection === 1 && (
-              <div className="space-y-4 py-2">
+              {/* Row 2: Academic + Logistics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-lg bg-primary/5 border border-primary/20 p-2.5">
+                <div>
+                  <Label className="text-xs">Class</Label>
+                  <Select value={form.class} onValueChange={v => setForm({...form, class: v})}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Section</Label>
+                  <Select value={form.section} onValueChange={v => setForm({...form, section: v})}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2"><Label className="text-xs">Previous School</Label><Input value={form.previousSchool} onChange={e => setForm({...form, previousSchool: e.target.value})} placeholder="If transfer" className="h-8" /></div>
+                <label className={cn("flex items-center gap-2 p-1.5 rounded-md border cursor-pointer", form.isHosteller ? "border-accent bg-accent/10" : "border-border/40")}>
+                  <input type="checkbox" checked={form.isHosteller} onChange={e => setForm({...form, isHosteller: e.target.checked})} className="w-3.5 h-3.5 accent-accent" />
+                  <span className="text-xs font-medium">🏠 Hosteller</span>
+                </label>
+                <label className={cn("flex items-center gap-2 p-1.5 rounded-md border cursor-pointer", form.transport ? "border-primary bg-primary/10" : "border-border/40")}>
+                  <input type="checkbox" checked={form.transport} onChange={e => setForm({...form, transport: e.target.checked})} className="w-3.5 h-3.5 accent-primary" />
+                  <span className="text-xs font-medium">🚌 Transport</span>
+                </label>
+                {form.transport ? (
+                  <div className="col-span-2"><Label className="text-xs">Transport Route</Label><Input value={form.transportRoute} onChange={e => setForm({...form, transportRoute: e.target.value})} placeholder="Route A — Gulshan" className="h-8" /></div>
+                ) : (
+                  <div className="col-span-2"><Label className="text-xs">Siblings in School</Label><Input value={form.siblings} onChange={e => setForm({...form, siblings: e.target.value})} placeholder="e.g., Sara Khan (Grade 3)" className="h-8" /></div>
+                )}
+              </div>
+
+              {/* Row 3: Parents — compact */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {/* Father */}
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                  <p className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-3"><User className="w-3.5 h-3.5" />Father Information</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2"><Label>Father's Name *</Label><Input value={form.fatherName} onChange={e => setForm({...form, fatherName: e.target.value})} placeholder="Father's full name" /></div>
-                    <div><Label>Father's CNIC</Label><Input value={form.fatherCnic} onChange={e => setForm({...form, fatherCnic: e.target.value})} placeholder="42101-XXXXXXX-X" /></div>
-                    <div><Label>Father's Phone *</Label><Input value={form.fatherPhone} onChange={e => setForm({...form, fatherPhone: e.target.value})} placeholder="+92 3xx xxxxxxx" /></div>
-                    <div className="col-span-2"><Label>Father's Occupation</Label><Input value={form.fatherOccupation} onChange={e => setForm({...form, fatherOccupation: e.target.value})} placeholder="e.g., Engineer, Businessman" /></div>
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+                  <p className="text-[10px] font-semibold text-primary uppercase mb-2">Father</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2"><Label className="text-[10px]">Name *</Label><Input value={form.fatherName} onChange={e => setForm({...form, fatherName: e.target.value})} placeholder="Father's name" className="h-8" /></div>
+                    <div><Label className="text-[10px]">CNIC</Label><Input value={form.fatherCnic} onChange={e => setForm({...form, fatherCnic: e.target.value})} placeholder="42101-XXX" className="h-8" /></div>
+                    <div><Label className="text-[10px]">Phone *</Label><Input value={form.fatherPhone} onChange={e => setForm({...form, fatherPhone: e.target.value})} placeholder="+92 3xx" className="h-8" /></div>
+                    <div className="col-span-2"><Label className="text-[10px]">Occupation</Label><Input value={form.fatherOccupation} onChange={e => setForm({...form, fatherOccupation: e.target.value})} placeholder="Engineer" className="h-8" /></div>
                   </div>
                 </div>
                 {/* Mother */}
-                <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3">
-                  <p className="text-xs font-semibold text-purple-600 flex items-center gap-1.5 mb-3"><UserCircle className="w-3.5 h-3.5" />Mother Information</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Mother's Name</Label><Input value={form.motherName} onChange={e => setForm({...form, motherName: e.target.value})} /></div>
-                    <div><Label>Mother's Phone</Label><Input value={form.motherPhone} onChange={e => setForm({...form, motherPhone: e.target.value})} /></div>
-                    <div className="col-span-2"><Label>Mother's Occupation</Label><Input value={form.motherOccupation} onChange={e => setForm({...form, motherOccupation: e.target.value})} placeholder="Housewife / Occupation" /></div>
-                  </div>
-                </div>
-                {/* Guardian */}
-                <div className="rounded-lg border border-border/40 bg-muted/20 p-3">
-                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-3"><Users className="w-3.5 h-3.5" />Guardian (if parents unavailable)</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div><Label>Guardian Name</Label><Input value={form.guardianName} onChange={e => setForm({...form, guardianName: e.target.value})} /></div>
-                    <div><Label>Guardian Phone</Label><Input value={form.guardianPhone} onChange={e => setForm({...form, guardianPhone: e.target.value})} /></div>
-                    <div><Label>Relation</Label><Input value={form.guardianRelation} onChange={e => setForm({...form, guardianRelation: e.target.value})} placeholder="Uncle, Aunt, etc." /></div>
-                  </div>
-                </div>
-                {/* Emergency contact */}
-                <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
-                  <p className="text-xs font-semibold text-accent flex items-center gap-1.5 mb-3"><AlertCircle className="w-3.5 h-3.5" />Emergency Contact</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Emergency Contact Name</Label><Input value={form.emergencyName} onChange={e => setForm({...form, emergencyName: e.target.value})} /></div>
-                    <div><Label>Emergency Phone</Label><Input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} /></div>
+                <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5">
+                  <p className="text-[10px] font-semibold text-purple-600 uppercase mb-2">Mother</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label className="text-[10px]">Name</Label><Input value={form.motherName} onChange={e => setForm({...form, motherName: e.target.value})} className="h-8" /></div>
+                    <div><Label className="text-[10px]">Phone</Label><Input value={form.motherPhone} onChange={e => setForm({...form, motherPhone: e.target.value})} className="h-8" /></div>
+                    <div className="col-span-2"><Label className="text-[10px]">Occupation</Label><Input value={form.motherOccupation} onChange={e => setForm({...form, motherOccupation: e.target.value})} placeholder="Housewife" className="h-8" /></div>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Section 2: Academic */}
-            {formSection === 2 && (
-              <div className="space-y-4 py-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Class</Label>
-                    <Select value={form.class} onValueChange={v => setForm({...form, class: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Section</Label>
-                    <Select value={form.section} onValueChange={v => setForm({...form, section: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2"><Label>Previous School</Label><Input value={form.previousSchool} onChange={e => setForm({...form, previousSchool: e.target.value})} placeholder="School name (if transfer)" /></div>
-                </div>
-
-                {/* Hosteller + Transport */}
-                <div className="grid grid-cols-2 gap-3">
-                  <label className={cn("flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                    form.isHosteller ? "border-accent bg-accent/5" : "border-border/40")}>
-                    <input type="checkbox" checked={form.isHosteller} onChange={e => setForm({...form, isHosteller: e.target.checked})} className="w-4 h-4 accent-accent" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium flex items-center gap-1.5"><Home className="w-3.5 h-3.5 text-accent" />Hosteller</p>
-                      <p className="text-[10px] text-muted-foreground">Boarding student (+ Rs. 3,500/month)</p>
-                    </div>
-                  </label>
-                  <label className={cn("flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                    form.transport ? "border-primary bg-primary/5" : "border-border/40")}>
-                    <input type="checkbox" checked={form.transport} onChange={e => setForm({...form, transport: e.target.checked})} className="w-4 h-4 accent-primary" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium flex items-center gap-1.5"><Bus className="w-3.5 h-3.5 text-primary" />Uses Transport</p>
-                      <p className="text-[10px] text-muted-foreground">School bus service</p>
-                    </div>
-                  </label>
-                </div>
-                {form.transport && (
-                  <div><Label>Transport Route</Label><Input value={form.transportRoute} onChange={e => setForm({...form, transportRoute: e.target.value})} placeholder="e.g., Route A — Gulshan" /></div>
-                )}
-                <div><Label>Siblings in this School</Label><Input value={form.siblings} onChange={e => setForm({...form, siblings: e.target.value})} placeholder="e.g., Sara Khan (Grade 3)" /></div>
-
-                <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
-                  <p className="font-medium text-primary">Auto-generated on save:</p>
-                  <p className="text-muted-foreground mt-1">Student ID (SCH-2026-XXXX) • Roll Number • QR Code for ID Card • Monthly Fee: Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}{form.isHosteller ? " + Rs. 3,500 hostel" : ""}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Section 3: Medical & Address */}
-            {formSection === 3 && (
-              <div className="space-y-4 py-2">
-                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-                  <p className="text-xs font-semibold text-red-600 flex items-center gap-1.5 mb-3"><Stethoscope className="w-3.5 h-3.5" />Medical Information</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Medical Conditions</Label><Input value={form.medicalConditions} onChange={e => setForm({...form, medicalConditions: e.target.value})} placeholder="e.g., Asthma, Diabetes, None" /></div>
-                    <div><Label>Allergies</Label><Input value={form.allergies} onChange={e => setForm({...form, allergies: e.target.value})} placeholder="e.g., Peanuts, Dust, None" /></div>
+              {/* Row 4: Guardian + Emergency + Medical + Address */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Guardian (if parents unavailable)</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><Label className="text-[10px]">Name</Label><Input value={form.guardianName} onChange={e => setForm({...form, guardianName: e.target.value})} className="h-8" /></div>
+                    <div><Label className="text-[10px]">Phone</Label><Input value={form.guardianPhone} onChange={e => setForm({...form, guardianPhone: e.target.value})} className="h-8" /></div>
+                    <div><Label className="text-[10px]">Relation</Label><Input value={form.guardianRelation} onChange={e => setForm({...form, guardianRelation: e.target.value})} placeholder="Uncle" className="h-8" /></div>
                   </div>
                 </div>
-                <div className="rounded-lg border border-border/40 bg-muted/20 p-3">
-                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-3"><MapPin className="w-3.5 h-3.5" />Home Address</p>
-                  <div><Label>Complete Address</Label><textarea
-                    value={form.address}
-                    onChange={e => setForm({...form, address: e.target.value})}
-                    placeholder="House #, Street, Block, City, Province"
-                    className="w-full min-h-[70px] rounded-md border border-border bg-background px-3 py-2 text-sm mt-1"
-                  /></div>
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+                  <p className="text-[10px] font-semibold text-accent uppercase mb-2">Emergency Contact</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label className="text-[10px]">Name</Label><Input value={form.emergencyName} onChange={e => setForm({...form, emergencyName: e.target.value})} className="h-8" /></div>
+                    <div><Label className="text-[10px]">Phone</Label><Input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} className="h-8" /></div>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2.5">
+                  <p className="text-[10px] font-semibold text-red-600 uppercase mb-2">Medical</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label className="text-[10px]">Conditions</Label><Input value={form.medicalConditions} onChange={e => setForm({...form, medicalConditions: e.target.value})} placeholder="None" className="h-8" /></div>
+                    <div><Label className="text-[10px]">Allergies</Label><Input value={form.allergies} onChange={e => setForm({...form, allergies: e.target.value})} placeholder="None" className="h-8" /></div>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Home Address</p>
+                  <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="House #, Street, Block, City" className="h-8" />
                 </div>
               </div>
-            )}
 
-            <DialogFooter className="flex items-center justify-between">
-              <div className="flex gap-2">
-                {formSection > 0 && (
-                  <Button variant="outline" onClick={() => setFormSection(formSection - 1)}>← Previous</Button>
-                )}
+              {/* Auto-generated info */}
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-2 text-[10px] text-muted-foreground">
+                <span className="font-medium text-primary">Auto on save:</span> Student ID (SCH-2026-XXXX) • Roll Number • QR Code • Monthly Fee: Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}{form.isHosteller ? " + Rs. 3,500 hostel" : ""}
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => { setAddOpen(false); setForm(EMPTY_FORM); setFormSection(0); }}>Cancel</Button>
-                {formSection < 3 ? (
-                  <Button onClick={() => setFormSection(formSection + 1)} disabled={formSection === 0 && (!form.name || !form.fatherName)}>Next →</Button>
-                ) : (
-                  <Button onClick={handleAdd} disabled={!form.name || !form.fatherName} className="bg-primary hover:bg-primary/90">
-                    <Plus className="w-4 h-4 mr-1.5" />Save & Admit Student
-                  </Button>
-                )}
-              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setAddOpen(false); setForm(EMPTY_FORM); }}>Cancel</Button>
+              <Button onClick={handleAdd} disabled={!form.name || !form.fatherName} className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-1.5" />Save & Admit Student
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -517,52 +443,81 @@ export function StudentsModule() {
 
       {/* Profile drawer */}
       <Drawer open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DrawerContent className="max-h-[92vh]">
+        <DrawerContent className="max-h-[94vh]">
           {selected && (
             <>
-              <DrawerHeader className="border-b border-border/30 pb-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-20 h-20 ring-2 ring-primary/20">
+              {/* Gradient banner header */}
+              <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-5 text-primary-foreground overflow-hidden">
+                <div className="absolute inset-0 opacity-10 pattern-grid" />
+                <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+                <div className="relative flex items-start gap-4">
+                  <Avatar className="w-20 h-20 ring-4 ring-white/30 shadow-xl shrink-0">
                     {selected.photo ? (
                       <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover rounded-full" />
                     ) : (
-                      <AvatarFallback className={cn("text-xl font-semibold", selected.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>
+                      <AvatarFallback className={cn("text-2xl font-bold", selected.gender === "Male" ? "bg-white/20 text-white" : "bg-white/20 text-white")}>
                         {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <div className="flex-1">
-                    <DrawerTitle className="text-2xl flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <DrawerTitle className="text-2xl font-bold flex items-center gap-2 flex-wrap">
                       {selected.name}
-                      {selected.isHosteller && <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-0"><Home className="w-2.5 h-2.5 mr-0.5" />Hosteller</Badge>}
-                      {selected.transport && <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-0"><Bus className="w-2.5 h-2.5 mr-0.5" />Transport</Badge>}
+                      {selected.isHosteller && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20">🏠 Hosteller</span>}
+                      {selected.transport && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20">🚌 Transport</span>}
                     </DrawerTitle>
-                    <DrawerDescription className="flex items-center gap-2 flex-wrap mt-1.5">
-                      <Badge variant="outline">{selected.id}</Badge>
-                      <Badge variant="outline">Roll #{selected.rollNo}</Badge>
-                      <Badge variant="outline">{selected.class}-{selected.section}</Badge>
-                      <Badge variant="outline" className="bg-red-500/5">{selected.bloodGroup}</Badge>
-                      <Badge variant={selected.status === "Active" ? "default" : "secondary"}>{selected.status}</Badge>
+                    <DrawerDescription className="text-white/80 mt-1 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs">{selected.id}</span>
+                      <span className="text-xs">•</span>
+                      <span className="text-xs">Roll #{selected.rollNo}</span>
+                      <span className="text-xs">•</span>
+                      <span className="text-xs">{selected.class}-{selected.section}</span>
+                      <span className="text-xs">•</span>
+                      <span className="text-xs">🩸 {selected.bloodGroup}</span>
                     </DrawerDescription>
+                    {/* Quick stats row */}
+                    <div className="flex gap-4 mt-3">
+                      <div>
+                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
+                        <p className="text-lg font-bold">{selected.attendancePct}%</p>
+                      </div>
+                      <div className="border-l border-white/20 pl-4">
+                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Monthly Fee</p>
+                        <p className="text-lg font-bold">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                      </div>
+                      <div className="border-l border-white/20 pl-4">
+                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Outstanding</p>
+                        <p className="text-lg font-bold">{selected.outstandingAmount > 0 ? `Rs. ${selected.outstandingAmount.toLocaleString()}` : "✓ Clear"}</p>
+                      </div>
+                      <div className="border-l border-white/20 pl-4">
+                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Status</p>
+                        <p className="text-lg font-bold flex items-center gap-1">
+                          <span className={cn("w-2 h-2 rounded-full", selected.status === "Active" ? "bg-emerald-300" : "bg-red-300")} />
+                          {selected.status}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => printIDCard(selected)}>
-                      <QrCode className="w-4 h-4 mr-1.5" />ID Card
+                  <div className="flex flex-col gap-1.5 shrink-0">
+                    <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => printIDCard(selected)}>
+                      <QrCode className="w-3.5 h-3.5 mr-1" />ID Card
                     </Button>
-                    <Button size="sm" variant="outline"><Printer className="w-4 h-4 mr-1.5" />Profile</Button>
+                    <Button size="sm" variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border border-white/30" onClick={() => { setEditStudent(selected); setEditForm(selected); }}>
+                      <Edit className="w-3.5 h-3.5 mr-1" />Edit
+                    </Button>
                   </div>
                 </div>
-              </DrawerHeader>
+              </div>
               <div className="p-4 overflow-y-auto">
                 <Tabs defaultValue="overview">
-                  <TabsList className="grid w-full grid-cols-7 max-w-3xl">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="parents">Parents</TabsTrigger>
-                    <TabsTrigger value="academic">Academic</TabsTrigger>
-                    <TabsTrigger value="medical">Medical</TabsTrigger>
-                    <TabsTrigger value="fees">Fees</TabsTrigger>
-                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
-                    <TabsTrigger value="results">Results</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 max-w-3xl h-9">
+                    <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+                    <TabsTrigger value="parents" className="text-xs">Parents</TabsTrigger>
+                    <TabsTrigger value="academic" className="text-xs">Academic</TabsTrigger>
+                    <TabsTrigger value="medical" className="text-xs">Medical</TabsTrigger>
+                    <TabsTrigger value="fees" className="text-xs">Fees</TabsTrigger>
+                    <TabsTrigger value="attendance" className="text-xs">Attendance</TabsTrigger>
+                    <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
                   </TabsList>
 
                   {/* Overview */}

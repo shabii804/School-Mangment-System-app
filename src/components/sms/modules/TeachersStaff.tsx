@@ -139,24 +139,72 @@ export function TeachersModule() {
 
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add New Teacher</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3 py-2">
-            <div className="col-span-2"><Label>Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Teacher's full name" /></div>
-            <div><Label>Gender</Label>
-              <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
-              </Select>
+          <div className="space-y-2.5 py-1">
+            {/* Personal */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="col-span-2"><Label className="text-xs">Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Teacher's full name" className="h-8" /></div>
+              <div>
+                <Label className="text-xs">Gender</Label>
+                <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">CNIC</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXX-X" className="h-8" /></div>
+              <div><Label className="text-xs">Designation</Label><Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} className="h-8" /></div>
+              <div><Label className="text-xs">Qualification</Label><Input value={form.qualification} onChange={e => setForm({...form, qualification: e.target.value})} placeholder="M.Sc, B.Ed" className="h-8" /></div>
+              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" className="h-8" /></div>
+              <div><Label className="text-xs">Joining Date</Label><Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} className="h-8" /></div>
+              <div><Label className="text-xs">Monthly Salary (Rs.)</Label><Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} className="h-8" /></div>
             </div>
-            <div><Label>CNIC</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" /></div>
-            <div><Label>Designation</Label><Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} /></div>
-            <div><Label>Qualification</Label><Input value={form.qualification} onChange={e => setForm({...form, qualification: e.target.value})} placeholder="M.Sc, B.Ed" /></div>
-            <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx xxxxxxx" /></div>
-            <div><Label>Joining Date</Label><Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
-            <div><Label>Monthly Salary (Rs.)</Label><Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} /></div>
-            <div className="col-span-2"><Label>Subjects (comma-separated)</Label><Input value={form.subjects.join(", ")} onChange={e => setForm({...form, subjects: e.target.value.split(",").map(s => s.trim()).filter(Boolean)})} placeholder="Mathematics, Physics" /></div>
-            <div className="col-span-2"><Label>Classes (comma-separated)</Label><Input value={form.classes.join(", ")} onChange={e => setForm({...form, classes: e.target.value.split(",").map(s => s.trim()).filter(Boolean)})} placeholder="Grade 9, Grade 10" /></div>
+
+            {/* Subject assignment — checkbox grid */}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+              <p className="text-[10px] font-semibold text-primary uppercase mb-2">Assign Subjects (click to toggle)</p>
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+                {SUBJECTS.map(subj => {
+                  const checked = form.subjects.includes(subj);
+                  return (
+                    <button
+                      key={subj}
+                      type="button"
+                      onClick={() => setForm({...form, subjects: checked ? form.subjects.filter(s => s !== subj) : [...form.subjects, subj]})}
+                      className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border transition-all text-left",
+                        checked ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border/40 hover:border-primary/30")}
+                    >
+                      <BookOpen className="w-2.5 h-2.5 inline mr-1" />{subj}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Class assignment — checkbox grid */}
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+              <p className="text-[10px] font-semibold text-accent uppercase mb-2">Assign Classes (click to toggle)</p>
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+                {CLASSES.map(cls => {
+                  const checked = form.classes.includes(cls.name);
+                  return (
+                    <button
+                      key={cls.name}
+                      type="button"
+                      onClick={() => setForm({...form, classes: checked ? form.classes.filter(c => c !== cls.name) : [...form.classes, cls.name]})}
+                      className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border transition-all text-left",
+                        checked ? "bg-accent text-accent-foreground border-accent" : "bg-background border-border/40 hover:border-accent/30")}
+                    >
+                      <GraduationCap className="w-2.5 h-2.5 inline mr-1" />{cls.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="text-[10px] text-muted-foreground">
+              Selected: {form.subjects.length} subjects • {form.classes.length} classes
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
