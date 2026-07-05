@@ -25,15 +25,20 @@ export function ClassesModule() {
   const [addOpen, setAddOpen] = useState(false);
   const [rosterClass, setRosterClass] = useState<string | null>(null);
   const [assignTeacher, setAssignTeacher] = useState<{ className: string; section: string; teacherId: string } | null>(null);
+  const [subjectAssignClass, setSubjectAssignClass] = useState<string | null>(null);
   const [newClass, setNewClass] = useState({ name: "", sections: "A,B", monthlyFee: 2000 });
 
-  // Local classes state (could be in store, but keeping simple)
+  // Local classes state
   const [classes, setClasses] = useState(CLASSES.map(c => ({
     ...c,
     classTeacher: teachers[Math.floor(Math.random() * teachers.length)]?.name || "Unassigned",
   })));
 
+  // Subject-teacher assignment: { "Grade 9": { "Mathematics": "T-001", "English": "T-003" } }
+  const [subjectTeachers, setSubjectTeachers] = useState<Record<string, Record<string, string>>>({});
+
   const rosterStudents = rosterClass ? students.filter(s => s.class === rosterClass && s.status === "Active") : [];
+  const subjectAssignStudents = subjectAssignClass ? students.filter(s => s.class === subjectAssignClass && s.status === "Active") : [];
 
   return (
     <div className="space-y-4">
@@ -85,6 +90,9 @@ export function ClassesModule() {
                   <div className="flex gap-1">
                     <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setRosterClass(cls.name)}>
                       <Eye className="w-3 h-3 mr-1" />Roster
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubjectAssignClass(cls.name)}>
+                      <BookOpen className="w-3 h-3 mr-1" />Subjects
                     </Button>
                   </div>
                 </div>
@@ -199,6 +207,78 @@ export function ClassesModule() {
               }
             }}>Assign Teacher</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subject-Teacher Assignment Dialog */}
+      <Dialog open={!!subjectAssignClass} onOpenChange={(o) => !o && setSubjectAssignClass(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" />Subject-Teacher Assignment — {subjectAssignClass}</DialogTitle>
+          </DialogHeader>
+          {subjectAssignClass && (
+            <div className="space-y-2 py-2">
+              <p className="text-xs text-muted-foreground">Assign a teacher for each subject taught in this class. Click the dropdown to select or change the teacher.</p>
+              <div className="rounded-lg border border-border/40 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 border-b border-border/30">
+                    <tr>
+                      <th className="text-left p-2.5 text-xs font-semibold text-muted-foreground uppercase">Subject</th>
+                      <th className="text-left p-2.5 text-xs font-semibold text-muted-foreground uppercase">Assigned Teacher</th>
+                      <th className="text-center p-2.5 text-xs font-semibold text-muted-foreground uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {SUBJECTS.map(subj => {
+                      const assignedId = subjectTeachers[subjectAssignClass]?.[subj] || "";
+                      const teacher = teachers.find(t => t.id === assignedId);
+                      return (
+                        <tr key={subj} className="border-b border-border/20 hover:bg-muted/20 last:border-0">
+                          <td className="p-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center"><BookOpen className="w-3.5 h-3.5 text-primary" /></div>
+                              <span className="font-medium text-sm">{subj}</span>
+                            </div>
+                          </td>
+                          <td className="p-2.5">
+                            <Select
+                              value={assignedId}
+                              onValueChange={(teacherId) => {
+                                setSubjectTeachers(prev => ({
+                                  ...prev,
+                                  [subjectAssignClass]: { ...(prev[subjectAssignClass] || {}), [subj]: teacherId },
+                                }));
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select teacher..." /></SelectTrigger>
+                              <SelectContent>
+                                {teachers.map(t => <SelectItem key={t.id} value={t.id}>{t.name} • {t.designation}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="p-2.5 text-center">
+                            {teacher ? (
+                              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-0">✓ Assigned</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-0">Unassigned</Badge>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-muted-foreground">
+                  {SUBJECTS.filter(s => subjectTeachers[subjectAssignClass]?.[s]).length} of {SUBJECTS.length} subjects assigned
+                </p>
+                <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => setSubjectAssignClass(null)}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
