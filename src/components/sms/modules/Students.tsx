@@ -441,261 +441,293 @@ export function StudentsModule() {
         )}
       </Card>
 
-      {/* Profile drawer */}
-      <Drawer open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DrawerContent className="max-h-[94vh]">
-          {selected && (
-            <>
-              {/* Gradient banner header */}
-              <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-5 text-primary-foreground overflow-hidden">
-                <div className="absolute inset-0 opacity-10 pattern-grid" />
-                <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-                <div className="relative flex items-start gap-4">
-                  <Avatar className="w-20 h-20 ring-4 ring-white/30 shadow-xl shrink-0">
-                    {selected.photo ? (
-                      <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                      <AvatarFallback className={cn("text-2xl font-bold", selected.gender === "Male" ? "bg-white/20 text-white" : "bg-white/20 text-white")}>
-                        {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <DrawerTitle className="text-2xl font-bold flex items-center gap-2 flex-wrap">
-                      {selected.name}
-                      {selected.isHosteller && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20">🏠 Hosteller</span>}
-                      {selected.transport && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20">🚌 Transport</span>}
-                    </DrawerTitle>
-                    <DrawerDescription className="text-white/80 mt-1 flex items-center gap-2 flex-wrap">
-                      <span className="text-xs">{selected.id}</span>
-                      <span className="text-xs">•</span>
-                      <span className="text-xs">Roll #{selected.rollNo}</span>
-                      <span className="text-xs">•</span>
-                      <span className="text-xs">{selected.class}-{selected.section}</span>
-                      <span className="text-xs">•</span>
-                      <span className="text-xs">🩸 {selected.bloodGroup}</span>
-                    </DrawerDescription>
-                    {/* Quick stats row */}
-                    <div className="flex gap-4 mt-3">
-                      <div>
-                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
-                        <p className="text-lg font-bold">{selected.attendancePct}%</p>
-                      </div>
-                      <div className="border-l border-white/20 pl-4">
-                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Monthly Fee</p>
-                        <p className="text-lg font-bold">Rs. {selected.monthlyFee.toLocaleString()}</p>
-                      </div>
-                      <div className="border-l border-white/20 pl-4">
-                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Outstanding</p>
-                        <p className="text-lg font-bold">{selected.outstandingAmount > 0 ? `Rs. ${selected.outstandingAmount.toLocaleString()}` : "✓ Clear"}</p>
-                      </div>
-                      <div className="border-l border-white/20 pl-4">
-                        <p className="text-[10px] uppercase text-white/60 tracking-wider">Status</p>
-                        <p className="text-lg font-bold flex items-center gap-1">
-                          <span className={cn("w-2 h-2 rounded-full", selected.status === "Active" ? "bg-emerald-300" : "bg-red-300")} />
-                          {selected.status}
-                        </p>
-                      </div>
-                    </div>
+      {/* Profile slide-in panel */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          {/* Panel */}
+          <div
+            className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Gradient banner header */}
+            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-6 text-primary-foreground overflow-hidden">
+              <div className="absolute inset-0 opacity-10 pattern-grid" />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+              <div className="relative flex items-start gap-5">
+                <Avatar className="w-24 h-24 ring-4 ring-white/30 shadow-xl shrink-0">
+                  {selected.photo ? (
+                    <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    <AvatarFallback className="text-3xl font-bold bg-white/20 text-white">
+                      {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="flex-1 min-w-0 pt-1">
+                  <h2 className="text-2xl font-bold flex items-center gap-2 flex-wrap">
+                    {selected.name}
+                  </h2>
+                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                    {selected.isHosteller && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">🏠 Hosteller</span>}
+                    {selected.transport && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">🚌 Transport</span>}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-50 font-medium flex items-center gap-1">
+                      <span className={cn("w-1.5 h-1.5 rounded-full", selected.status === "Active" ? "bg-emerald-300" : "bg-red-300")} />
+                      {selected.status}
+                    </span>
                   </div>
-                  <div className="flex flex-col gap-1.5 shrink-0">
-                    <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => printIDCard(selected)}>
-                      <QrCode className="w-3.5 h-3.5 mr-1" />ID Card
-                    </Button>
-                    <Button size="sm" variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border border-white/30" onClick={() => { setEditStudent(selected); setEditForm(selected); }}>
-                      <Edit className="w-3.5 h-3.5 mr-1" />Edit
-                    </Button>
-                  </div>
+                  <p className="text-white/70 text-xs mt-2">
+                    {selected.id} • Roll #{selected.rollNo} • {selected.class}-{selected.section} • 🩸 {selected.bloodGroup}
+                  </p>
                 </div>
               </div>
-              <div className="p-4 overflow-y-auto">
-                <Tabs defaultValue="overview">
-                  <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 max-w-3xl h-9">
-                    <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
-                    <TabsTrigger value="parents" className="text-xs">Parents</TabsTrigger>
-                    <TabsTrigger value="academic" className="text-xs">Academic</TabsTrigger>
-                    <TabsTrigger value="medical" className="text-xs">Medical</TabsTrigger>
-                    <TabsTrigger value="fees" className="text-xs">Fees</TabsTrigger>
-                    <TabsTrigger value="attendance" className="text-xs">Attendance</TabsTrigger>
-                    <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
-                  </TabsList>
-
-                  {/* Overview */}
-                  <TabsContent value="overview" className="mt-4 space-y-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <InfoTile icon={Calendar} label="Date of Birth" value={selected.dob} color="text-primary" />
-                      <InfoTile icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" />
-                      <InfoTile icon={Globe} label="Nationality" value={selected.nationality} color="text-primary" />
-                      <InfoTile icon={User} label="Religion" value={selected.religion} color="text-purple-600" />
-                      <InfoTile icon={User} label="CNIC / B-Form" value={selected.cnic} color="text-foreground" />
-                      <InfoTile icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" />
-                      <InfoTile icon={DollarSign} label="Monthly Fee" value={`Rs. ${selected.monthlyFee.toLocaleString()}`} color="text-emerald-600" />
-                      <InfoTile icon={Home} label="Hosteller" value={selected.isHosteller ? "Yes" : "No"} color="text-accent" />
-                    </div>
-                    {selected.address && selected.address !== "—" && (
-                      <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-1"><MapPin className="w-3 h-3" />Home Address</p>
-                        <p className="text-sm font-medium">{selected.address}</p>
-                      </div>
-                    )}
-                    {selected.siblings && (
-                      <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Siblings in School</p>
-                        <p className="text-sm font-medium">{selected.siblings}</p>
-                      </div>
-                    )}
-                    {selected.transport && selected.transportRoute && (
-                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                        <p className="text-xs text-primary uppercase tracking-wide flex items-center gap-1.5 mb-1"><Bus className="w-3 h-3" />Transport</p>
-                        <p className="text-sm font-medium">{selected.transportRoute}</p>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  {/* Parents */}
-                  <TabsContent value="parents" className="mt-4 space-y-3">
-                    {/* Father */}
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-                      <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3 flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Father</p>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <InfoRow label="Name" value={selected.fatherName} />
-                        <InfoRow label="CNIC" value={selected.fatherCnic} />
-                        <InfoRow label="Phone" value={selected.fatherPhone} icon={Phone} />
-                        <InfoRow label="Occupation" value={selected.fatherOccupation} icon={Briefcase} />
-                      </div>
-                    </div>
-                    {/* Mother */}
-                    <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4">
-                      <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-3 flex items-center gap-1.5"><UserCircle className="w-3.5 h-3.5" />Mother</p>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <InfoRow label="Name" value={selected.motherName} />
-                        <InfoRow label="Phone" value={selected.motherPhone} icon={Phone} />
-                        <InfoRow label="Occupation" value={selected.motherOccupation} icon={Briefcase} />
-                      </div>
-                    </div>
-                    {/* Guardian */}
-                    {selected.guardianName && (
-                      <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Guardian</p>
-                        <div className="grid grid-cols-3 gap-3 text-sm">
-                          <InfoRow label="Name" value={selected.guardianName} />
-                          <InfoRow label="Phone" value={selected.guardianPhone} icon={Phone} />
-                          <InfoRow label="Relation" value={selected.guardianRelation} />
-                        </div>
-                      </div>
-                    )}
-                    {/* Emergency */}
-                    <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
-                      <p className="text-xs font-semibold text-accent uppercase tracking-wide mb-3 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" />Emergency Contact</p>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <InfoRow label="Contact Name" value={selected.emergencyName} />
-                        <InfoRow label="Phone" value={selected.emergencyContact} icon={Phone} />
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  {/* Academic */}
-                  <TabsContent value="academic" className="mt-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <InfoTile icon={GraduationCap} label="Current Class" value={`${selected.class}-${selected.section}`} color="text-primary" />
-                      <InfoTile icon={User} label="Roll Number" value={selected.rollNo} color="text-foreground" />
-                      <InfoTile icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" />
-                      <InfoTile icon={FileText} label="Previous School" value={selected.previousSchool} color="text-foreground" />
-                    </div>
-                  </TabsContent>
-
-                  {/* Medical */}
-                  <TabsContent value="medical" className="mt-4 space-y-3">
-                    <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
-                      <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-3 flex items-center gap-1.5"><Stethoscope className="w-3.5 h-3.5" />Medical Information</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <InfoTile icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" />
-                        <InfoTile icon={AlertCircle} label="Medical Conditions" value={selected.medicalConditions} color="text-foreground" />
-                        <InfoTile icon={AlertCircle} label="Allergies" value={selected.allergies} color="text-foreground" />
-                        <InfoTile icon={Phone} label="Emergency Phone" value={selected.emergencyContact} color="text-foreground" />
-                      </div>
-                    </div>
-                    <div className="rounded-lg border border-border/40 p-3 text-xs text-muted-foreground">
-                      <p className="font-medium text-foreground">⚠️ Important:</p>
-                      <p className="mt-1">This information is used during medical emergencies and field trips. Please keep the school office updated on any changes.</p>
-                    </div>
-                  </TabsContent>
-
-                  {/* Fees */}
-                  <TabsContent value="fees" className="mt-4 space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
-                      <Card className="border-0 shadow-sm bg-muted/30"><CardContent className="p-3">
-                        <p className="text-xs text-muted-foreground">Monthly Fee</p>
-                        <p className="text-lg font-bold">Rs. {selected.monthlyFee.toLocaleString()}</p>
-                        {selected.isHosteller && <p className="text-[10px] text-accent mt-0.5">+ Rs. 3,500 hostel</p>}
-                      </CardContent></Card>
-                      <Card className="border-0 shadow-sm bg-muted/30"><CardContent className="p-3">
-                        <p className="text-xs text-muted-foreground">Outstanding</p>
-                        <p className="text-lg font-bold text-red-600">Rs. {selected.outstandingAmount.toLocaleString()}</p>
-                      </CardContent></Card>
-                      <Card className="border-0 shadow-sm bg-muted/30"><CardContent className="p-3">
-                        <p className="text-xs text-muted-foreground">This Month</p>
-                        <p className="text-lg font-bold text-emerald-600">{selected.feePaidThisMonth ? "Paid" : "Pending"}</p>
-                      </CardContent></Card>
-                    </div>
-                    {/* Fee History */}
-                    <div className="rounded-lg border border-border/40 overflow-hidden">
-                      <div className="px-3 py-2 bg-muted/40 border-b border-border/30 flex items-center justify-between">
-                        <p className="text-xs font-semibold flex items-center gap-1.5"><ReceiptIcon className="w-3.5 h-3.5 text-primary" /> Fee Payment History</p>
-                        <p className="text-[10px] text-muted-foreground">{feeCollections.filter(f => f.studentId === selected.id).length} receipts</p>
-                      </div>
-                      <div className="max-h-48 overflow-y-auto">
-                        {feeCollections.filter(f => f.studentId === selected.id).length === 0 ? (
-                          <div className="p-6 text-center text-xs text-muted-foreground">No fee payments recorded yet.</div>
-                        ) : (
-                          feeCollections.filter(f => f.studentId === selected.id).map(f => (
-                            <div key={f.id} className="flex items-center gap-3 p-2.5 border-b border-border/20 hover:bg-muted/30 last:border-0">
-                              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0"><ReceiptIcon className="w-3.5 h-3.5 text-emerald-600" /></div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-mono text-muted-foreground">{f.receiptNo}</p>
-                                <p className="text-[10px] text-muted-foreground">{f.date} • {f.feeType} • {f.mode}</p>
-                              </div>
-                              <p className="font-bold text-sm text-emerald-600">Rs. {f.amount.toLocaleString()}</p>
-                              <button onClick={() => printFeeReceipt(f, selected, school)} className="text-muted-foreground hover:text-primary transition-colors p-1" title="Reprint Receipt"><Printer className="w-3.5 h-3.5" /></button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  {/* Attendance */}
-                  <TabsContent value="attendance" className="mt-4">
-                    <div className="rounded-lg border border-border/40 p-4 text-center">
-                      <div className="relative w-32 h-32 mx-auto">
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle cx="64" cy="64" r="56" fill="none" stroke="oklch(0.92 0.012 95)" strokeWidth="12" />
-                          <circle cx="64" cy="64" r="56" fill="none" stroke="#15857A" strokeWidth="12"
-                            strokeDasharray={`${2 * Math.PI * 56 * selected.attendancePct / 100} ${2 * Math.PI * 56}`}
-                            strokeLinecap="round" />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <p className="text-2xl font-bold">{selected.attendancePct}%</p>
-                          <p className="text-[10px] text-muted-foreground">Attendance</p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-3">Current month attendance</p>
-                    </div>
-                  </TabsContent>
-
-                  {/* Results */}
-                  <TabsContent value="results" className="mt-4">
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                      No exam results published yet for this term.
-                    </div>
-                  </TabsContent>
-                </Tabs>
+              {/* Quick stats */}
+              <div className="relative grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/20">
+                <div>
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
+                  <p className="text-xl font-bold mt-0.5">{selected.attendancePct}%</p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Monthly Fee</p>
+                  <p className="text-xl font-bold mt-0.5">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Outstanding</p>
+                  <p className="text-xl font-bold mt-0.5">{selected.outstandingAmount > 0 ? `Rs. ${selected.outstandingAmount.toLocaleString()}` : "✓ Clear"}</p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Admitted</p>
+                  <p className="text-xl font-bold mt-0.5">{selected.admissionDate.slice(0, 4)}</p>
+                </div>
               </div>
-            </>
-          )}
-        </DrawerContent>
-      </Drawer>
+            </div>
+
+            {/* Action bar */}
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-border/30 bg-muted/20">
+              <Button size="sm" variant="outline" onClick={() => printIDCard(selected)}>
+                <QrCode className="w-3.5 h-3.5 mr-1.5" />Print ID Card
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { setEditStudent(selected); setEditForm(selected); }}>
+                <Edit className="w-3.5 h-3.5 mr-1.5" />Edit Profile
+              </Button>
+              <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => { setPromoteTarget(selected); setPromoteClass(selected.class); setPromoteSection(selected.section); }}>
+                <ArrowUpCircle className="w-3.5 h-3.5 mr-1.5" />Promote
+              </Button>
+              <div className="flex-1" />
+              <Button size="sm" variant="outline" className="text-red-600" onClick={() => { setDeleteConfirm(selected); }}>
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+              </Button>
+            </div>
+
+            {/* Tabbed content */}
+            <div className="p-6">
+              <Tabs defaultValue="overview">
+                <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 h-10 mb-4">
+                  <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+                  <TabsTrigger value="parents" className="text-xs">Parents</TabsTrigger>
+                  <TabsTrigger value="academic" className="text-xs">Academic</TabsTrigger>
+                  <TabsTrigger value="medical" className="text-xs">Medical</TabsTrigger>
+                  <TabsTrigger value="fees" className="text-xs">Fees</TabsTrigger>
+                  <TabsTrigger value="attendance" className="text-xs">Attend.</TabsTrigger>
+                  <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
+                </TabsList>
+
+                {/* Overview */}
+                <TabsContent value="overview" className="space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                    <ProfileCard icon={Calendar} label="Date of Birth" value={selected.dob} color="text-primary" bg="bg-primary/5" />
+                    <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
+                    <ProfileCard icon={Globe} label="Nationality" value={selected.nationality} color="text-primary" bg="bg-primary/5" />
+                    <ProfileCard icon={User} label="Religion" value={selected.religion} color="text-purple-600" bg="bg-purple-500/5" />
+                    <ProfileCard icon={FileText} label="CNIC / B-Form" value={selected.cnic} color="text-foreground" bg="bg-muted/30" />
+                    <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
+                    <ProfileCard icon={DollarSign} label="Monthly Fee" value={`Rs. ${selected.monthlyFee.toLocaleString()}`} color="text-emerald-600" bg="bg-emerald-500/5" />
+                    <ProfileCard icon={Home} label="Hosteller" value={selected.isHosteller ? "Yes (+Rs. 3,500)" : "No"} color="text-accent" bg="bg-accent/5" />
+                    <ProfileCard icon={Bus} label="Transport" value={selected.transport ? "Yes" : "No"} color="text-primary" bg="bg-primary/5" />
+                  </div>
+                  {selected.address && selected.address !== "—" && (
+                    <div className="rounded-xl border border-border/40 p-3 bg-muted/20">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-1"><MapPin className="w-3 h-3" />Home Address</p>
+                      <p className="text-sm font-medium">{selected.address}</p>
+                    </div>
+                  )}
+                  {selected.siblings && (
+                    <div className="rounded-xl border border-border/40 p-3 bg-muted/20">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Siblings in School</p>
+                      <p className="text-sm font-medium">{selected.siblings}</p>
+                    </div>
+                  )}
+                  {selected.transport && selected.transportRoute && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                      <p className="text-[10px] text-primary uppercase tracking-wide flex items-center gap-1.5 mb-1"><Bus className="w-3 h-3" />Transport Route</p>
+                      <p className="text-sm font-medium">{selected.transportRoute}</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Parents */}
+                <TabsContent value="parents" className="space-y-3">
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center"><User className="w-4 h-4 text-primary" /></div>
+                      <p className="text-sm font-semibold text-primary">Father</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <ProfileField label="Name" value={selected.fatherName} />
+                      <ProfileField label="CNIC" value={selected.fatherCnic} />
+                      <ProfileField label="Phone" value={selected.fatherPhone} icon={Phone} />
+                      <ProfileField label="Occupation" value={selected.fatherOccupation} icon={Briefcase} />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center"><UserCircle className="w-4 h-4 text-purple-600" /></div>
+                      <p className="text-sm font-semibold text-purple-600">Mother</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <ProfileField label="Name" value={selected.motherName} />
+                      <ProfileField label="Phone" value={selected.motherPhone} icon={Phone} />
+                      <ProfileField label="Occupation" value={selected.motherOccupation} icon={Briefcase} />
+                    </div>
+                  </div>
+                  {selected.guardianName && (
+                    <div className="rounded-xl border border-border/40 bg-muted/20 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><Users className="w-4 h-4 text-muted-foreground" /></div>
+                        <p className="text-sm font-semibold">Guardian</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <ProfileField label="Name" value={selected.guardianName} />
+                        <ProfileField label="Phone" value={selected.guardianPhone} icon={Phone} />
+                        <ProfileField label="Relation" value={selected.guardianRelation} />
+                      </div>
+                    </div>
+                  )}
+                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center"><AlertCircle className="w-4 h-4 text-accent" /></div>
+                      <p className="text-sm font-semibold text-accent">Emergency Contact</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <ProfileField label="Name" value={selected.emergencyName} />
+                      <ProfileField label="Phone" value={selected.emergencyContact} icon={Phone} />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Academic */}
+                <TabsContent value="academic" className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <ProfileCard icon={GraduationCap} label="Current Class" value={`${selected.class}-${selected.section}`} color="text-primary" bg="bg-primary/5" />
+                    <ProfileCard icon={User} label="Roll Number" value={selected.rollNo} color="text-foreground" bg="bg-muted/30" />
+                    <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
+                    <ProfileCard icon={FileText} label="Previous School" value={selected.previousSchool} color="text-foreground" bg="bg-muted/30" />
+                  </div>
+                </TabsContent>
+
+                {/* Medical */}
+                <TabsContent value="medical" className="space-y-3">
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center"><Stethoscope className="w-4 h-4 text-red-600" /></div>
+                      <p className="text-sm font-semibold text-red-600">Medical Information</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
+                      <ProfileCard icon={AlertCircle} label="Conditions" value={selected.medicalConditions} color="text-foreground" bg="bg-muted/30" />
+                      <ProfileCard icon={AlertCircle} label="Allergies" value={selected.allergies} color="text-foreground" bg="bg-muted/30" />
+                      <ProfileCard icon={Phone} label="Emergency Phone" value={selected.emergencyContact} color="text-foreground" bg="bg-muted/30" />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/40 p-3 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground">⚠️ Important:</p>
+                    <p className="mt-1">This information is used during medical emergencies and field trips. Please keep the school office updated on any changes.</p>
+                  </div>
+                </TabsContent>
+
+                {/* Fees */}
+                <TabsContent value="fees" className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div className="rounded-xl bg-muted/30 p-3 border border-border/30">
+                      <p className="text-[10px] text-muted-foreground uppercase">Monthly Fee</p>
+                      <p className="text-xl font-bold mt-1">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                      {selected.isHosteller && <p className="text-[10px] text-accent mt-0.5">+ Rs. 3,500 hostel</p>}
+                    </div>
+                    <div className="rounded-xl bg-red-500/5 p-3 border border-red-500/20">
+                      <p className="text-[10px] text-muted-foreground uppercase">Outstanding</p>
+                      <p className="text-xl font-bold text-red-600 mt-1">Rs. {selected.outstandingAmount.toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-xl bg-emerald-500/5 p-3 border border-emerald-500/20">
+                      <p className="text-[10px] text-muted-foreground uppercase">This Month</p>
+                      <p className="text-xl font-bold text-emerald-600 mt-1">{selected.feePaidThisMonth ? "Paid ✓" : "Pending"}</p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/40 overflow-hidden">
+                    <div className="px-3 py-2 bg-muted/40 border-b border-border/30 flex items-center justify-between">
+                      <p className="text-xs font-semibold flex items-center gap-1.5"><ReceiptIcon className="w-3.5 h-3.5 text-primary" /> Fee Payment History</p>
+                      <p className="text-[10px] text-muted-foreground">{feeCollections.filter(f => f.studentId === selected.id).length} receipts</p>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {feeCollections.filter(f => f.studentId === selected.id).length === 0 ? (
+                        <div className="p-6 text-center text-xs text-muted-foreground">No fee payments recorded yet.</div>
+                      ) : (
+                        feeCollections.filter(f => f.studentId === selected.id).map(f => (
+                          <div key={f.id} className="flex items-center gap-3 p-2.5 border-b border-border/20 hover:bg-muted/30 last:border-0">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0"><ReceiptIcon className="w-3.5 h-3.5 text-emerald-600" /></div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-mono text-muted-foreground">{f.receiptNo}</p>
+                              <p className="text-[10px] text-muted-foreground">{f.date} • {f.feeType} • {f.mode}</p>
+                            </div>
+                            <p className="font-bold text-sm text-emerald-600">Rs. {f.amount.toLocaleString()}</p>
+                            <button onClick={() => printFeeReceipt(f, selected, school)} className="text-muted-foreground hover:text-primary transition-colors p-1" title="Reprint Receipt"><Printer className="w-3.5 h-3.5" /></button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Attendance */}
+                <TabsContent value="attendance">
+                  <div className="rounded-xl border border-border/40 p-6 text-center">
+                    <div className="relative w-36 h-36 mx-auto">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="72" cy="72" r="64" fill="none" stroke="oklch(0.92 0.012 95)" strokeWidth="14" />
+                        <circle cx="72" cy="72" r="64" fill="none" stroke="#15857A" strokeWidth="14"
+                          strokeDasharray={`${2 * Math.PI * 64 * selected.attendancePct / 100} ${2 * Math.PI * 64}`}
+                          strokeLinecap="round" />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <p className="text-3xl font-bold text-primary">{selected.attendancePct}%</p>
+                        <p className="text-[10px] text-muted-foreground">Attendance</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-4">Current month attendance rate</p>
+                  </div>
+                </TabsContent>
+
+                {/* Results */}
+                <TabsContent value="results">
+                  <div className="text-center py-12 text-sm text-muted-foreground">
+                    <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="font-medium">No exam results published yet</p>
+                    <p className="text-xs mt-1">Results will appear here after the next exam is graded.</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={!!editStudent} onOpenChange={(o) => !o && setEditStudent(null)}>
@@ -835,6 +867,32 @@ function InfoTile({ icon: Icon, label, value, color }: { icon: any; label: strin
     <div className="rounded-lg bg-muted/30 p-3">
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><Icon className={cn("w-3 h-3", color)} />{label}</p>
       <p className="text-sm font-medium mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function ProfileCard({ icon: Icon, label, value, color, bg }: { icon: any; label: string; value: string; color?: string; bg?: string }) {
+  return (
+    <div className={cn("rounded-xl border border-border/30 p-3 flex items-center gap-3", bg)}>
+      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", bg?.replace("/5", "/15").replace("/30", "/40"))}>
+        <Icon className={cn("w-4 h-4", color)} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-semibold truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function ProfileField({ label, value, icon: Icon }: { label: string; value: string; icon?: any }) {
+  return (
+    <div>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="text-sm font-medium flex items-center gap-1.5 mt-0.5">
+        {Icon && <Icon className="w-3 h-3 text-muted-foreground" />}
+        {value || "—"}
+      </p>
     </div>
   );
 }
