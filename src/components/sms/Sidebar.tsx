@@ -7,7 +7,8 @@ import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, GraduationCap as Logo,
-  ChevronLeft, ChevronRight, BookOpen, type LucideIcon,
+  ChevronLeft, ChevronRight, BookOpen, Bus, Home, Package, Calendar,
+  type LucideIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -30,9 +31,15 @@ const NAV_ITEMS: NavItem[] = [
   { key: "salary", label: "Salary & Fine", icon: Wallet, group: "finance" },
   { key: "ledger", label: "Income & Expense", icon: BookOpen, group: "finance" },
   { key: "results", label: "Results", icon: FileText, group: "academics" },
+  { key: "exam", label: "Examinations", icon: GraduationCap, group: "academics" },
   { key: "certificates", label: "Certificates", icon: Award, group: "academics" },
   { key: "reports", label: "Reports", icon: BarChart3, group: "academics" },
   { key: "analytics", label: "Analytics", icon: LineChart, group: "academics" },
+  { key: "library", label: "Library", icon: BookOpen, group: "facilities" },
+  { key: "transport", label: "Transport", icon: Bus, group: "facilities" },
+  { key: "hostel", label: "Hostel", icon: Home, group: "facilities" },
+  { key: "inventory", label: "Inventory", icon: Package, group: "facilities" },
+  { key: "events", label: "Event Calendar", icon: Calendar, group: "facilities" },
   { key: "users", label: "User Management", icon: UserPlus, group: "system" },
   { key: "settings", label: "Settings", icon: Settings, group: "system" },
 ];
@@ -42,6 +49,7 @@ const GROUP_LABELS: Record<NavItem["group"], string> = {
   operations: "Daily Operations",
   finance: "Finance",
   academics: "Academics",
+  facilities: "Facilities",
   system: "System",
 };
 
@@ -57,7 +65,7 @@ export function Sidebar() {
     return true;
   });
 
-  const groups: NavItem["group"][] = ["main", "operations", "finance", "academics", "system"];
+  const groups: NavItem["group"][] = ["main", "operations", "finance", "academics", "facilities", "system"];
 
   return (
     <aside className={cn(

@@ -8,7 +8,8 @@ import {
 export type ModuleKey =
   | "dashboard" | "students" | "teachers" | "staff" | "classes" | "timetable"
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
-  | "reports" | "analytics" | "users" | "settings" | "ledger";
+  | "reports" | "analytics" | "users" | "settings" | "ledger"
+  | "exam" | "library" | "transport" | "hostel" | "inventory" | "events";
 
 export interface SchoolInfo {
   name: string;

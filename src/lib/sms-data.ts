@@ -422,3 +422,149 @@ export const PENDING_TASKS = [
   { id: "T4", title: "Issue bonafide certificate for Ayesha", module: "certificates" as const, priority: "medium" as const, dueIn: "Today" },
   { id: "T5", title: "Enter mid-term English marks", module: "results" as const, priority: "low" as const, dueIn: "Tomorrow" },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// LIBRARY DATA
+// ─────────────────────────────────────────────────────────────
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+  isbn: string;
+  totalCopies: number;
+  availableCopies: number;
+  shelf: string;
+}
+
+export interface BookIssue {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  issueDate: string;
+  dueDate: string;
+  returnDate?: string;
+  fine: number;
+  status: "Issued" | "Returned" | "Overdue";
+}
+
+export const BOOKS: Book[] = [
+  { id: "BK-001", title: "Mathematics for Class 9", author: "Dr. R. Sharma", category: "Mathematics", isbn: "978-0123456789", totalCopies: 10, availableCopies: 7, shelf: "A-12" },
+  { id: "BK-002", title: "English Grammar in Use", author: "Raymond Murphy", category: "English", isbn: "978-0521537629", totalCopies: 8, availableCopies: 5, shelf: "B-03" },
+  { id: "BK-003", title: "Physics Fundamentals", author: "Halliday & Resnick", category: "Science", isbn: "978-0471320579", totalCopies: 6, availableCopies: 4, shelf: "C-08" },
+  { id: "BK-004", title: "Urdu Adab Ki Mukhtasir Tareekh", author: "Dr. Jameel Jalibi", category: "Urdu", isbn: "978-9693512345", totalCopies: 5, availableCopies: 3, shelf: "D-01" },
+  { id: "BK-005", title: "Pakistan Studies", author: "Iftikhar Ahmad", category: "Social Studies", isbn: "978-9695320112", totalCopies: 12, availableCopies: 10, shelf: "A-05" },
+  { id: "BK-006", title: "Islamiat for Secondary", author: "Maulana Minhaj", category: "Islamiat", isbn: "978-9695320987", totalCopies: 8, availableCopies: 6, shelf: "E-02" },
+  { id: "BK-007", title: "Computer Science Basics", author: "Sumita Arora", category: "Computer", isbn: "978-8174500123", totalCopies: 6, availableCopies: 2, shelf: "F-10" },
+  { id: "BK-008", title: "Chemistry: The Central Science", author: "Brown & LeMay", category: "Science", isbn: "978-0134414232", totalCopies: 5, availableCopies: 4, shelf: "C-15" },
+];
+
+export const BOOK_ISSUES: BookIssue[] = [
+  { id: "IS-001", bookId: "BK-001", bookTitle: "Mathematics for Class 9", studentId: "SCH-2026-0001", studentName: "Ahmed Khan", class: "Playgroup", issueDate: "2026-06-15", dueDate: "2026-06-29", fine: 0, status: "Issued" },
+  { id: "IS-002", bookId: "BK-007", bookTitle: "Computer Science Basics", studentId: "SCH-2026-0005", studentName: "Maryam Sheikh", class: "Grade 1", issueDate: "2026-06-10", dueDate: "2026-06-24", fine: 50, status: "Overdue" },
+  { id: "IS-003", bookId: "BK-003", bookTitle: "Physics Fundamentals", studentId: "SCH-2026-0014", studentName: "Omar Khan", class: "Grade 3", issueDate: "2026-06-20", dueDate: "2026-07-04", fine: 0, status: "Issued" },
+  { id: "IS-004", bookId: "BK-002", bookTitle: "English Grammar in Use", studentId: "SCH-2026-0027", studentName: "Aisha Malik", class: "Grade 5", issueDate: "2026-06-05", dueDate: "2026-06-19", returnDate: "2026-06-18", fine: 0, status: "Returned" },
+];
+
+// ─────────────────────────────────────────────────────────────
+// TRANSPORT DATA
+// ─────────────────────────────────────────────────────────────
+export interface BusRoute {
+  id: string;
+  routeName: string;
+  vehicleNo: string;
+  driverName: string;
+  driverPhone: string;
+  capacity: number;
+  occupied: number;
+  stops: string[];
+  morningTime: string;
+  eveningTime: string;
+}
+
+export const BUS_ROUTES: BusRoute[] = [
+  { id: "RT-A", routeName: "Route A — Gulshan", vehicleNo: "KHI-1234", driverName: "Mr. Salim Shah", driverPhone: "+92 313 4444444", capacity: 30, occupied: 24, stops: ["Gulshan Chowrangi", "NIPA", " Hassan Square", "University Road"], morningTime: "07:00 AM", eveningTime: "02:30 PM" },
+  { id: "RT-B", routeName: "Route B — Malir", vehicleNo: "KHI-5678", driverName: "Mr. Akram Khan", driverPhone: "+92 312 3333333", capacity: 25, occupied: 18, stops: ["Malir Halt", "Jinnah Square", "Kalaboard", "Faisal Cantt"], morningTime: "06:45 AM", eveningTime: "02:30 PM" },
+  { id: "RT-C", routeName: "Route C — Korangi", vehicleNo: "KHI-9012", driverName: "Mr. Yousuf", driverPhone: "+92 315 5555555", capacity: 28, occupied: 15, stops: ["Korangi 1½", "Nasir Jump", "Kalaboard", "Com311"], morningTime: "06:50 AM", eveningTime: "02:30 PM" },
+  { id: "RT-D", routeName: "Route D — Nazimabad", vehicleNo: "KHI-3456", driverName: "Mr. Tanveer", driverPhone: "+92 318 6666666", capacity: 22, occupied: 20, stops: ["Nazimabad Block 4", "Liaquatabad", "Golimar", "Lasbela"], morningTime: "07:00 AM", eveningTime: "02:30 PM" },
+  { id: "RT-E", routeName: "Route E — Saddar", vehicleNo: "KHI-7890", driverName: "Mr. Faisal", driverPhone: "+92 321 7777777", capacity: 20, occupied: 12, stops: ["Saddar", "Empress Market", "Preedy Street", "Regal"], morningTime: "07:15 AM", eveningTime: "02:45 PM" },
+];
+
+// ─────────────────────────────────────────────────────────────
+// HOSTEL DATA
+// ─────────────────────────────────────────────────────────────
+export interface HostelRoom {
+  id: string;
+  roomNo: string;
+  block: string;
+  floor: string;
+  capacity: number;
+  occupied: number;
+  type: "Single" | "Double" | "Dormitory";
+  monthlyRent: number;
+}
+
+export const HOSTEL_ROOMS: HostelRoom[] = [
+  { id: "HR-001", roomNo: "A-101", block: "Block A (Boys)", floor: "Ground", capacity: 4, occupied: 3, type: "Dormitory", monthlyRent: 3500 },
+  { id: "HR-002", roomNo: "A-102", block: "Block A (Boys)", floor: "Ground", capacity: 4, occupied: 4, type: "Dormitory", monthlyRent: 3500 },
+  { id: "HR-003", roomNo: "A-201", block: "Block A (Boys)", floor: "First", capacity: 2, occupied: 1, type: "Double", monthlyRent: 5000 },
+  { id: "HR-004", roomNo: "B-101", block: "Block B (Girls)", floor: "Ground", capacity: 4, occupied: 2, type: "Dormitory", monthlyRent: 3500 },
+  { id: "HR-005", roomNo: "B-102", block: "Block B (Girls)", floor: "Ground", capacity: 4, occupied: 4, type: "Dormitory", monthlyRent: 3500 },
+  { id: "HR-006", roomNo: "B-201", block: "Block B (Girls)", floor: "First", capacity: 1, occupied: 0, type: "Single", monthlyRent: 7000 },
+];
+
+// ─────────────────────────────────────────────────────────────
+// INVENTORY DATA
+// ─────────────────────────────────────────────────────────────
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  minStock: number;
+  location: string;
+  condition: "Good" | "Needs Repair" | "Damaged";
+  purchaseDate: string;
+}
+
+export const INVENTORY_ITEMS: InventoryItem[] = [
+  { id: "INV-001", name: "Student Desks", category: "Furniture", quantity: 120, unit: "pcs", minStock: 100, location: "All Classrooms", condition: "Good", purchaseDate: "2023-08-15" },
+  { id: "INV-002", name: "Whiteboards", category: "Furniture", quantity: 15, unit: "pcs", minStock: 13, location: "All Classrooms", condition: "Good", purchaseDate: "2023-08-15" },
+  { id: "INV-003", name: "Computers (Lab)", category: "Electronics", quantity: 20, unit: "pcs", minStock: 15, location: "Computer Lab", condition: "Good", purchaseDate: "2024-01-10" },
+  { id: "INV-004", name: "Projector", category: "Electronics", quantity: 3, unit: "pcs", minStock: 2, location: "AV Room", condition: "Needs Repair", purchaseDate: "2022-06-20" },
+  { id: "INV-005", name: "Lab Microscopes", category: "Lab Equipment", quantity: 12, unit: "pcs", minStock: 10, location: "Science Lab", condition: "Good", purchaseDate: "2023-03-05" },
+  { id: "INV-006", name: "Exam Paper (A4)", category: "Stationery", quantity: 45, unit: "reams", minStock: 20, location: "Store Room", condition: "Good", purchaseDate: "2026-06-01" },
+  { id: "INV-007", name: "Chairs (Office)", category: "Furniture", quantity: 25, unit: "pcs", minStock: 20, location: "Admin Office", condition: "Good", purchaseDate: "2023-08-15" },
+  { id: "INV-008", name: "AC Units", category: "Electronics", quantity: 8, unit: "pcs", minStock: 6, location: "Various", condition: "Needs Repair", purchaseDate: "2021-05-10" },
+  { id: "INV-009", name: "First Aid Kits", category: "Medical", quantity: 5, unit: "kits", minStock: 3, location: "Medical Room", condition: "Good", purchaseDate: "2026-01-15" },
+  { id: "INV-010", name: "Sports Equipment", category: "Sports", quantity: 1, unit: "set", minStock: 1, location: "Sports Room", condition: "Good", purchaseDate: "2024-09-01" },
+];
+
+// ─────────────────────────────────────────────────────────────
+// EVENT CALENDAR DATA
+// ─────────────────────────────────────────────────────────────
+export interface SchoolEvent {
+  id: string;
+  title: string;
+  type: "Exam" | "Holiday" | "PTM" | "Sports" | "Cultural" | "Meeting" | "Deadline";
+  date: string;
+  description: string;
+  color: string;
+}
+
+export const SCHOOL_EVENTS: SchoolEvent[] = [
+  { id: "EV-001", title: "Monthly Test - July", type: "Exam", date: "2026-07-15", description: "Monthly tests for all classes Grade 6-10", color: "bg-red-500" },
+  { id: "EV-002", title: "Parent-Teacher Meeting", type: "PTM", date: "2026-07-20", description: "Quarterly PTM for all parents", color: "bg-primary" },
+  { id: "EV-003", title: "Independence Day", type: "Holiday", date: "2026-08-14", description: "National holiday — school closed", color: "bg-emerald-500" },
+  { id: "EV-004", title: "Sports Day", type: "Sports", date: "2026-08-25", description: "Annual sports day with track events", color: "bg-accent" },
+  { id: "EV-005", title: "Fee Submission Deadline", type: "Deadline", date: "2026-07-10", description: "Last date to submit July fees", color: "bg-yellow-500" },
+  { id: "EV-006", title: "Mid-Term Examinations", type: "Exam", date: "2026-09-10", description: "Mid-term exams for all classes", color: "bg-red-500" },
+  { id: "EV-007", title: "Staff Meeting", type: "Meeting", date: "2026-07-05", description: "Monthly staff meeting at 2 PM", color: "bg-purple-500" },
+  { id: "EV-008", title: "Annual Cultural Day", type: "Cultural", date: "2026-10-15", description: "Annual cultural show and performances", color: "bg-pink-500" },
+  { id: "EV-009", title: "Eid-ul-Adha Holiday", type: "Holiday", date: "2026-07-18", description: "Eid holidays — school closed for 3 days", color: "bg-emerald-500" },
+  { id: "EV-010", title: "Final Examinations", type: "Exam", date: "2026-12-01", description: "Final exams for all classes", color: "bg-red-500" },
+];

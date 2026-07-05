@@ -35,6 +35,12 @@ const MODULE_TITLES: Record<string, { title: string; subtitle: string }> = {
   users: { title: "User Management", subtitle: "Accounts and role permissions" },
   settings: { title: "Settings", subtitle: "School configuration" },
   ledger: { title: "Income & Expense Ledger", subtitle: "Financial transactions and P&L" },
+  exam: { title: "Examinations", subtitle: "Exam schedules, grades, and result compilation" },
+  library: { title: "Library", subtitle: "Book catalog, issue/return, and fines" },
+  transport: { title: "Transport", subtitle: "Bus routes, vehicles, and driver management" },
+  hostel: { title: "Hostel", subtitle: "Room allocation and mess management" },
+  inventory: { title: "Inventory", subtitle: "Assets, equipment, and supplies" },
+  events: { title: "Event Calendar", subtitle: "Events, holidays, and important dates" },
 };
 
 const NOTIF_COLORS: Record<string, string> = {

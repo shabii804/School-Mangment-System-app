@@ -16,6 +16,8 @@ import { ResultsModule, CertificatesModule } from "@/components/sms/modules/Resu
 import { ReportsModule, AnalyticsModule } from "@/components/sms/modules/ReportsAnalytics";
 import { UsersModule, SettingsModule } from "@/components/sms/modules/UsersSettings";
 import { LedgerModule } from "@/components/sms/modules/Ledger";
+import { ExamModule } from "@/components/sms/modules/ExamModule";
+import { LibraryModule, TransportModule, HostelModule, InventoryModule, EventsModule } from "@/components/sms/modules/NewModules";
 
 export default function Home() {
   const { activeModule, isDark, setCommandOpen } = useAppStore();
@@ -58,6 +60,12 @@ export default function Home() {
       case "users": return <UsersModule />;
       case "settings": return <SettingsModule />;
       case "ledger": return <LedgerModule />;
+      case "exam": return <ExamModule />;
+      case "library": return <LibraryModule />;
+      case "transport": return <TransportModule />;
+      case "hostel": return <HostelModule />;
+      case "inventory": return <InventoryModule />;
+      case "events": return <EventsModule />;
       default: return <DashboardModule />;
     }
   };
