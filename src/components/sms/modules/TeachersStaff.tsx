@@ -241,7 +241,7 @@ export function TeachersModule() {
 
       {/* Delete confirmation */}
       <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2 text-red-600"><Trash2 className="w-5 h-5" />Delete Teacher?</DialogTitle></DialogHeader>
           {deleteConfirm && (
             <div className="py-2">
@@ -548,7 +548,7 @@ export function StaffModule() {
 
       {/* Delete confirmation */}
       <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2 text-red-600"><Trash2 className="w-5 h-5" />Delete Staff?</DialogTitle></DialogHeader>
           {deleteConfirm && (
             <div className="py-2">

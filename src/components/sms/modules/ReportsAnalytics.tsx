@@ -179,7 +179,7 @@ export function ReportsModule() {
 
       {/* Attendance Report Filter Dialog */}
       <Dialog open={filterOpen === 4} onOpenChange={(o) => !o && setFilterOpen(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><ClipboardCheck className="w-5 h-5 text-primary" />Attendance Report — Filter</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div>
@@ -217,7 +217,7 @@ export function ReportsModule() {
 
       {/* Result Card Filter Dialog */}
       <Dialog open={filterOpen === 9} onOpenChange={(o) => !o && setFilterOpen(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" />Result Card — Filter</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div>

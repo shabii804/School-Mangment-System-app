@@ -115,7 +115,7 @@ export function UsersModule() {
 
       {/* Add user dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Add New User</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div><Label>Full Name</Label><Input placeholder="e.g., Mr. Ali Khan" /></div>

@@ -33,6 +33,7 @@ interface SalaryRow {
   designation: string;
   monthlySalary: number;
   attendance: { present: number; late: number; halfDay: number; absent: number; leave: number };
+  dept?: string;
 }
 
 export function SalaryModule() {
@@ -40,11 +41,15 @@ export function SalaryModule() {
   const { school } = useAppStore();
   const [month, setMonth] = useState("July 2026");
   const [selected, setSelected] = useState<SalaryRow | null>(null);
+  const [deptFilter, setDeptFilter] = useState("all");
 
   const allEmployees: SalaryRow[] = [
-    ...TEACHERS.map(t => ({ id: t.id, name: t.name, designation: t.designation, monthlySalary: t.monthlySalary, attendance: t.attendance })),
-    ...STAFF.map(s => ({ id: s.id, name: s.name, designation: s.designation, monthlySalary: s.monthlySalary, attendance: s.attendance })),
+    ...TEACHERS.map(t => ({ id: t.id, name: t.name, designation: t.designation, monthlySalary: t.monthlySalary, attendance: t.attendance, dept: "Teaching" })),
+    ...STAFF.map(s => ({ id: s.id, name: s.name, designation: s.designation, monthlySalary: s.monthlySalary, attendance: s.attendance, dept: s.department })),
   ];
+
+  const filteredEmployees = deptFilter === "all" ? allEmployees : allEmployees.filter(e => e.dept === deptFilter);
+  const departments = Array.from(new Set(allEmployees.map(e => e.dept)));
 
   const calculate = (emp: SalaryRow) => {
     const gross = emp.monthlySalary;
@@ -98,25 +103,34 @@ export function SalaryModule() {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Select value={month} onValueChange={setMonth}>
-          <SelectTrigger className="w-44 bg-background/60"><SelectValue /></SelectTrigger>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={month} onValueChange={setMonth}>
+            <SelectTrigger className="w-40 bg-background/60"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="July 2026">July 2026</SelectItem>
             <SelectItem value="June 2026">June 2026</SelectItem>
             <SelectItem value="May 2026">May 2026</SelectItem>
           </SelectContent>
-        </Select>
+          </Select>
+          <Select value={deptFilter} onValueChange={setDeptFilter}>
+            <SelectTrigger className="w-40 bg-background/60"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm"
             onClick={() => {
-              toast({ title: "Generating payroll batch PDF...", description: `${allEmployees.length} employees • ${month}` });
-              printPayrollBatch(allEmployees, month, school);
+              toast({ title: "Generating payroll batch PDF...", description: `${filteredEmployees.length} employees • ${month}` });
+              printPayrollBatch(filteredEmployees, month, school);
             }}
           >
             <FileDown className="w-4 h-4 mr-1.5" />Payroll Summary PDF
           </Button>
           <Button size="sm" className="bg-primary hover:bg-primary/90"
-            onClick={() => toast({ title: "All Salary Slips Generated", description: `${allEmployees.length} slips for ${month}.` })}
+            onClick={() => toast({ title: "All Salary Slips Generated", description: `${filteredEmployees.length} slips for ${month}.` })}
           >
             <Printer className="w-4 h-4 mr-1.5" />Finalize & Generate Slips
           </Button>
@@ -131,6 +145,7 @@ export function SalaryModule() {
               <TableRow className="hover:bg-transparent border-border/40">
                 <TableHead>ID</TableHead>
                 <TableHead>Employee</TableHead>
+                <TableHead>Dept</TableHead>
                 <TableHead>Designation</TableHead>
                 <TableHead className="text-right">Gross</TableHead>
                 <TableHead className="text-center">Att. Summary</TableHead>
@@ -140,7 +155,7 @@ export function SalaryModule() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allEmployees.map(emp => {
+              {filteredEmployees.map(emp => {
                 const calc = calculate(emp);
                 const totalDays = emp.attendance.present + emp.attendance.late + emp.attendance.halfDay + emp.attendance.absent + emp.attendance.leave;
                 return (
@@ -156,6 +171,7 @@ export function SalaryModule() {
                         <span className="font-medium text-sm">{emp.name}</span>
                       </div>
                     </TableCell>
+                    <TableCell><Badge variant="outline" className="text-[9px]">{emp.dept || "—"}</Badge></TableCell>
                     <TableCell className="text-xs text-muted-foreground">{emp.designation}</TableCell>
                     <TableCell className="text-right font-medium text-sm">Rs. {emp.monthlySalary.toLocaleString()}</TableCell>
                     <TableCell>
@@ -189,7 +205,7 @@ export function SalaryModule() {
 
       {/* Salary slip dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Printer className="w-5 h-5 text-primary" />Salary Slip — {month}</DialogTitle>
           </DialogHeader>

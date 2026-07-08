@@ -242,7 +242,7 @@ export function LedgerModule() {
 
       {/* Add Transaction Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-primary" />Add Transaction</DialogTitle>
           </DialogHeader>

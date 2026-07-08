@@ -34,6 +34,7 @@ export function FeesModule() {
   const HOSTEL_FEE = feeStructure.hostelFee;
   const ADMISSION_MULTIPLIER = feeStructure.admissionMultiplier;
   const [search, setSearch] = useState("");
+  const [feeClassFilter, setFeeClassFilter] = useState("all");
   const [selected, setSelected] = useState<typeof students[0] | null>(null);
 
   // Breakdown state — combine tuition + hostel in one receipt
@@ -48,9 +49,10 @@ export function FeesModule() {
     const q = (search || searchQuery).toLowerCase();
     return students.filter(s =>
       s.status === "Active" &&
+      (feeClassFilter === "all" || s.class === feeClassFilter) &&
       (!q || `${s.name} ${s.id} ${s.fatherName} ${s.fatherPhone}`.toLowerCase().includes(q))
     );
-  }, [students, search, searchQuery]);
+  }, [students, search, searchQuery, feeClassFilter]);
 
   // Auto-select student from cross-module navigation (defaulters → collect)
   useEffect(() => {
@@ -185,17 +187,24 @@ export function FeesModule() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Student lookup */}
         <Card className="lg:col-span-2 border-0 shadow-sm glass-card">
-          <div className="p-4 border-b border-border/30">
-            <div className="relative">
+          <div className="p-4 border-b border-border/30 flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search student to collect fee (name, ID, phone)..."
+                placeholder="Search student (name, ID, phone)..."
                 className="pl-9 bg-background/60"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 autoFocus
               />
             </div>
+            <Select value={feeClassFilter} onValueChange={setFeeClassFilter}>
+              <SelectTrigger className="w-36 bg-background/60 h-9"><Filter className="w-3.5 h-3.5 mr-1.5" /><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {Array.from(new Set(students.filter(s => s.status === "Active").map(s => s.class))).sort().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="max-h-96 overflow-y-auto">
             {filtered.slice(0, 12).map(s => (
@@ -280,7 +289,7 @@ export function FeesModule() {
 
       {/* Collect dialog with combined fee breakdown */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-emerald-600" />Collect Fee</DialogTitle>
           </DialogHeader>

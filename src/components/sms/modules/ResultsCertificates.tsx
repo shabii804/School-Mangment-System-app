@@ -184,7 +184,7 @@ export function ResultsModule() {
 
       {/* Marks entry dialog */}
       <Dialog open={marksDialog} onOpenChange={setMarksDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><FileText className="w-5 h-5 text-primary" />Enter Marks — {selectedClass} • {EXAMS.find(e => e.id === selectedExam)?.name}</DialogTitle>
           </DialogHeader>
@@ -379,7 +379,7 @@ export function CertificatesModule() {
 
       {/* Generate dialog with recipient selector */}
       <Dialog open={!!selectedCert} onOpenChange={(o) => !o && setSelectedCert(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Award className="w-5 h-5 text-primary" />

@@ -110,7 +110,7 @@ export function LibraryModule() {
 
       {/* Add Book Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add New Book</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div><Label>Book Title *</Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
@@ -127,7 +127,7 @@ export function LibraryModule() {
 
       {/* Issue Book Dialog */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><BookMarked className="w-5 h-5 text-primary" />Issue Book</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div><Label>Select Book</Label><Select defaultValue=""><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
@@ -194,7 +194,7 @@ export function TransportModule() {
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Bus Route</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div><Label>Route Name *</Label><Input placeholder="Route F — Clifton" /></div>
@@ -327,7 +327,7 @@ export function InventoryModule() {
       </Card>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Inventory Item</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div><Label>Item Name *</Label><Input placeholder="e.g., Lab Beakers" /></div>
@@ -412,7 +412,7 @@ export function EventsModule() {
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Event</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div><Label>Event Title *</Label><Input placeholder="e.g., Science Exhibition" /></div>

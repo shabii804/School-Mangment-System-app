@@ -117,7 +117,7 @@ export function ClassesModule() {
 
       {/* Add Class Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add New Class</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <div><Label>Class Name *</Label><Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" /></div>
@@ -178,7 +178,7 @@ export function ClassesModule() {
 
       {/* Assign Class Teacher Dialog */}
       <Dialog open={!!assignTeacher} onOpenChange={(o) => !o && setAssignTeacher(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><UserCog className="w-5 h-5 text-primary" />Assign Class Teacher</DialogTitle></DialogHeader>
           {assignTeacher && (
             <div className="space-y-3 py-2">

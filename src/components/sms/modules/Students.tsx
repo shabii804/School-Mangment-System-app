@@ -1022,7 +1022,7 @@ export function StudentsModule() {
 
       {/* Delete confirmation */}
       <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600"><Trash2 className="w-5 h-5" />Delete Student?</DialogTitle>
           </DialogHeader>
@@ -1051,7 +1051,7 @@ export function StudentsModule() {
 
       {/* Promote dialog */}
       <Dialog open={!!promoteTarget} onOpenChange={(o) => !o && setPromoteTarget(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-emerald-600" />Promote Student</DialogTitle>
           </DialogHeader>
@@ -1097,7 +1097,7 @@ export function StudentsModule() {
 
       {/* Bulk Promote dialog */}
       <Dialog open={bulkPromoteOpen} onOpenChange={setBulkPromoteOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-emerald-600" />Bulk Promote Students</DialogTitle>
           </DialogHeader>
@@ -1134,7 +1134,7 @@ export function StudentsModule() {
 
       {/* Bulk Fee Collection dialog */}
       <Dialog open={bulkFeeOpen} onOpenChange={setBulkFeeOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-emerald-600" />Bulk Fee Collection</DialogTitle>
           </DialogHeader>
