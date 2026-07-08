@@ -71,7 +71,7 @@ export function Topbar() {
 
   return (
     <header className="shrink-0 z-30 glass-card border-b border-border/40">
-      <div className="px-6 py-3 flex items-center gap-4">
+      <div className="px-4 md:px-6 py-3 flex items-center gap-2 md:gap-4">
         {/* Title block */}
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-bold text-foreground leading-tight">{meta.title}</h2>
@@ -81,9 +81,9 @@ export function Topbar() {
         {/* Session Switcher */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 gap-2 border-primary/20 bg-primary/5">
+            <Button variant="outline" size="sm" className="h-9 gap-2 border-primary/20 bg-primary/5 shrink-0">
               <Calendar className="w-3.5 h-3.5 text-primary" />
-              <span className="font-semibold text-primary">{school.session}</span>
+              <span className="font-semibold text-primary hidden sm:inline">{school.session}</span>
               <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>

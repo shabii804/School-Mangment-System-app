@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore, type ModuleKey } from "@/lib/sms-store";
 import { cn } from "@/lib/utils";
 import {
@@ -61,6 +61,19 @@ const GROUP_LABELS: Record<NavItem["group"], string> = {
 export function Sidebar() {
   const { activeModule, setActiveModule, role, school } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Auto-collapse on small screens
+  useEffect(() => {
+    const checkWidth = () => {
+      if (window.innerWidth < 768) {
+        setCollapsed(true);
+      }
+    };
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
 
   // Filter nav items by role
   const visibleItems = NAV_ITEMS.filter(item => {
