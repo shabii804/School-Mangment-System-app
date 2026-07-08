@@ -498,6 +498,24 @@ export function SettingsModule() {
                 <p className="font-medium">Last Backup:</p>
                 <p className="text-muted-foreground mt-0.5">2026-07-01 23:00 • backup-20260701.db • 4.1 MB</p>
               </div>
+              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                <p className="text-xs font-semibold text-red-600 mb-2">⚠️ Danger Zone</p>
+                <p className="text-xs text-muted-foreground mb-2">Reset all data to original demo state. This will clear all students, teachers, staff, fees, and transactions you've added.</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-500/30 hover:bg-red-500/10 h-7 text-xs"
+                  onClick={() => {
+                    ["students", "teachers", "staff", "feeCollections", "activities", "documents", "commLogs", "transactions"].forEach(k => {
+                      try { window.localStorage.removeItem(`edudesk_${k}`); } catch {}
+                    });
+                    toast({ title: "Data Reset ✓", description: "All data cleared. Reloading with demo data...", variant: "destructive" });
+                    setTimeout(() => window.location.reload(), 1500);
+                  }}
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />Reset All Data
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

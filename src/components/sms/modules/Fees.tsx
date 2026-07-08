@@ -29,8 +29,10 @@ import { printFeeReceipt, printDefaulterList, printFeeCollectionReport } from "@
 const HOSTEL_FEE = 3500;
 
 export function FeesModule() {
-  const { students, feeCollections, collectFee, searchQuery, selectedStudentId, school } = useAppStore();
+  const { students, feeCollections, collectFee, searchQuery, selectedStudentId, school, feeStructure } = useAppStore();
   const { toast } = useToast();
+  const HOSTEL_FEE = feeStructure.hostelFee;
+  const ADMISSION_MULTIPLIER = feeStructure.admissionMultiplier;
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<typeof students[0] | null>(null);
 
@@ -74,7 +76,7 @@ export function FeesModule() {
 
   const tuitionAmt = includeTuition ? selected?.monthlyFee || 0 : 0;
   const hostelAmt = includeHostel && selected?.isHosteller ? HOSTEL_FEE : 0;
-  const admissionAmt = includeAdmission ? (selected?.monthlyFee || 0) * 3 : 0;
+  const admissionAmt = includeAdmission ? (selected?.monthlyFee || 0) * ADMISSION_MULTIPLIER : 0;
   const checkboxTotal = tuitionAmt + hostelAmt + admissionAmt;
   const customAmt = useCustom && customAmount ? parseInt(customAmount) || 0 : 0;
   const total = useCustom ? customAmt : checkboxTotal;
@@ -398,7 +400,7 @@ export function FeesModule() {
                           <p className="text-[10px] text-muted-foreground">One-time (3 × monthly)</p>
                         </div>
                       </div>
-                      <p className="font-bold text-sm">Rs. {(selected.monthlyFee * 3).toLocaleString()}</p>
+                      <p className="font-bold text-sm">Rs. {(selected.monthlyFee * ADMISSION_MULTIPLIER).toLocaleString()}</p>
                     </button>
                   </div>
                 )}

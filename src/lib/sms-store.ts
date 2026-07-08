@@ -213,6 +213,21 @@ function saveSchool(s: SchoolInfo) {
   try { window.localStorage.setItem("edudesk_school", JSON.stringify(s)); } catch {}
 }
 
+// Generic persistence helpers for collections
+function loadCollection<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(`edudesk_${key}`);
+    if (raw) return JSON.parse(raw) as T;
+  } catch {}
+  return fallback;
+}
+
+function saveCollection<T>(key: string, data: T) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(data)); } catch {}
+}
+
 const INITIAL_NOTIFICATIONS: Notification[] = [
   { id: "N1", title: "3 Fee Defaulters Today", description: "Rs. 9,000 outstanding across 3 students", time: "5 min ago", type: "fee", read: false, action: { module: "defaulters", label: "View List" } },
   { id: "N2", title: "Attendance Pending", description: "Grade 10-A attendance not marked yet", time: "1 hour ago", type: "attendance", read: false, action: { module: "attendance", label: "Mark Now" } },
@@ -254,11 +269,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ feeStructure: next });
   },
 
-  students: STUDENTS,
-  teachers: TEACHERS,
-  staff: STAFF,
-  feeCollections: FEE_COLLECTIONS,
-  activities: ACTIVITIES,
+  students: loadCollection("students", STUDENTS),
+  teachers: loadCollection("teachers", TEACHERS),
+  staff: loadCollection("staff", STAFF),
+  feeCollections: loadCollection("feeCollections", FEE_COLLECTIONS),
+  activities: loadCollection("activities", ACTIVITIES),
 
   isDark: false,
   toggleTheme: () => set((s) => ({ isDark: !s.isDark })),
@@ -389,3 +404,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   addTransaction: (t) => set((state) => ({ transactions: [t, ...state.transactions] })),
   deleteTransaction: (id) => set((state) => ({ transactions: state.transactions.filter(t => t.id !== id) })),
 }));
+
+// Auto-persist key collections to localStorage on every change
+useAppStore.subscribe((state) => {
+  saveCollection("students", state.students);
+  saveCollection("teachers", state.teachers);
+  saveCollection("staff", state.staff);
+  saveCollection("feeCollections", state.feeCollections);
+  saveCollection("activities", state.activities);
+  saveCollection("documents", state.documents);
+  saveCollection("commLogs", state.commLogs);
+  saveCollection("transactions", state.transactions);
+});
