@@ -43,8 +43,10 @@ export function ResultsModule() {
   const [selectedClass, setSelectedClass] = useState("Grade 9");
   const [marksDialog, setMarksDialog] = useState(false);
 
-  // Mock marks data
-  const classStudents = STUDENTS.filter(s => s.class === selectedClass && s.status === "Active").slice(0, 8);
+  // Mock marks data — handle "all" classes
+  const classStudents = selectedClass === "all"
+    ? STUDENTS.filter(s => s.status === "Active").slice(0, 15)
+    : STUDENTS.filter(s => s.class === selectedClass && s.status === "Active").slice(0, 8);
   const marksData = classStudents.map((s, i) => {
     const subjects = SUBJECTS.slice(0, 5).map(sub => {
       const obtained = 60 + ((i * 7 + sub.length * 3) % 40);
@@ -69,7 +71,8 @@ export function ResultsModule() {
         <Select value={selectedClass} onValueChange={setSelectedClass}>
           <SelectTrigger className="w-40 bg-background/60"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {["Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            <SelectItem value="all">All Classes</SelectItem>
+            {["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
         <div className="ml-auto flex gap-2">

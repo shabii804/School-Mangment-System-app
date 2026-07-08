@@ -238,9 +238,26 @@ const CONCESSION_STATUS_STYLES: Record<string, string> = {
 
 export function ConcessionModule() {
   const { toast } = useToast();
+  const { students } = useAppStore();
   const [addOpen, setAddOpen] = useState(false);
   const [concessions, setConcessions] = useState<Concession[]>(CONCESSIONS);
   const [form, setForm] = useState({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" });
+  const [selectedClass, setSelectedClass] = useState("all");
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+
+  // Filter students by selected class
+  const classOptions = Array.from(new Set(students.filter(s => s.status === "Active").map(s => s.class))).sort();
+  const studentOptions = selectedClass === "all"
+    ? students.filter(s => s.status === "Active")
+    : students.filter(s => s.status === "Active" && s.class === selectedClass);
+
+  const handleStudentSelect = (id: string) => {
+    setSelectedStudentId(id);
+    const student = students.find(s => s.id === id);
+    if (student) {
+      setForm({ ...form, studentId: student.id, studentName: student.name, class: `${student.class}-${student.section}` });
+    }
+  };
 
   const activeCount = concessions.filter(c => c.status === "Active").length;
   const expiredCount = concessions.filter(c => c.status === "Expired").length;
@@ -336,14 +353,36 @@ export function ConcessionModule() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Fee Concession</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Student Name *</Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} /></div>
-              <div><Label>Student ID</Label><Input value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})} placeholder="SCH-2026-XXXX" /></div>
+            {/* Step 1: Select Class */}
+            <div>
+              <Label>Select Class</Label>
+              <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); setForm({...form, studentId: "", studentName: "", class: ""}); }}>
+                <SelectTrigger><SelectValue placeholder="All Classes" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Class</Label><Input value={form.class} onChange={e => setForm({...form, class: e.target.value})} placeholder="Grade 9" /></div>
-              <div><Label>Concession Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Sibling Discount", "Staff Child", "Merit Scholarship", "Financial Aid", "Early Payment", "Full Scholarship", "Custom"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+            {/* Step 2: Select Student */}
+            <div>
+              <Label>Select Student *</Label>
+              <Select value={selectedStudentId} onValueChange={handleStudentSelect}>
+                <SelectTrigger><SelectValue placeholder="Choose student..." /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {studentOptions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} • {s.class}-{s.section} • Roll #{s.rollNo}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
+            {/* Auto-filled student info */}
+            {form.studentName && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5 text-xs">
+                <div className="flex justify-between"><span className="text-muted-foreground">Student:</span><span className="font-medium">{form.studentName}</span></div>
+                <div className="flex justify-between mt-0.5"><span className="text-muted-foreground">ID:</span><span className="font-mono">{form.studentId}</span></div>
+                <div className="flex justify-between mt-0.5"><span className="text-muted-foreground">Class:</span><span className="font-medium">{form.class}</span></div>
+              </div>
+            )}
+            <div><Label>Concession Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Sibling Discount", "Staff Child", "Merit Scholarship", "Financial Aid", "Early Payment", "Full Scholarship", "Custom"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Percentage (%)</Label><Input type="number" value={form.percentage} onChange={e => setForm({...form, percentage: Number(e.target.value)})} min={0} max={100} /></div>
               <div><Label>Fixed Amount (Rs.)</Label><Input type="number" value={form.fixedAmount} onChange={e => setForm({...form, fixedAmount: Number(e.target.value)})} min={0} /></div>
@@ -357,7 +396,7 @@ export function ConcessionModule() {
               Use either percentage OR fixed amount. Percentage applies to monthly tuition fee.
             </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.studentName || !form.reason}>Add Concession</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => { setAddOpen(false); setSelectedClass("all"); setSelectedStudentId(""); }}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.studentName || !form.reason}>Add Concession</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

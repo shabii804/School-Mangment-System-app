@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/sms-store";
-import { STATS, FEE_TREND, STUDENT_GROWTH, ACTIVITIES, TODAY_SCHEDULE, UPCOMING_BIRTHDAYS, PENDING_TASKS } from "@/lib/sms-data";
+import { STATS, FEE_TREND, STUDENT_GROWTH, ACTIVITIES, TODAY_SCHEDULE, UPCOMING_BIRTHDAYS, PENDING_TASKS, CONCESSIONS } from "@/lib/sms-data";
 import { KpiCard } from "../KpiCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   TrendingUp, AlertTriangle, Wallet, Plus, Receipt, ClipboardList,
   FileText, Activity as ActivityIcon, Cake, Calendar, Clock,
   CheckCircle2, Circle, ArrowRight, Sparkles, School, ArrowUpRight,
-  ArrowDownRight, Bus, Home, BookOpen, Shield, Zap,
+  ArrowDownRight, Bus, Home, BookOpen, Shield, Zap, Award,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -142,8 +142,8 @@ export function DashboardModule() {
 
       {/* ═══ KPI Row 1 — Primary Stats ═══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <button onClick={kpiClick("students")} className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-0.5">
+        <button onClick={kpiClick("students")} className="text-left">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Students</p>
@@ -153,7 +153,7 @@ export function DashboardModule() {
                   <ArrowUpRight className="w-3 h-3" /> +3 this month
                 </div>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Users className="w-5 h-5 text-primary" />
               </div>
             </div>
@@ -170,7 +170,7 @@ export function DashboardModule() {
         </button>
 
         <button onClick={kpiClick("attendance")} className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-0.5">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Attendance</p>
@@ -180,7 +180,7 @@ export function DashboardModule() {
                   <ArrowUpRight className="w-3 h-3" /> +2% vs yesterday
                 </div>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/15 transition-colors">
+              <div className="w-11 h-11 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
                 <ClipboardCheck className="w-5 h-5 text-yellow-600" />
               </div>
             </div>
@@ -194,7 +194,7 @@ export function DashboardModule() {
         </button>
 
         <button onClick={kpiClick("fees")} className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-0.5">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Collection</p>
@@ -204,7 +204,7 @@ export function DashboardModule() {
                   <ArrowUpRight className="w-3 h-3" /> +18% vs avg
                 </div>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/15 transition-colors">
+              <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
                 <DollarSign className="w-5 h-5 text-accent" />
               </div>
             </div>
@@ -218,7 +218,7 @@ export function DashboardModule() {
         </button>
 
         <button onClick={kpiClick("defaulters")} className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-0.5">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fee Defaulters</p>
@@ -228,7 +228,7 @@ export function DashboardModule() {
                   <AlertTriangle className="w-3 h-3" /> Needs follow-up
                 </div>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/15 transition-colors">
+              <div className="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/10 transition-colors">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
             </div>
@@ -262,6 +262,38 @@ export function DashboardModule() {
           <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-xl font-bold text-red-600">Rs. {(STATS.pendingFees / 1000).toFixed(1)}K</p></div>
         </div>
       </div>
+
+      {/* ═══ Concession / Scholarship Summary ═══ */}
+      {(() => {
+        const activeConcessions = CONCESSIONS.filter(c => c.status === "Active");
+        const totalSaving = activeConcessions.reduce((s, c) => s + c.monthlySaving, 0);
+        const studentsBenefited = new Set(activeConcessions.map(c => c.studentId)).size;
+        if (activeConcessions.length === 0) return null;
+        return (
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+              <Award className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="flex-1 flex items-center gap-4 flex-wrap">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Active Concessions</p>
+                <p className="text-lg font-bold">{activeConcessions.length} scholarships & discounts</p>
+              </div>
+              <div className="border-l border-border/30 pl-4">
+                <p className="text-xs text-muted-foreground">Students Benefited</p>
+                <p className="text-lg font-bold">{studentsBenefited}</p>
+              </div>
+              <div className="border-l border-border/30 pl-4">
+                <p className="text-xs text-muted-foreground">Monthly Saving</p>
+                <p className="text-lg font-bold text-emerald-600">Rs. {totalSaving.toLocaleString()}</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="text-xs h-7 shrink-0" onClick={() => setActiveModule("concession")}>
+              View Details <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          </div>
+        );
+      })()}
 
       {/* ═══ Charts Row ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
