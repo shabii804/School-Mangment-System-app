@@ -48,7 +48,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 export function DashboardModule() {
-  const { setActiveModule, school } = useAppStore();
+  const { setActiveModule, school, feeCollections } = useAppStore();
 
   const quickActions = [
     { label: "Collect Fee", desc: "New receipt", icon: Receipt, module: "fees" as const, color: "bg-emerald-500/10 text-emerald-600", border: "hover:border-emerald-500/30" },
@@ -149,9 +149,6 @@ export function DashboardModule() {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Students</p>
                 <p className="text-3xl font-bold mt-1 tabular-nums">{STATS.totalStudents}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Active enrollment</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-medium">
-                  <ArrowUpRight className="w-3 h-3" /> +3 this month
-                </div>
               </div>
               <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Users className="w-5 h-5 text-primary" />
@@ -175,10 +172,7 @@ export function DashboardModule() {
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Attendance</p>
                 <p className="text-3xl font-bold mt-1 tabular-nums">{STATS.todayAttendancePct}%</p>
-                <p className="text-xs text-muted-foreground mt-0.5">28 present / 30 expected</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-medium">
-                  <ArrowUpRight className="w-3 h-3" /> +2% vs yesterday
-                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">Mark today's attendance</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
                 <ClipboardCheck className="w-5 h-5 text-yellow-600" />
@@ -199,10 +193,7 @@ export function DashboardModule() {
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Collection</p>
                 <p className="text-3xl font-bold mt-1 tabular-nums">Rs. {STATS.todayFeeCollection.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">6 receipts issued</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-emerald-600 font-medium">
-                  <ArrowUpRight className="w-3 h-3" /> +18% vs avg
-                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{feeCollections.filter(f => f.date === new Date().toISOString().split("T")[0]).length} receipts today</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
                 <DollarSign className="w-5 h-5 text-accent" />
@@ -234,9 +225,9 @@ export function DashboardModule() {
             </div>
             {/* Progress bar showing collection rate */}
             <div className="mt-2">
-              <div className="flex justify-between text-[9px] text-muted-foreground mb-1"><span>Collection Rate</span><span>{Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100)}%</span></div>
+              <div className="flex justify-between text-[9px] text-muted-foreground mb-1"><span>Collection Rate</span><span>{STATS.totalStudents > 0 ? Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100) : 0}%</span></div>
               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full" style={{ width: `${Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100)}%` }} />
+                <div className="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full" style={{ width: `${STATS.totalStudents > 0 ? Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100) : 0}%` }} />
               </div>
             </div>
           </div>
