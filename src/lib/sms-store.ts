@@ -233,6 +233,24 @@ function saveCollection<T>(key: string, data: T) {
 
 const INITIAL_NOTIFICATIONS: Notification[] = [];
 
+// === CRITICAL: Clear old seed data BEFORE store creation ===
+// This runs once on page load — if version changed, wipe ALL old data
+if (typeof window !== "undefined") {
+  const CURRENT_VERSION = "3.0-clean";
+  const storedVersion = window.localStorage.getItem("edudesk_version");
+  if (storedVersion !== CURRENT_VERSION) {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith("edudesk_") && k !== "edudesk_version") {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => { try { window.localStorage.removeItem(k); } catch {} });
+    window.localStorage.setItem("edudesk_version", CURRENT_VERSION);
+  }
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   role: "admin",
   setRole: (role) => set({ role, userName: ROLE_NAMES[role] }),
