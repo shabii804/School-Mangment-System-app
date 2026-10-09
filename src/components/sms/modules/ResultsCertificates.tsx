@@ -356,11 +356,6 @@ export function CertificatesModule() {
             </TableHeader>
             <TableBody>
               {[
-                { no: "CERT-2026-001", type: "Bonafide", recipient: "Ayesha Khan (Student)", date: "2026-07-01" },
-                { no: "CERT-2026-002", type: "Character", recipient: "Hamza Sheikh (Student)", date: "2026-06-28" },
-                { no: "CERT-2026-003", type: "Experience", recipient: "Ms. Sadia Rahman (Teacher)", date: "2026-06-25" },
-                { no: "CERT-2026-004", type: "Best Teacher Award", recipient: "Mr. Imran Yousuf (Teacher)", date: "2026-06-20" },
-                { no: "CERT-2026-005", type: "Student of the Year", recipient: "Fatima Ali (Student)", date: "2026-06-18" },
               ].map(c => (
                 <TableRow key={c.no} className="border-border/30 hover:bg-muted/30">
                   <TableCell className="font-mono text-xs">{c.no}</TableCell>

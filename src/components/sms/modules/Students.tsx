@@ -113,10 +113,10 @@ export function StudentsModule() {
     if (form.cnic && !/^[\d]{5}-?[\d]{7}-?[\d]$/.test(form.cnic)) { toast({ title: "Invalid CNIC", description: "CNIC format: 42101-1234567-1", variant: "destructive" }); return; }
 
     const cls = CLASSES.find(c => c.name === form.class);
-    const monthlyFee = cls?.monthlyFee ?? 2000;
-    const hostelFee = form.isHosteller ? 3500 : 0;
+    const monthlyFee = cls?.monthlyFee ?? 0;
+    const hostelFee = form.isHosteller ? (useAppStore.getState().feeStructure.hostelFee || 0) : 0;
     const newStudent: Student = {
-      id: `SCH-2026-${String(students.length + 1).padStart(4, "0")}`,
+      id: `SCH-${new Date().getFullYear()}-${String(students.length + 1).padStart(4, "0")}`,
       rollNo: String(filtered.length + 1).padStart(2, "0"),
       name: form.name,
       class: form.class,
@@ -356,7 +356,7 @@ export function StudentsModule() {
                   <span className="text-xs font-medium">🚌 Transport</span>
                 </label>
                 {form.transport ? (
-                  <div className="col-span-2"><Label className="text-xs">Transport Route</Label><Input value={form.transportRoute} onChange={e => setForm({...form, transportRoute: e.target.value})} placeholder="Route A — Gulshan" className="h-8" /></div>
+                  <div className="col-span-2"><Label className="text-xs">Transport Route</Label><Input value={form.transportRoute} onChange={e => setForm({...form, transportRoute: e.target.value})} placeholder="e.g., Route A — Area Name" className="h-8" /></div>
                 ) : (
                   <div className="col-span-2"><Label className="text-xs">Siblings in School</Label><Input value={form.siblings} onChange={e => setForm({...form, siblings: e.target.value})} placeholder="e.g., Sara Khan (Grade 3)" className="h-8" /></div>
                 )}
@@ -417,7 +417,7 @@ export function StudentsModule() {
 
               {/* Auto-generated info */}
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-2 text-[10px] text-muted-foreground">
-                <span className="font-medium text-primary">Auto on save:</span> Student ID (SCH-2026-XXXX) • Roll Number • QR Code • Monthly Fee: Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}{form.isHosteller ? " + Rs. 3,500 hostel" : ""}
+                <span className="font-medium text-primary">Auto on save:</span> Student ID (SCH-YYYY-XXXX) • Roll Number • QR Code • Monthly Fee: Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}{form.isHosteller ? " + hostel fee" : ""}
               </div>
             </div>
 
@@ -671,7 +671,7 @@ export function StudentsModule() {
                     <ProfileCard icon={FileText} label="CNIC / B-Form" value={selected.cnic} color="text-foreground" bg="bg-muted/30" />
                     <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
                     <ProfileCard icon={DollarSign} label="Monthly Fee" value={`Rs. ${selected.monthlyFee.toLocaleString()}`} color="text-emerald-600" bg="bg-emerald-500/5" />
-                    <ProfileCard icon={Home} label="Hosteller" value={selected.isHosteller ? "Yes (+Rs. 3,500)" : "No"} color="text-accent" bg="bg-accent/5" />
+                    <ProfileCard icon={Home} label="Hosteller" value={selected.isHosteller ? "Yes" : "No"} color="text-accent" bg="bg-accent/5" />
                     <ProfileCard icon={Bus} label="Transport" value={selected.transport ? "Yes" : "No"} color="text-primary" bg="bg-primary/5" />
                   </div>
                   {selected.address && selected.address !== "—" && (
@@ -780,7 +780,7 @@ export function StudentsModule() {
                     <div className="rounded-xl bg-muted/30 p-3 border border-border/30">
                       <p className="text-[10px] text-muted-foreground uppercase">Monthly Fee</p>
                       <p className="text-xl font-bold mt-1">Rs. {selected.monthlyFee.toLocaleString()}</p>
-                      {selected.isHosteller && <p className="text-[10px] text-accent mt-0.5">+ Rs. 3,500 hostel</p>}
+                      {selected.isHosteller && <p className="text-[10px] text-accent mt-0.5">Hostel fee applies</p>}
                     </div>
                     <div className="rounded-xl bg-red-500/5 p-3 border border-red-500/20">
                       <p className="text-[10px] text-muted-foreground uppercase">Outstanding</p>

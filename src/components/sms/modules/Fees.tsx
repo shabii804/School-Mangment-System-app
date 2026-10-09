@@ -110,7 +110,7 @@ export function FeesModule() {
     // Find the just-created collection (most recent)
     const newCollection = {
       id: `FC-${String(feeCollections.length + 1).padStart(4, "0")}`,
-      receiptNo: `RCPT-20260702-${String(feeCollections.length + 1).padStart(3, "0")}`,
+      receiptNo: `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(feeCollections.length + 1).padStart(3, "0")}`,
       studentId: selected.id,
       studentName: selected.name,
       class: selected.class,
@@ -494,7 +494,7 @@ export function FeesModule() {
               <div className="rounded-lg bg-muted/30 p-2 text-xs flex items-center gap-2">
                 <IdCard className="w-3.5 h-3.5 text-primary" />
                 <span className="text-muted-foreground">
-                  Receipt <span className="font-mono font-medium text-foreground">RCPT-20260702-{String(feeCollections.length + 1).padStart(3, "0")}</span> will open in a new tab for printing.
+                  Receipt <span className="font-mono font-medium text-foreground">RCPT-{new Date().toISOString().slice(0, 10).replace(/-/g, "")}-{String(feeCollections.length + 1).padStart(3, "0")}</span> will open in a new tab for printing.
                 </span>
               </div>
             </div>

@@ -24,8 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/lib/sms-store";
 import { printSalarySlip, printPayrollBatch } from "@/lib/pdf-service";
 
-const WORKING_DAYS = 26;
-const LATE_FINE = 500;
+const WORKING_DAYS = 26; // Configurable in Settings
+const LATE_FINE = 500; // Configurable in Settings
 
 interface SalaryRow {
   id: string;
@@ -217,7 +217,7 @@ export function SalaryModule() {
                 <div className="rounded-lg bg-gradient-to-br from-primary to-primary/70 p-4 text-primary-foreground">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold">Greenwood Public School</p>
+                      <p className="text-sm font-bold">{school.name}</p>
                       <p className="text-[10px] opacity-80">Salary Slip • {month}</p>
                     </div>
                     <div className="text-right">

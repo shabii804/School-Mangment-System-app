@@ -265,9 +265,9 @@ export function HostelModule() {
         <CardHeader><CardTitle className="text-base">Mess & Dining</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Mess Contractor</p><p className="font-medium mt-1">Al-Madina Caterers</p></div>
-            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Monthly Mess Fee</p><p className="font-medium mt-1">Rs. 4,500/student</p></div>
-            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Meal Times</p><p className="font-medium mt-1">7AM, 1PM, 8PM</p></div>
+            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Mess Contractor</p><p className="font-medium mt-1">Not configured</p></div>
+            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Monthly Mess Fee</p><p className="font-medium mt-1">Rs. 0/student</p></div>
+            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Meal Times</p><p className="font-medium mt-1">Not set</p></div>
             <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Total Mess Students</p><p className="font-medium mt-1">{totalOccupied}</p></div>
           </div>
         </CardContent>

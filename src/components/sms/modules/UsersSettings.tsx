@@ -26,13 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { exportFeeStructureCSV } from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
 
-const USERS = [
-  { id: 1, name: "Mr. Principal Ahmed", username: "admin", role: "Admin", email: "principal@greenwood.edu", status: "Active", lastLogin: "2026-07-02 08:15" },
-  { id: 2, name: "Ms. Nargis Bibi", username: "accountant", role: "Accountant", email: "accounts@greenwood.edu", status: "Active", lastLogin: "2026-07-02 09:42" },
-  { id: 3, name: "Ms. Sadia Rahman", username: "sadia", role: "Teacher", email: "sadia@greenwood.edu", status: "Active", lastLogin: "2026-07-02 08:50" },
-  { id: 4, name: "Mr. Imran Yousuf", username: "imran", role: "Teacher", email: "imran@greenwood.edu", status: "Active", lastLogin: "2026-07-01 16:20" },
-  { id: 5, name: "Mr. Tariq Mehmood", username: "tariq", role: "Admin", email: "office@greenwood.edu", status: "Inactive", lastLogin: "2026-06-15 11:00" },
-];
+const USERS: { id: number; name: string; username: string; role: string; email: string; status: string; lastLogin: string }[] = [];
 
 const ROLE_COLORS: Record<string, string> = {
   Admin: "bg-primary/15 text-primary",
@@ -485,7 +479,7 @@ export function SettingsModule() {
                 <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-16 flex-col" onClick={() => toast({ title: "Backup Created", description: "backup-2026-07-02.db • 4.2 MB" })}>
+                <Button variant="outline" className="h-16 flex-col" onClick={() => toast({ title: "Backup Created", description: `backup-${new Date().toISOString().split("T")[0]}.db` })}>
                   <Download className="w-5 h-5 mb-1" />
                   <span>Backup Now</span>
                 </Button>
@@ -496,7 +490,7 @@ export function SettingsModule() {
               </div>
               <div className="rounded-lg bg-muted/30 p-3 text-xs">
                 <p className="font-medium">Last Backup:</p>
-                <p className="text-muted-foreground mt-0.5">2026-07-01 23:00 • backup-20260701.db • 4.1 MB</p>
+                <p className="text-muted-foreground mt-0.5">No backups yet — click "Backup Now" to create one.</p>
               </div>
               <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
                 <p className="text-xs font-semibold text-red-600 mb-2">⚠️ Danger Zone</p>
