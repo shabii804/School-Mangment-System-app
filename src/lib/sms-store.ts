@@ -156,32 +156,27 @@ interface AppState {
 }
 
 const ROLE_NAMES: Record<Role, string> = {
-  admin: "Mr. Principal (Admin)",
-  accountant: "Ms. Nargis (Accountant)",
-  teacher: "Ms. Sadia (Teacher)",
+  admin: "Administrator",
+  accountant: "Accountant",
+  teacher: "Teacher",
 };
 
 const DEFAULT_SCHOOL: SchoolInfo = {
-  name: "Greenwood Public School",
-  tagline: "Knowledge • Character • Excellence",
-  address: "123 Education Road, Karachi, Pakistan",
-  phone: "+92 21 1234567",
-  email: "info@greenwood.edu",
+  name: "",
+  tagline: "",
+  address: "",
+  phone: "",
+  email: "",
   logo: null,
-  session: "2026–27",
+  session: "",
 };
 
 const DEFAULT_FEE_STRUCTURE: FeeStructureConfig = {
-  classFees: {
-    "Playgroup": 1500, "Nursery": 1800, "KG": 2000,
-    "Grade 1": 2200, "Grade 2": 2400, "Grade 3": 2600,
-    "Grade 4": 2800, "Grade 5": 3000, "Grade 6": 3200,
-    "Grade 7": 3500, "Grade 8": 3800, "Grade 9": 4200, "Grade 10": 4500,
-  },
-  hostelFee: 3500,
-  admissionMultiplier: 3,
-  lateFee: 200,
-  dueDate: 10,
+  classFees: {},
+  hostelFee: 0,
+  admissionMultiplier: 0,
+  lateFee: 0,
+  dueDate: 0,
 };
 
 function loadFeeStructure(): FeeStructureConfig {

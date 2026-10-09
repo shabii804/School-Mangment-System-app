@@ -127,28 +127,11 @@ export interface Activity {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Classes & subjects
+// Classes & subjects — EMPTY (admin adds via Classes module)
 // ─────────────────────────────────────────────────────────────
-export const CLASSES = [
-  { name: "Playgroup", sections: ["A", "B"], monthlyFee: 1500 },
-  { name: "Nursery", sections: ["A", "B"], monthlyFee: 1800 },
-  { name: "KG", sections: ["A", "B"], monthlyFee: 2000 },
-  { name: "Grade 1", sections: ["A", "B", "C"], monthlyFee: 2200 },
-  { name: "Grade 2", sections: ["A", "B"], monthlyFee: 2400 },
-  { name: "Grade 3", sections: ["A", "B"], monthlyFee: 2600 },
-  { name: "Grade 4", sections: ["A", "B"], monthlyFee: 2800 },
-  { name: "Grade 5", sections: ["A", "B"], monthlyFee: 3000 },
-  { name: "Grade 6", sections: ["A", "B"], monthlyFee: 3200 },
-  { name: "Grade 7", sections: ["A"], monthlyFee: 3500 },
-  { name: "Grade 8", sections: ["A"], monthlyFee: 3800 },
-  { name: "Grade 9", sections: ["A"], monthlyFee: 4200 },
-  { name: "Grade 10", sections: ["A"], monthlyFee: 4500 },
-];
+export const CLASSES: { name: string; sections: string[]; monthlyFee: number }[] = [];
 
-export const SUBJECTS = [
-  "English", "Urdu", "Mathematics", "Science", "Social Studies",
-  "Islamiat", "Computer", "Physics", "Chemistry", "Biology",
-];
+export const SUBJECTS: string[] = [];
 
 // ─────────────────────────────────────────────────────────────
 // Sample students (40 students across classes)
@@ -185,11 +168,7 @@ export const TIMETABLE: Record<string, TimetableSlot[]> = {};
 // ─────────────────────────────────────────────────────────────
 // Exams
 // ─────────────────────────────────────────────────────────────
-export const EXAMS: Exam[] = [
-  { id: "E1", name: "Monthly Test - July 2026", type: "Monthly", startDate: "2026-07-15", endDate: "2026-07-18", classes: ["Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"] },
-  { id: "E2", name: "Mid-Term Examination 2026", type: "Mid-Term", startDate: "2026-09-10", endDate: "2026-09-20", classes: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"] },
-  { id: "E3", name: "Final Examination 2026", type: "Final", startDate: "2026-12-01", endDate: "2026-12-15", classes: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"] },
-];
+export const EXAMS: Exam[] = [];
 
 // ─────────────────────────────────────────────────────────────
 // Derived stats
@@ -198,8 +177,8 @@ export const STATS = {
   totalStudents: 0,
   totalTeachers: 0,
   totalStaff: 0,
-  todayAttendancePct: 92,
-  todayFeeCollection: 18500,
+  todayAttendancePct: 0,
+  todayFeeCollection: 0,
   monthlyIncome: 0,
   pendingFees: 0,
   defaultersCount: 0,
@@ -239,6 +218,4 @@ export const ALUMNI: Alumnus[] = [];
 export const LEAVE_REQUESTS: LeaveRequest[] = [];
 export const LEAVE_BALANCES: LeaveBalance[] = [];
 export const CONCESSIONS: Concession[] = [];
-export const ACADEMIC_SESSIONS: AcademicSession[] = [
-  { id: "S-2026-27", name: "2026–27", startDate: "2026-04-01", endDate: "2027-03-31", status: "Active", studentCount: 0, teacherCount: 0, totalFeeCollected: 0, totalSalaryPaid: 0 },
-];
+export const ACADEMIC_SESSIONS: AcademicSession[] = [];
