@@ -50,11 +50,11 @@ export function ReportsModule() {
   const [filterOpen, setFilterOpen] = useState<number | null>(null);
 
   // Filter state
-  const [attClass, setAttClass] = useState("Grade 9");
-  const [attMonth, setAttMonth] = useState("July 2026");
-  const [resultClass, setResultClass] = useState("Grade 9");
+  const [attClass, setAttClass] = useState("");
+  const [attMonth, setAttMonth] = useState("");
+  const [resultClass, setResultClass] = useState("");
   const [resultStudent, setResultStudent] = useState("");
-  const [resultExam, setResultExam] = useState(EXAMS[0].id);
+  const [resultExam, setResultExam] = useState("");
 
   const handlePrint = (reportId: number, name: string) => {
     // Reports with filters need the filter dialog

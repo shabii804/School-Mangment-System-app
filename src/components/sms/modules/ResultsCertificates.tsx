@@ -39,8 +39,8 @@ function gradeFor(pct: number) {
 export function ResultsModule() {
   const { toast } = useToast();
   const { school } = useAppStore();
-  const [selectedExam, setSelectedExam] = useState(EXAMS[0].id);
-  const [selectedClass, setSelectedClass] = useState("Grade 9");
+  const [selectedExam, setSelectedExam] = useState("");
+  const [selectedClass, setSelectedClass] = useState("");
   const [marksDialog, setMarksDialog] = useState(false);
 
   // Mock marks data — handle "all" classes
@@ -251,12 +251,12 @@ export function CertificatesModule() {
   const { school } = useAppStore();
   const [recipientType, setRecipientType] = useState<"student" | "teacher">("student");
   const [selectedCert, setSelectedCert] = useState<{ type: string; category: string } | null>(null);
-  const [selectedStudentId, setSelectedStudentId] = useState(STUDENTS[0].id);
-  const [selectedTeacherId, setSelectedTeacherId] = useState(TEACHERS[0].id);
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
 
   const certTypes = recipientType === "student" ? STUDENT_CERT_TYPES : TEACHER_CERT_TYPES;
-  const selectedStudent = STUDENTS.find(s => s.id === selectedStudentId) || STUDENTS[0];
-  const selectedTeacher = TEACHERS.find(t => t.id === selectedTeacherId) || TEACHERS[0];
+  const selectedStudent = STUDENTS.find(s => s.id === selectedStudentId);
+  const selectedTeacher = TEACHERS.find(t => t.id === selectedTeacherId);
 
   const openCert = (cert: { type: string; category: string }) => {
     setSelectedCert(cert);
