@@ -96,6 +96,14 @@ interface AppState {
   updateFeeStructure: (patch: Partial<FeeStructureConfig>) => void;
   setClassFee: (className: string, amount: number) => void;
 
+  // Managed collections (CRUD via store so they persist)
+  classes: { name: string; sections: string[]; monthlyFee: number; classTeacher?: string }[];
+  subjects: string[];
+  addClass: (cls: { name: string; sections: string[]; monthlyFee: number }) => void;
+  deleteClass: (name: string) => void;
+  addSubject: (subject: string) => void;
+  deleteSubject: (subject: string) => void;
+
   // Data
   students: Student[];
   teachers: Teacher[];
@@ -257,6 +265,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ feeStructure: next });
   },
 
+  classes: loadCollection("classes", []),
+  subjects: loadCollection("subjects", []),
+  addClass: (cls) => set((state) => ({ classes: [...state.classes, cls] })),
+  deleteClass: (name) => set((state) => ({ classes: state.classes.filter(c => c.name !== name) })),
+  addSubject: (subject) => set((state) => ({ subjects: [...state.subjects, subject] })),
+  deleteSubject: (subject) => set((state) => ({ subjects: state.subjects.filter(s => s !== subject) })),
+
   students: loadCollection("students", STUDENTS),
   teachers: loadCollection("teachers", TEACHERS),
   staff: loadCollection("staff", STAFF),
@@ -394,4 +409,6 @@ useAppStore.subscribe((state) => {
   saveCollection("documents", state.documents);
   saveCollection("commLogs", state.commLogs);
   saveCollection("transactions", state.transactions);
+  saveCollection("classes", state.classes);
+  saveCollection("subjects", state.subjects);
 });

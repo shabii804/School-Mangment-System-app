@@ -27,7 +27,7 @@ import {
   AlertCircle, Bus, Siblings, Home, Calendar, Droplet, Globe, Briefcase,
   User, UserCircle, Stethoscope, FileText, X, DollarSign, Edit, ArrowUpCircle,
 } from "lucide-react";
-import { CLASSES, type Student } from "@/lib/sms-data";
+import { type Student } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
 import { printStudentIDCard, printFeeReceipt } from "@/lib/pdf-service";
 import { Receipt as ReceiptIcon } from "lucide-react";
@@ -49,7 +49,8 @@ const EMPTY_FORM = {
 };
 
 export function StudentsModule() {
-  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog, collectFee } = useAppStore();
+  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog, collectFee, classes: storeClasses } = useAppStore();
+  const CLASSES = storeClasses.length > 0 ? storeClasses : [];
   const { toast } = useToast();
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");

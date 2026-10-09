@@ -20,7 +20,7 @@ import {
   Plus, Edit, Trash2, FileText, Calendar, ClipboardList, Award,
   GraduationCap, Printer, BookOpen,
 } from "lucide-react";
-import { EXAMS, CLASSES, SUBJECTS } from "@/lib/sms-data";
+import { type Exam } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
 
 const GRADE_BANDS = [

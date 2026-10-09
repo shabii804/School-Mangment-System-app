@@ -26,7 +26,7 @@ import {
   CalendarDays, Briefcase, IdCard, Edit, Trash2, Eye, X,
   Building2, Award, Users as UsersIcon, User, UserCircle, DollarSign,
 } from "lucide-react";
-import { TEACHERS, STAFF, SUBJECTS, CLASSES, type Teacher, type Staff } from "@/lib/sms-data";
+import { type Teacher, type Staff } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,7 +40,9 @@ const EMPTY_TEACHER: Teacher = {
 };
 
 export function TeachersModule() {
-  const { teachers, addTeacher, updateTeacher, deleteTeacher } = useAppStore();
+  const { teachers, addTeacher, updateTeacher, deleteTeacher, classes: storeClasses, subjects: storeSubjects } = useAppStore();
+  const CLASSES = storeClasses;
+  const SUBJECTS = storeSubjects;
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
   const [editTeacher, setEditTeacher] = useState<Teacher | null>(null);
@@ -168,9 +170,14 @@ export function TeachersModule() {
 
             {/* Subject assignment — checkbox grid */}
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
-              <p className="text-[10px] font-semibold text-primary uppercase mb-2">Assign Subjects (click to toggle)</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-primary uppercase">Assign Subjects (click to toggle)</p>
+                {SUBJECTS.length === 0 && <span className="text-[9px] text-muted-foreground">No subjects yet — add in Classes module</span>}
+              </div>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
-                {SUBJECTS.map(subj => {
+                {SUBJECTS.length === 0 ? (
+                  <p className="text-xs text-muted-foreground col-span-full text-center py-2">No subjects added. Go to Classes → Subjects tab to add.</p>
+                ) : SUBJECTS.map(subj => {
                   const checked = form.subjects.includes(subj);
                   return (
                     <button
@@ -189,9 +196,14 @@ export function TeachersModule() {
 
             {/* Class assignment — checkbox grid */}
             <div className="rounded-lg border border-accent/20 bg-accent/5 p-2.5">
-              <p className="text-[10px] font-semibold text-accent uppercase mb-2">Assign Classes (click to toggle)</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-accent uppercase">Assign Classes (click to toggle)</p>
+                {CLASSES.length === 0 && <span className="text-[9px] text-muted-foreground">No classes yet</span>}
+              </div>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
-                {CLASSES.map(cls => {
+                {CLASSES.length === 0 ? (
+                  <p className="text-xs text-muted-foreground col-span-full text-center py-2">No classes added. Go to Classes module to add.</p>
+                ) : CLASSES.map(cls => {
                   const checked = form.classes.includes(cls.name);
                   return (
                     <button
