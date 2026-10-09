@@ -228,14 +228,7 @@ function saveCollection<T>(key: string, data: T) {
   try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(data)); } catch {}
 }
 
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  { id: "N1", title: "3 Fee Defaulters Today", description: "Rs. 9,000 outstanding across 3 students", time: "5 min ago", type: "fee", read: false, action: { module: "defaulters", label: "View List" } },
-  { id: "N2", title: "Attendance Pending", description: "Grade 10-A attendance not marked yet", time: "1 hour ago", type: "attendance", read: false, action: { module: "attendance", label: "Mark Now" } },
-  { id: "N3", title: "Salary Slips Due", description: "July 2026 payroll needs to be finalized", time: "2 hours ago", type: "salary", read: false, action: { module: "salary", label: "Process" } },
-  { id: "N4", title: "New Admission", description: "Zara Sheikh joined Nursery-A", time: "Yesterday", type: "admission", read: true, action: { module: "students", label: "View Profile" } },
-  { id: "N5", title: "Backup Completed", description: "Automatic daily backup saved (4.2 MB)", time: "Yesterday", type: "system", read: true },
-  { id: "N6", title: "Birthday Today 🎂", description: "Ahmed Khan (Grade 5-A) celebrates today", time: "Today", type: "birthday", read: false, action: { module: "students", label: "Greet" } },
-];
+const INITIAL_NOTIFICATIONS: Notification[] = [];
 
 export const useAppStore = create<AppState>((set, get) => ({
   role: "admin",
@@ -391,16 +384,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   addCommLog: (log) => set((state) => ({ commLogs: [log, ...state.commLogs] })),
   deleteCommLog: (id) => set((state) => ({ commLogs: state.commLogs.filter(l => l.id !== id) })),
 
-  transactions: [
-    { id: "TX-001", date: "2026-07-01", type: "Income", category: "Fee Collection", description: "Monthly tuition fees — July", amount: 185000, mode: "Cash" },
-    { id: "TX-002", date: "2026-07-01", type: "Expense", category: "Salary", description: "Teaching staff salaries — June", amount: 313000, mode: "Bank" },
-    { id: "TX-003", date: "2026-06-28", type: "Expense", category: "Utilities", description: "Electricity bill — June", amount: 18000, mode: "Cheque" },
-    { id: "TX-004", date: "2026-06-25", type: "Expense", category: "Maintenance", description: "Building repair — Block A", amount: 12000, mode: "Cash" },
-    { id: "TX-005", date: "2026-06-20", type: "Income", category: "Admission Fee", description: "New admissions — 3 students", amount: 22500, mode: "Cash" },
-    { id: "TX-006", date: "2026-06-15", type: "Expense", category: "Stationery", description: "Office supplies + exam papers", amount: 8500, mode: "Cash" },
-    { id: "TX-007", date: "2026-06-10", type: "Expense", category: "Transport", description: "Bus fuel + maintenance", amount: 22000, mode: "Cash" },
-    { id: "TX-008", date: "2026-06-05", type: "Income", category: "Hostel Fee", description: "Hostel fees — 12 students", amount: 42000, mode: "Cash" },
-  ],
+  transactions: [],
   addTransaction: (t) => set((state) => ({ transactions: [t, ...state.transactions] })),
   deleteTransaction: (id) => set((state) => ({ transactions: state.transactions.filter(t => t.id !== id) })),
 }));
