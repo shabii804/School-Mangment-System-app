@@ -194,7 +194,7 @@ const GROUP_ORDER: ModuleMeta["group"][] = ["main", "operations", "finance", "ac
 
 export function SettingsModule() {
   const { toast } = useToast();
-  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee, enabledModules, toggleModule, setAllModulesEnabled } = useAppStore();
+  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee, enabledModules, toggleModule, setAllModulesEnabled, students, updateStudent } = useAppStore();
   const [autoBackup, setAutoBackup] = useState(true);
   const [lateFine, setLateFine] = useState("500");
   const [dueDate, setDueDate] = useState("10");
@@ -241,8 +241,40 @@ export function SettingsModule() {
   };
 
   const saveSchoolInfo = () => {
+    // Check if session is changing
+    const oldSession = school.session;
+    const newSession = form.session;
+    const sessionChanged = oldSession !== newSession && newSession.trim();
+
+    if (sessionChanged) {
+      if (!window.confirm(
+        `Change academic session from "${oldSession}" to "${newSession}"?\n\n` +
+        `This will:\n` +
+        `• Reset all students' "fee paid this month" flags\n` +
+        `• Keep all student/teacher/class data intact\n` +
+        `• Previous attendance and fee records remain for audit\n\n` +
+        `Continue?`
+      )) {
+        return;
+      }
+    }
+
     updateSchool(form);
-    toast({ title: "School Information Saved ✓", description: "Changes are now reflected across the app." });
+
+    if (sessionChanged) {
+      // Reset feePaidThisMonth for all active students (new session = new payment cycle)
+      students.forEach(s => {
+        if (s.status === "Active" && s.feePaidThisMonth) {
+          updateStudent(s.id, { feePaidThisMonth: false });
+        }
+      });
+      toast({
+        title: "School Information Saved ✓",
+        description: `Session changed to "${newSession}". Fee-paid flags reset for all students.`,
+      });
+    } else {
+      toast({ title: "School Information Saved ✓", description: "Changes are now reflected across the app." });
+    }
   };
 
   return (

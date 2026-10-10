@@ -1,0 +1,589 @@
+     1→"use client";
+     2→
+     3→import { useAppStore } from "@/lib/sms-store";
+     4→import { STATS, FEE_TREND, STUDENT_GROWTH, ACTIVITIES, TODAY_SCHEDULE, UPCOMING_BIRTHDAYS, PENDING_TASKS, CONCESSIONS } from "@/lib/sms-data";
+     5→import { KpiCard } from "../KpiCard";
+     6→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     7→import { Button } from "@/components/ui/button";
+     8→import { Badge } from "@/components/ui/badge";
+     9→import {
+    10→  Users, GraduationCap, UserCog, ClipboardCheck, DollarSign,
+    11→  TrendingUp, AlertTriangle, Wallet, Plus, Receipt, ClipboardList,
+    12→  FileText, Activity as ActivityIcon, Cake, Calendar, Clock,
+    13→  CheckCircle2, Circle, ArrowRight, Sparkles, School, ArrowUpRight,
+    14→  ArrowDownRight, Bus, Home, BookOpen, Shield, Zap, Award,
+    15→} from "lucide-react";
+    16→import {
+    17→  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+    18→  Tooltip, ResponsiveContainer, Legend, Line, LineChart, RadialBarChart,
+    19→  RadialBar, PolarAngleAxis,
+    20→} from "recharts";
+    21→import { cn } from "@/lib/utils";
+    22→
+    23→const ACTIVITY_COLORS: Record<string, string> = {
+    24→  fee: "bg-emerald-500",
+    25→  attendance: "bg-primary",
+    26→  admission: "bg-purple-500",
+    27→  salary: "bg-accent",
+    28→  certificate: "bg-yellow-500",
+    29→  system: "bg-muted-foreground",
+    30→};
+    31→
+    32→const ACTIVITY_ICONS: Record<string, any> = {
+    33→  fee: DollarSign, attendance: ClipboardCheck, admission: UserCog,
+    34→  salary: Wallet, certificate: FileText, system: ActivityIcon,
+    35→};
+    36→
+    37→const SCHEDULE_STATUS: Record<string, { color: string; bg: string; label: string; dot: string }> = {
+    38→  completed: { color: "text-emerald-600", bg: "bg-emerald-500/10", label: "Done", dot: "bg-emerald-500" },
+    39→  "in-progress": { color: "text-primary", bg: "bg-primary/10", label: "LIVE", dot: "bg-primary animate-pulse" },
+    40→  upcoming: { color: "text-muted-foreground", bg: "bg-muted", label: "Next", dot: "bg-muted-foreground/30" },
+    41→  break: { color: "text-accent", bg: "bg-accent/10", label: "Break", dot: "bg-accent" },
+    42→};
+    43→
+    44→const PRIORITY_STYLES: Record<string, string> = {
+    45→  high: "bg-red-500/10 text-red-600 border-red-500/20",
+    46→  medium: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+    47→  low: "bg-muted text-muted-foreground border-border",
+    48→};
+    49→
+    50→export function DashboardModule() {
+    51→  const { setActiveModule, school, feeCollections, students, teachers, staff, transactions, attendanceRecords, classes } = useAppStore();
+    52→
+    53→  // ─── Compute ALL KPIs from real store data ───
+    54→  const todayStr = new Date().toISOString().split("T")[0];
+    55→  const activeStudents = students.filter(s => s.status === "Active");
+    56→  const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
+    57→  const todayCollections = feeCollections.filter(f => f.date === todayStr);
+    58→  const todayFeeCollection = todayCollections.reduce((s, f) => s + f.amount, 0);
+    59→
+    60→  // Today's attendance: from attendanceRecords for today
+    61→  const todayAtt = attendanceRecords.filter(r => r.date === todayStr);
+    62→  const presentToday = todayAtt.filter(r => r.status === "Present" || r.status === "Late").length;
+    63→  const todayAttendancePct = todayAtt.length > 0 ? Math.round((presentToday / todayAtt.length) * 100) : 0;
+    64→
+    65→  // Monthly income: sum of this month's fee collections + income transactions
+    66→  const monthStr = todayStr.slice(0, 7); // YYYY-MM
+    67→  const monthlyFeeIncome = feeCollections.filter(f => f.date.startsWith(monthStr)).reduce((s, f) => s + f.amount, 0);
+    68→  const monthlyOtherIncome = transactions.filter(t => t.type === "Income" && t.date.startsWith(monthStr)).reduce((s, t) => s + t.amount, 0);
+    69→  const monthlyIncome = monthlyFeeIncome + monthlyOtherIncome;
+    70→
+    71→  // Pending fees: total outstanding across active students
+    72→  const pendingFees = defaulters.reduce((s, d) => s + d.outstandingAmount, 0);
+    73→
+    74→  const KPI = {
+    75→    totalStudents: activeStudents.length,
+    76→    totalTeachers: teachers.length,
+    77→    totalStaff: staff.length,
+    78→    todayAttendancePct,
+    79→    todayFeeCollection,
+    80→    monthlyIncome,
+    81→    pendingFees,
+    82→    defaultersCount: defaulters.length,
+    83→  };
+    84→
+    85→  // ─── Real fee trend — last 6 months from store ───
+    86→  const feeTrend = Array.from({ length: 6 }, (_, i) => {
+    87→    const d = new Date();
+    88→    d.setMonth(d.getMonth() - (5 - i));
+    89→    const ms = d.toISOString().slice(0, 7);
+    90→    const collected = feeCollections.filter(f => f.date.startsWith(ms)).reduce((s, f) => s + f.amount, 0);
+    91→    return {
+    92→      month: d.toLocaleDateString("en-GB", { month: "short" }),
+    93→      collected: Math.round(collected / 1000), // in thousands
+    94→      pending: Math.round(pendingFees / 1000),
+    95→    };
+    96→  });
+    97→
+    98→  // ─── Real student growth — last 6 months from admissionDate ───
+    99→  const studentGrowth = Array.from({ length: 6 }, (_, i) => {
+   100→    const d = new Date();
+   101→    d.setMonth(d.getMonth() - (5 - i));
+   102→    const ms = d.toISOString().slice(0, 7);
+   103→    const count = students.filter(s => s.admissionDate && s.admissionDate.startsWith(ms)).length;
+   104→    const cumulative = students.filter(s => s.admissionDate && s.admissionDate <= ms + "-31").length;
+   105→    return { month: d.toLocaleDateString("en-GB", { month: "short" }), students: count, total: cumulative };
+   106→  });
+   107→
+   108→  const quickActions = [
+   109→    { label: "Collect Fee", desc: "New receipt", icon: Receipt, module: "fees" as const, color: "bg-emerald-500/10 text-emerald-600", border: "hover:border-emerald-500/30" },
+   110→    { label: "Attendance", desc: "Mark today", icon: ClipboardList, module: "attendance" as const, color: "bg-primary/10 text-primary", border: "hover:border-primary/30" },
+   111→    { label: "Add Student", desc: "New admission", icon: Plus, module: "students" as const, color: "bg-purple-500/10 text-purple-600", border: "hover:border-purple-500/30" },
+   112→    { label: "Reports", desc: "Print PDF", icon: FileText, module: "reports" as const, color: "bg-accent/10 text-accent", border: "hover:border-accent/30" },
+   113→    { label: "Library", desc: "Issue book", icon: BookOpen, module: "library" as const, color: "bg-blue-500/10 text-blue-600", border: "hover:border-blue-500/30" },
+   114→    { label: "Events", desc: "View calendar", icon: Calendar, module: "events" as const, color: "bg-pink-500/10 text-pink-600", border: "hover:border-pink-500/30" },
+   115→  ];
+   116→
+   117→  const kpiClick = (module: "defaulters" | "fees" | "students" | "attendance") => () => setActiveModule(module);
+   118→
+   119→  // Mini data for sparkline
+   120→  const attendanceSpark = [
+   121→    { day: "M", val: 92 }, { day: "T", val: 88 }, { day: "W", val: 95 },
+   122→    { day: "T", val: 90 }, { day: "F", val: 93 }, { day: "S", val: 87 },
+   123→  ];
+   124→
+   125→  const feeSpark = [
+   126→    { day: "M", val: 12 }, { day: "T", val: 18 }, { day: "W", val: 8 },
+   127→    { day: "T", val: 15 }, { day: "F", val: 22 }, { day: "S", val: 18 },
+   128→  ];
+   129→
+   130→  return (
+   131→    <div className="space-y-3 fade-in">
+   132→      {/* ═══ Hero Banner ═══ */}
+   133→      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/90 p-4 text-primary-foreground shadow-lg">
+   134→        <div className="absolute inset-0 opacity-10 pattern-grid" />
+   135→        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/25 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
+   136→        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-y-1/2" />
+   137→        <div className="absolute top-1/2 left-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl" />
+   138→        <div className="relative flex items-start gap-6">
+   139→          {/* Logo */}
+   140→          <div className="w-20 h-20 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center overflow-hidden ring-4 ring-white/20 shadow-2xl shrink-0">
+   141→            {school.logo ? (
+   142→              <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
+   143→            ) : (
+   144→              <School className="w-8 h-8 text-primary-foreground" />
+   145→            )}
+   146→          </div>
+   147→          <div className="flex-1 min-w-0">
+   148→            <div className="flex items-center gap-2 flex-wrap">
+   149→              <p className="text-xs opacity-90">Assalam-o-Alaikum, welcome back 👋</p>
+   150→              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 font-medium backdrop-blur-sm">
+   151→                <Sparkles className="w-2.5 h-2.5 inline mr-1" />Session {school.session}
+   152→              </span>
+   153→              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/20 font-medium flex items-center gap-1 backdrop-blur-sm">
+   154→                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+   155→                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+   156→              </span>
+   157→            </div>
+   158→            <h2 className="text-2xl font-bold mt-1 tracking-tight">{school.name}</h2>
+   159→            <p className="text-sm opacity-80 mt-0.5">{school.tagline}</p>
+   160→            {/* Inline mini stats */}
+   161→            <div className="flex gap-4 mt-3">
+   162→              <div>
+   163→                <p className="text-2xl font-bold tabular-nums">{KPI.totalStudents}</p>
+   164→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Students</p>
+   165→              </div>
+   166→              <div className="border-l border-white/15 pl-5">
+   167→                <p className="text-2xl font-bold tabular-nums">{KPI.totalTeachers + KPI.totalStaff}</p>
+   168→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Staff</p>
+   169→              </div>
+   170→              <div className="border-l border-white/15 pl-5">
+   171→                <p className="text-2xl font-bold tabular-nums">{KPI.todayAttendancePct}%</p>
+   172→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Att.</p>
+   173→              </div>
+   174→              <div className="border-l border-white/15 pl-5">
+   175→                <p className="text-2xl font-bold tabular-nums">Rs. {(KPI.todayFeeCollection / 1000).toFixed(0)}K</p>
+   176→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Coll.</p>
+   177→              </div>
+   178→            </div>
+   179→            {/* Quick action buttons */}
+   180→            <div className="flex flex-wrap gap-2 mt-4">
+   181→              <button onClick={() => setActiveModule("fees")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-semibold transition-all hover:scale-105 backdrop-blur-sm shadow-sm">
+   182→                <Receipt className="w-3.5 h-3.5" /> Collect Fee
+   183→              </button>
+   184→              <button onClick={() => setActiveModule("attendance")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition-all hover:scale-105 border border-white/20 backdrop-blur-sm">
+   185→                <ClipboardList className="w-3.5 h-3.5" /> Mark Attendance
+   186→              </button>
+   187→              <button onClick={() => setActiveModule("students")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition-all hover:scale-105 border border-white/20 backdrop-blur-sm">
+   188→                <Plus className="w-3.5 h-3.5" /> New Admission
+   189→              </button>
+   190→              <button onClick={() => setActiveModule("defaulters")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent/25 hover:bg-accent/35 text-xs font-semibold transition-all hover:scale-105 border border-accent/30 backdrop-blur-sm">
+   191→                <AlertTriangle className="w-3.5 h-3.5" /> {KPI.defaultersCount} Defaulters
+   192→              </button>
+   193→            </div>
+   194→          </div>
+   195→        </div>
+   196→      </div>
+   197→
+   198→      {/* ═══ KPI Row 1 — Primary Stats ═══ */}
+   199→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   200→        <button onClick={kpiClick("students")} className="text-left">
+   201→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm">
+   202→            <div className="flex items-start justify-between">
+   203→              <div>
+   204→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Students</p>
+   205→                <p className="text-2xl font-bold mt-1 tabular-nums">{KPI.totalStudents}</p>
+   206→                <p className="text-xs text-muted-foreground mt-0.5">Active enrollment</p>
+   207→              </div>
+   208→              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+   209→                <Users className="w-4 h-4 text-primary" />
+   210→              </div>
+   211→            </div>
+   212→            {/* Mini sparkline */}
+   213→            <div className="mt-2 h-6">
+   214→              <ResponsiveContainer width="100%" height="100%">
+   215→                <AreaChart data={studentGrowth}>
+   216→                  <defs><linearGradient id="sparkStudents" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#15857A" stopOpacity={0.4} /><stop offset="95%" stopColor="#15857A" stopOpacity={0} /></linearGradient></defs>
+   217→                  <Area type="monotone" dataKey="students" stroke="#15857A" strokeWidth={1.5} fill="url(#sparkStudents)" />
+   218→                </AreaChart>
+   219→              </ResponsiveContainer>
+   220→            </div>
+   221→          </div>
+   222→        </button>
+   223→
+   224→        <button onClick={kpiClick("attendance")} className="text-left group">
+   225→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
+   226→            <div className="flex items-start justify-between">
+   227→              <div>
+   228→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Attendance</p>
+   229→                <p className="text-2xl font-bold mt-1 tabular-nums">{KPI.todayAttendancePct}%</p>
+   230→                <p className="text-xs text-muted-foreground mt-0.5">Mark today's attendance</p>
+   231→              </div>
+   232→              <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
+   233→                <ClipboardCheck className="w-4 h-4 text-yellow-600" />
+   234→              </div>
+   235→            </div>
+   236→            {/* Mini bar chart */}
+   237→            <div className="mt-2 h-6 flex items-end gap-1">
+   238→              {attendanceSpark.map((d, i) => (
+   239→                <div key={i} className="flex-1 rounded-sm bg-yellow-500/30 hover:bg-yellow-500/50 transition-colors" style={{ height: `${d.val}%` }} title={`${d.day}: ${d.val}%`} />
+   240→              ))}
+   241→            </div>
+   242→          </div>
+   243→        </button>
+   244→
+   245→        <button onClick={kpiClick("fees")} className="text-left group">
+   246→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
+   247→            <div className="flex items-start justify-between">
+   248→              <div>
+   249→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Collection</p>
+   250→                <p className="text-2xl font-bold mt-1 tabular-nums">Rs. {KPI.todayFeeCollection.toLocaleString()}</p>
+   251→                <p className="text-xs text-muted-foreground mt-0.5">{todayCollections.length} receipts today</p>
+   252→              </div>
+   253→              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
+   254→                <DollarSign className="w-4 h-4 text-accent" />
+   255→              </div>
+   256→            </div>
+   257→            {/* Mini bar chart */}
+   258→            <div className="mt-2 h-6 flex items-end gap-1">
+   259→              {feeSpark.map((d, i) => (
+   260→                <div key={i} className="flex-1 rounded-sm bg-accent/30 hover:bg-accent/50 transition-colors" style={{ height: `${(d.val / 22) * 100}%` }} title={`${d.day}: Rs. ${d.val}K`} />
+   261→              ))}
+   262→            </div>
+   263→          </div>
+   264→        </button>
+   265→
+   266→        <button onClick={kpiClick("defaulters")} className="text-left group">
+   267→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
+   268→            <div className="flex items-start justify-between">
+   269→              <div>
+   270→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fee Defaulters</p>
+   271→                <p className="text-2xl font-bold mt-1 tabular-nums text-red-600">{KPI.defaultersCount}</p>
+   272→                <p className="text-xs text-muted-foreground mt-0.5">Past due date</p>
+   273→                <div className="flex items-center gap-1 mt-2 text-xs text-red-600 font-medium">
+   274→                  <AlertTriangle className="w-3 h-3" /> Needs follow-up
+   275→                </div>
+   276→              </div>
+   277→              <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/10 transition-colors">
+   278→                <AlertTriangle className="w-4 h-4 text-red-600" />
+   279→              </div>
+   280→            </div>
+   281→            {/* Progress bar showing collection rate */}
+   282→            <div className="mt-2">
+   283→              <div className="flex justify-between text-[9px] text-muted-foreground mb-1"><span>Collection Rate</span><span>{KPI.totalStudents > 0 ? Math.round((1 - KPI.defaultersCount / KPI.totalStudents) * 100) : 0}%</span></div>
+   284→              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+   285→                <div className="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full" style={{ width: `${KPI.totalStudents > 0 ? Math.round(Math.max(0, 1 - KPI.defaultersCount / KPI.totalStudents) * 100) : 0}%` }} />
+   286→              </div>
+   287→            </div>
+   288→          </div>
+   289→        </button>
+   290→      </div>
+   291→
+   292→      {/* ═══ KPI Row 2 — Secondary Stats ═══ */}
+   293→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   294→        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
+   295→          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><GraduationCap className="w-4 h-4 text-purple-600" /></div>
+   296→          <div><p className="text-[10px] text-muted-foreground uppercase">Teaching Staff</p><p className="text-lg font-bold">{KPI.totalTeachers}</p></div>
+   297→        </div>
+   298→        <button onClick={() => setActiveModule("classes")} className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3 text-left hover:bg-muted/30 transition-colors">
+   299→          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><School className="w-4 h-4 text-primary" /></div>
+   300→          <div><p className="text-[10px] text-muted-foreground uppercase">Classes</p><p className="text-lg font-bold">{classes.length}</p></div>
+   301→        </button>
+   302→        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
+   303→          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><TrendingUp className="w-4 h-4 text-emerald-600" /></div>
+   304→          <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Income</p><p className="text-lg font-bold">Rs. {(KPI.monthlyIncome / 1000).toFixed(0)}K</p></div>
+   305→        </div>
+   306→        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
+   307→          <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center"><Wallet className="w-4 h-4 text-pink-600" /></div>
+   308→          <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-lg font-bold text-red-600">Rs. {(KPI.pendingFees / 1000).toFixed(1)}K</p></div>
+   309→        </div>
+   310→      </div>
+   311→
+   312→      {/* ═══ Concession / Scholarship Summary ═══ */}
+   313→      {(() => {
+   314→        const activeConcessions = CONCESSIONS.filter(c => c.status === "Active");
+   315→        const totalSaving = activeConcessions.reduce((s, c) => s + c.monthlySaving, 0);
+   316→        const studentsBenefited = new Set(activeConcessions.map(c => c.studentId)).size;
+   317→        if (activeConcessions.length === 0) return null;
+   318→        return (
+   319→          <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+   320→            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+   321→              <Award className="w-4 h-4 text-emerald-600" />
+   322→            </div>
+   323→            <div className="flex-1 flex items-center gap-4 flex-wrap">
+   324→              <div>
+   325→                <p className="text-xs text-muted-foreground uppercase font-semibold">Active Concessions</p>
+   326→                <p className="text-lg font-bold">{activeConcessions.length} scholarships & discounts</p>
+   327→              </div>
+   328→              <div className="border-l border-border/30 pl-4">
+   329→                <p className="text-xs text-muted-foreground">Students Benefited</p>
+   330→                <p className="text-lg font-bold">{studentsBenefited}</p>
+   331→              </div>
+   332→              <div className="border-l border-border/30 pl-4">
+   333→                <p className="text-xs text-muted-foreground">Monthly Saving</p>
+   334→                <p className="text-lg font-bold text-emerald-600">Rs. {totalSaving.toLocaleString()}</p>
+   335→              </div>
+   336→            </div>
+   337→            <Button variant="ghost" size="sm" className="text-xs h-7 shrink-0" onClick={() => setActiveModule("concession")}>
+   338→              View Details <ArrowRight className="w-3 h-3 ml-1" />
+   339→            </Button>
+   340→          </div>
+   341→        );
+   342→      })()}
+   343→
+   344→      {/* ═══ Charts Row ═══ */}
+   345→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   346→        {/* Fee Collection Trend — 2/3 width */}
+   347→        <Card className="lg:col-span-2 border-0 shadow-sm glass-card card-hover">
+   348→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   349→            <div>
+   350→              <CardTitle className="text-base flex items-center gap-2">
+   351→                <TrendingUp className="w-4 h-4 text-primary" /> Fee Collection Trend
+   352→              </CardTitle>
+   353→              <p className="text-xs text-muted-foreground">Collected vs pending — last 6 months</p>
+   354→            </div>
+   355→            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("analytics")}>
+   356→              View Analytics <ArrowRight className="w-3 h-3 ml-1" />
+   357→            </Button>
+   358→          </CardHeader>
+   359→          <CardContent>
+   360→            <ResponsiveContainer width="100%" height={180}>
+   361→              <AreaChart data={feeTrend}>
+   362→                <defs>
+   363→                  <linearGradient id="collectedGrad" x1="0" y1="0" x2="0" y2="1">
+   364→                    <stop offset="5%" stopColor="#15857A" stopOpacity={0.5} />
+   365→                    <stop offset="95%" stopColor="#15857A" stopOpacity={0} />
+   366→                  </linearGradient>
+   367→                  <linearGradient id="pendingGrad" x1="0" y1="0" x2="0" y2="1">
+   368→                    <stop offset="5%" stopColor="#FF6A3B" stopOpacity={0.4} />
+   369→                    <stop offset="95%" stopColor="#FF6A3B" stopOpacity={0} />
+   370→                  </linearGradient>
+   371→                </defs>
+   372→                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.015 95)" vertical={false} />
+   373→                <XAxis dataKey="month" stroke="oklch(0.50 0.015 200)" fontSize={11} tickLine={false} axisLine={false} />
+   374→                <YAxis stroke="oklch(0.50 0.015 200)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v / 1000}K`} />
+   375→                <Tooltip contentStyle={{ background: "oklch(0.99 0.005 95)", border: "1px solid oklch(0.88 0.015 95)", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} formatter={(v: number) => `Rs. ${v.toLocaleString()}`} />
+   376→                <Legend wrapperStyle={{ fontSize: 12 }} />
+   377→                <Area type="monotone" dataKey="collected" stroke="#15857A" strokeWidth={2.5} fill="url(#collectedGrad)" name="Collected" />
+   378→                <Area type="monotone" dataKey="pending" stroke="#FF6A3B" strokeWidth={2.5} fill="url(#pendingGrad)" name="Pending" />
+   379→              </AreaChart>
+   380→            </ResponsiveContainer>
+   381→          </CardContent>
+   382→        </Card>
+   383→
+   384→        {/* Today's Schedule — 1/3 width */}
+   385→        <Card className="border-0 shadow-sm glass-card card-hover">
+   386→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   387→            <div>
+   388→              <CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" />Today's Schedule</CardTitle>
+   389→              <p className="text-xs text-muted-foreground">Grade 9-A • Live</p>
+   390→            </div>
+   391→            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("timetable")}>
+   392→              Full <ArrowRight className="w-3 h-3 ml-1" />
+   393→            </Button>
+   394→          </CardHeader>
+   395→          <CardContent className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+   396→            {TODAY_SCHEDULE.map((s, i) => {
+   397→              const style = SCHEDULE_STATUS[s.status];
+   398→              return (
+   399→                <div key={i} className={cn("flex items-center gap-3 p-2 rounded-xl border transition-all hover:scale-[1.02]", style.bg, s.status === "in-progress" ? "border-primary/30 ring-1 ring-primary/20" : "border-border/40")}>
+   400→                  <div className={cn("w-1 h-8 rounded-full shrink-0", style.dot)} />
+   401→                  <div className="text-center shrink-0 w-10">
+   402→                    <p className="text-[9px] text-muted-foreground">{s.time}</p>
+   403→                    <p className={cn("text-xs font-bold", style.color)}>{s.period}</p>
+   404→                  </div>
+   405→                  <div className="flex-1 min-w-0">
+   406→                    <p className="text-sm font-medium truncate">{s.subject}</p>
+   407→                    <p className="text-[10px] text-muted-foreground truncate">{s.teacher} • {s.room}</p>
+   408→                  </div>
+   409→                  {s.status === "in-progress" ? (
+   410→                    <Badge className="text-[9px] bg-primary text-primary-foreground border-0 animate-pulse">LIVE</Badge>
+   411→                  ) : s.status === "completed" ? (
+   412→                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+   413→                  ) : (
+   414→                    <Badge variant="outline" className={cn("text-[9px] border-0", style.color, style.bg)}>{style.label}</Badge>
+   415→                  )}
+   416→                </div>
+   417→              );
+   418→            })}
+   419→          </CardContent>
+   420→        </Card>
+   421→      </div>
+   422→
+   423→      {/* ═══ Quick Actions + Recent Activity ═══ */}
+   424→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   425→        {/* Quick Actions */}
+   426→        <Card className="border-0 shadow-sm glass-card card-hover">
+   427→          <CardHeader className="pb-2">
+   428→            <CardTitle className="text-base flex items-center gap-2"><Zap className="w-4 h-4 text-accent" />Quick Actions</CardTitle>
+   429→            <p className="text-xs text-muted-foreground">One-click access</p>
+   430→          </CardHeader>
+   431→          <CardContent className="grid grid-cols-2 gap-2.5">
+   432→            {quickActions.map(action => {
+   433→              const Icon = action.icon;
+   434→              return (
+   435→                <button
+   436→                  key={action.label}
+   437→                  onClick={() => setActiveModule(action.module)}
+   438→                  className={cn("flex flex-col items-start gap-2 p-3 rounded-xl border border-border/40 transition-all card-hover text-left", action.border)}
+   439→                >
+   440→                  <div className={cn("rounded-lg p-2", action.color)}>
+   441→                    <Icon className="w-4 h-4" />
+   442→                  </div>
+   443→                  <div>
+   444→                    <p className="text-xs font-semibold">{action.label}</p>
+   445→                    <p className="text-[10px] text-muted-foreground">{action.desc}</p>
+   446→                  </div>
+   447→                </button>
+   448→              );
+   449→            })}
+   450→          </CardContent>
+   451→        </Card>
+   452→
+   453→        {/* Recent activity — 2/3 width */}
+   454→        <Card className="lg:col-span-2 border-0 shadow-sm glass-card card-hover">
+   455→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   456→            <div>
+   457→              <CardTitle className="text-base flex items-center gap-2">
+   458→                <ActivityIcon className="w-4 h-4 text-primary" /> Recent Activities
+   459→              </CardTitle>
+   460→              <p className="text-xs text-muted-foreground">Latest 7 events in the system</p>
+   461→            </div>
+   462→            <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground" onClick={() => setActiveModule("reports")}>View all</Button>
+   463→          </CardHeader>
+   464→          <CardContent className="space-y-1 max-h-[220px] overflow-y-auto">
+   465→            {ACTIVITIES.length === 0 ? (
+   466→              <div className="text-center py-8 text-xs text-muted-foreground">
+   467→                <ActivityIcon className="w-6 h-6 mx-auto mb-1.5 opacity-40" />
+   468→                No recent activity yet. Actions you take will appear here.
+   469→              </div>
+   470→            ) : ACTIVITIES.map(act => {
+   471→              const Icon = ACTIVITY_ICONS[act.type] || ActivityIcon;
+   472→              return (
+   473→                <div key={act.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors group">
+   474→                  <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", ACTIVITY_COLORS[act.type], "bg-opacity-10")} style={{ background: act.type === "fee" ? "oklch(0.95 0.05 150)" : act.type === "attendance" ? "oklch(0.95 0.05 175)" : act.type === "admission" ? "oklch(0.95 0.05 280)" : act.type === "salary" ? "oklch(0.95 0.08 45)" : act.type === "certificate" ? "oklch(0.95 0.08 95)" : "oklch(0.95 0 0)" }}>
+   475→                    <Icon className="w-3.5 h-3.5" style={{ color: act.type === "fee" ? "#059669" : act.type === "attendance" ? "#15857A" : act.type === "admission" ? "#7C3AED" : act.type === "salary" ? "#FF6A3B" : act.type === "certificate" ? "#CA8A04" : "#6B7280" }} />
+   476→                  </div>
+   477→                  <div className="flex-1 min-w-0">
+   478→                    <p className="text-sm font-medium text-foreground">{act.action}</p>
+   479→                    <p className="text-xs text-muted-foreground truncate">{act.description}</p>
+   480→                  </div>
+   481→                  <div className="text-right shrink-0">
+   482→                    <p className="text-[10px] text-muted-foreground">{act.timestamp.split(" ")[1]}</p>
+   483→                    <p className="text-[10px] text-muted-foreground/70">{act.user.split(" ")[0]}</p>
+   484→                  </div>
+   485→                </div>
+   486→              );
+   487→            })}
+   488→          </CardContent>
+   489→        </Card>
+   490→      </div>
+   491→
+   492→      {/* ═══ Pending Tasks + Birthdays ═══ */}
+   493→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   494→        {/* Pending tasks */}
+   495→        <Card className="border-0 shadow-sm glass-card card-hover">
+   496→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   497→            <CardTitle className="text-base flex items-center gap-2">
+   498→              <Clock className="w-4 h-4 text-accent" /> Pending Tasks Today
+   499→            </CardTitle>
+   500→            <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-0">{PENDING_TASKS.length} tasks</Badge>
+   501→          </CardHeader>
+   502→          <CardContent className="space-y-1">
+   503→            {PENDING_TASKS.map(task => (
+   504→              <button
+   505→                key={task.id}
+   506→                onClick={() => setActiveModule(task.module)}
+   507→                className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors text-left group"
+   508→              >
+   509→                <Circle className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+   510→                <div className="flex-1 min-w-0">
+   511→                  <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
+   512→                  <p className="text-[10px] text-muted-foreground">Due in {task.dueIn}</p>
+   513→                </div>
+   514→                <Badge variant="outline" className={cn("text-[9px] capitalize", PRIORITY_STYLES[task.priority])}>
+   515→                  {task.priority}
+   516→                </Badge>
+   517→                <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+   518→              </button>
+   519→            ))}
+   520→          </CardContent>
+   521→        </Card>
+   522→
+   523→        {/* Birthdays */}
+   524→        <Card className="border-0 shadow-sm glass-card card-hover">
+   525→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   526→            <CardTitle className="text-base flex items-center gap-2">
+   527→              <Cake className="w-4 h-4 text-pink-500" /> Upcoming Birthdays
+   528→            </CardTitle>
+   529→            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("students")}>
+   530→              All students <ArrowRight className="w-3 h-3 ml-1" />
+   531→            </Button>
+   532→          </CardHeader>
+   533→          <CardContent className="space-y-1.5">
+   534→            {UPCOMING_BIRTHDAYS.map((b, i) => (
+   535→              <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+   536→                <div className="relative">
+   537→                  <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold", b.date === "Today" ? "bg-gradient-to-br from-pink-500 to-purple-500 text-white" : "bg-gradient-to-br from-pink-500/15 to-purple-500/15 text-pink-600")}>
+   538→                    {b.avatar}
+   539→                  </div>
+   540→                  {b.date === "Today" && (
+   541→                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-accent border-2 border-card animate-pulse" />
+   542→                  )}
+   543→                </div>
+   544→                <div className="flex-1 min-w-0">
+   545→                  <p className="text-sm font-medium truncate">{b.name}</p>
+   546→                  <p className="text-[10px] text-muted-foreground">{b.class} • Turning {b.age}</p>
+   547→                </div>
+   548→                <Badge variant="outline" className={cn("text-[10px] border-0", b.date === "Today" ? "bg-accent/15 text-accent font-semibold" : "bg-muted text-muted-foreground")}>
+   549→                  {b.date === "Today" && "🎂 "}{b.date}
+   550→                </Badge>
+   551→              </div>
+   552→            ))}
+   553→          </CardContent>
+   554→        </Card>
+   555→      </div>
+   556→
+   557→      {/* ═══ Student Growth — Full Width ═══ */}
+   558→      <Card className="border-0 shadow-sm glass-card card-hover">
+   559→        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   560→          <div>
+   561→            <CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> Student Growth Trend</CardTitle>
+   562→            <p className="text-xs text-muted-foreground">Last 12 months enrollment</p>
+   563→          </div>
+   564→          <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("analytics")}>
+   565→            View Analytics <ArrowRight className="w-3 h-3 ml-1" />
+   566→          </Button>
+   567→        </CardHeader>
+   568→        <CardContent>
+   569→          <ResponsiveContainer width="100%" height={140}>
+   570→            <BarChart data={studentGrowth}>
+   571→              <defs>
+   572→                <linearGradient id="studentsGrad2" x1="0" y1="0" x2="0" y2="1">
+   573→                  <stop offset="0%" stopColor="#15857A" />
+   574→                  <stop offset="100%" stopColor="#15857A" stopOpacity={0.4} />
+   575→                </linearGradient>
+   576→              </defs>
+   577→              <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.015 95)" vertical={false} />
+   578→              <XAxis dataKey="month" stroke="oklch(0.50 0.015 200)" fontSize={10} tickLine={false} axisLine={false} interval={1} />
+   579→              <YAxis stroke="oklch(0.50 0.015 200)" fontSize={11} tickLine={false} axisLine={false} domain={[400, 480]} />
+   580→              <Tooltip contentStyle={{ background: "oklch(0.99 0.005 95)", border: "1px solid oklch(0.88 0.015 95)", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} formatter={(v: number) => `${v} students`} />
+   581→              <Bar dataKey="students" fill="url(#studentsGrad2)" radius={[4, 4, 0, 0]} name="Students" />
+   582→            </BarChart>
+   583→          </ResponsiveContainer>
+   584→        </CardContent>
+   585→      </Card>
+   586→    </div>
+   587→  );
+   588→}
+   589→

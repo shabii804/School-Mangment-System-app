@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,18 @@ function StudentAttendance() {
   const filtered = classFilter === "all"
     ? students.filter(s => s.status === "Active")
     : students.filter(s => s.class === classFilter && s.status === "Active");
+
+  // Pre-populate all filtered students as "Present" by default
+  // so the user doesn't have to click each one just to save
+  useEffect(() => {
+    setStatuses(prev => {
+      const next = { ...prev };
+      filtered.forEach(s => {
+        if (!next[s.id]) next[s.id] = "Present";
+      });
+      return next;
+    });
+  }, [classFilter, students.length]); // re-run when class filter or student count changes
 
   const setStatus = (id: string, status: AttStatus) => {
     setStatuses(prev => ({ ...prev, [id]: status }));

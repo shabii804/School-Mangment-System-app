@@ -307,7 +307,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "9.0-seeded";
+  const CURRENT_VERSION = "10.0-qa-fixed";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -518,6 +518,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   deleteStudent: (id) => set((state) => ({
     students: state.students.filter(s => s.id !== id),
+    // Clean up PII: delete all documents belonging to this student
+    documents: state.documents.filter(d => d.studentId !== id),
+    // Clean up communication logs
+    commLogs: state.commLogs.filter(l => l.studentId !== id),
+    // NOTE: feeCollections and attendanceRecords are kept for audit trail
+    // (the student's name is still embedded in feeCollections.studentName)
   })),
 
   promoteStudent: (id, newClass, newSection) => set((state) => ({
@@ -575,11 +581,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     set({
       feeCollections: [newCollection, ...state.feeCollections],
-      students: state.students.map(s =>
-        s.id === studentId
-          ? { ...s, feePaidThisMonth: true, outstandingAmount: Math.max(0, s.outstandingAmount - amount) }
-          : s
-      ),
+      students: state.students.map(s => {
+        if (s.id !== studentId) return s;
+        const newOutstanding = Math.max(0, s.outstandingAmount - amount);
+        // Only mark feePaidThisMonth = true when outstanding reaches 0
+        // Partial payments keep the flag false so the student still appears in Defaulters
+        const fullyPaid = newOutstanding <= 0;
+        return {
+          ...s,
+          feePaidThisMonth: fullyPaid,
+          outstandingAmount: newOutstanding,
+        };
+      }),
       activities: [newActivity, ...state.activities],
     });
   },

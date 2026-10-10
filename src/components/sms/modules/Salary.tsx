@@ -14,7 +14,6 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { TEACHERS, STAFF } from "@/lib/sms-data";
 import {
   Wallet, Calculator, Printer, FileDown, CheckCircle2,
   TrendingDown, AlertCircle,
@@ -367,6 +366,16 @@ export function SalaryModule() {
               const slipNo = `SLIP-${month.replace(/[^a-zA-Z0-9]/g, "")}-${String(Date.now()).slice(-6)}`;
               toast({ title: "Opening salary slip PDF...", description: slipNo });
               printSalarySlip(selected, month, calc, slipNo, school);
+              // Record salary payment as an expense in the Ledger
+              addTransaction({
+                id: `TX-${String(Date.now()).slice(-6)}`,
+                date: new Date().toISOString().split("T")[0],
+                type: "Expense",
+                category: "Salary",
+                description: `Salary — ${selected.name} (${month})`,
+                amount: calc.net,
+                mode: "Bank",
+              });
             }}>
               <Printer className="w-4 h-4 mr-1.5" />Print Slip (PDF)
             </Button>

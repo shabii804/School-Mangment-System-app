@@ -136,9 +136,15 @@ export function StudentsModule() {
     const cls = CLASSES.find(c => c.name === form.class);
     const monthlyFee = cls?.monthlyFee ?? 0;
     const hostelFee = form.isHosteller ? (useAppStore.getState().feeStructure.hostelFee || 0) : 0;
+    // Compute next available roll number for THIS class+section (not global)
+    const sameClassStudents = students.filter(s => s.class === form.class && s.section === form.section);
+    const maxRoll = sameClassStudents.reduce((max, s) => {
+      const n = parseInt(s.rollNo) || 0;
+      return n > max ? n : max;
+    }, 0);
     const newStudent: Student = {
       id: `SCH-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
-      rollNo: String(students.length + 1).padStart(2, "0"),
+      rollNo: String(maxRoll + 1).padStart(2, "0"),
       name: form.name,
       class: form.class,
       section: form.section,
@@ -241,7 +247,7 @@ export function StudentsModule() {
   const handleBulkPromote = () => {
     selectedIds.forEach(id => {
       const newFee = CLASSES.find(c => c.name === bulkClass)?.monthlyFee;
-      updateStudent(id, { class: bulkClass, section: bulkSection, ...(newFee ? { monthlyFee: newFee } : {}) });
+      updateStudent(id, { class: bulkClass, section: bulkSection, ...(newFee !== undefined ? { monthlyFee: newFee } : {}) });
     });
     toast({ title: "Bulk Promote Complete ✓", description: `${selectedIds.size} students promoted to ${bulkClass}-${bulkSection}` });
     setSelectedIds(new Set());
@@ -1301,7 +1307,12 @@ export function StudentsModule() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Promote to Class</Label>
-                  <Select value={promoteClass} onValueChange={setPromoteClass}>
+                  <Select value={promoteClass} onValueChange={(v) => {
+                    setPromoteClass(v);
+                    // Reset section to first available section of the new class
+                    const cls = CLASSES.find(c => c.name === v);
+                    setPromoteSection(cls?.sections?.[0] || "A");
+                  }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
                   </Select>
@@ -1309,25 +1320,61 @@ export function StudentsModule() {
                 <div><Label>Section</Label>
                   <Select value={promoteSection} onValueChange={setPromoteSection}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+                    <SelectContent>
+                      {(CLASSES.find(c => c.name === promoteClass)?.sections || ["A", "B"]).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
                 <p className="font-medium text-primary">What happens on promote:</p>
-                <p className="text-muted-foreground mt-1">• Student moves to new class & section<br/>• New roll number auto-assigned<br/>• Monthly fee updated to new class rate<br/>• All historical records preserved</p>
+                <p className="text-muted-foreground mt-1">• Student moves to new class & section<br/>• New roll number auto-assigned (next available)<br/>• Monthly fee updated to new class rate<br/>• If fee increases, outstanding adjusted & fee-paid flag reset<br/>• All historical records preserved</p>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setPromoteTarget(null)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => {
-              if (promoteTarget) {
-                const newFee = CLASSES.find(c => c.name === promoteClass)?.monthlyFee ?? promoteTarget.monthlyFee;
-                updateStudent(promoteTarget.id, { class: promoteClass, section: promoteSection, monthlyFee: newFee });
-                toast({ title: "Student Promoted ✓", description: `${promoteTarget.name} → ${promoteClass}-${promoteSection} • Fee: Rs. ${newFee.toLocaleString()}/month` });
-                setPromoteTarget(null);
+            <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={CLASSES.length === 0} onClick={() => {
+              if (!promoteTarget) return;
+              const targetCls = CLASSES.find(c => c.name === promoteClass);
+              if (!targetCls) {
+                toast({ title: "Invalid class", description: "Please select a valid class.", variant: "destructive" });
+                return;
               }
+              const newFee = targetCls.monthlyFee;
+              const oldFee = promoteTarget.monthlyFee;
+
+              // Compute next available roll number in the target class+section
+              const sameClassStudents = students.filter(s =>
+                s.class === promoteClass && s.section === promoteSection && s.id !== promoteTarget.id
+              );
+              const maxRoll = sameClassStudents.reduce((max, s) => {
+                const n = parseInt(s.rollNo) || 0;
+                return n > max ? n : max;
+              }, 0);
+              const newRollNo = String(maxRoll + 1).padStart(2, "0");
+
+              // Build the update patch
+              const patch: Partial<Student> = {
+                class: promoteClass,
+                section: promoteSection,
+                monthlyFee: newFee,
+                rollNo: newRollNo,
+              };
+
+              // If fee increased and student already paid this month, reset the paid flag
+              // and add the difference to outstanding
+              if (newFee > oldFee && promoteTarget.feePaidThisMonth) {
+                patch.feePaidThisMonth = false;
+                patch.outstandingAmount = promoteTarget.outstandingAmount + (newFee - oldFee);
+              }
+
+              updateStudent(promoteTarget.id, patch);
+              toast({
+                title: "Student Promoted ✓",
+                description: `${promoteTarget.name} → ${promoteClass}-${promoteSection} • Roll #${newRollNo} • Fee: Rs. ${newFee.toLocaleString()}/month${newFee > oldFee && promoteTarget.feePaidThisMonth ? " • Fee paid flag reset (fee increased)" : ""}`,
+              });
+              setPromoteTarget(null);
             }}><ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote Student</Button>
           </DialogFooter>
         </DialogContent>

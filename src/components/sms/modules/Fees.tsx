@@ -29,7 +29,7 @@ import { printFeeReceipt, printDefaulterList, printFeeCollectionReport } from "@
 const HOSTEL_FEE = 3500;
 
 export function FeesModule() {
-  const { students, feeCollections, collectFee, searchQuery, selectedStudentId, school, feeStructure } = useAppStore();
+  const { students, feeCollections, collectFee, searchQuery, selectedStudentId, school, feeStructure, setSelectedStudent: setStoreSelectedStudent } = useAppStore();
   const { toast } = useToast();
   const HOSTEL_FEE = feeStructure.hostelFee;
   const ADMISSION_MULTIPLIER = feeStructure.admissionMultiplier;
@@ -143,7 +143,9 @@ export function FeesModule() {
       description: `Receipt ${receiptNo} • Rs. ${total.toLocaleString()} from ${selected.name}.`,
     });
 
+    // Clear both local + store selection so the dialog doesn't reopen
     setSelected(null);
+    setStoreSelectedStudent(null);
   };
 
   const reprintReceipt = async (f: typeof feeCollections[0]) => {

@@ -1,0 +1,722 @@
+     1→"use client";
+     2→
+     3→import { useState, useMemo, useEffect } from "react";
+     4→import { useAppStore } from "@/lib/sms-store";
+     5→import { Card, CardContent } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { Input } from "@/components/ui/input";
+     8→import { Badge } from "@/components/ui/badge";
+     9→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    10→import {
+    11→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    12→} from "@/components/ui/table";
+    13→import {
+    14→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    15→} from "@/components/ui/dialog";
+    16→import {
+    17→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    18→} from "@/components/ui/select";
+    19→import {
+    20→  Search, DollarSign, Receipt, Printer, AlertTriangle, Filter,
+    21→  CheckCircle2, Clock, TrendingUp, Wallet, FileDown, Home, BookOpen,
+    22→  GraduationCap, IdCard, Brain,
+    23→} from "lucide-react";
+    24→import { cn } from "@/lib/utils";
+    25→import { useToast } from "@/hooks/use-toast";
+    26→import { printFeeReceipt, printDefaulterList, printFeeCollectionReport } from "@/lib/pdf-service";
+    27→
+    28→// Hostel fee constant
+    29→const HOSTEL_FEE = 3500;
+    30→
+    31→export function FeesModule() {
+    32→  const { students, feeCollections, collectFee, searchQuery, selectedStudentId, school, feeStructure } = useAppStore();
+    33→  const { toast } = useToast();
+    34→  const HOSTEL_FEE = feeStructure.hostelFee;
+    35→  const ADMISSION_MULTIPLIER = feeStructure.admissionMultiplier;
+    36→  const [search, setSearch] = useState("");
+    37→  const [feeClassFilter, setFeeClassFilter] = useState("all");
+    38→  const [selected, setSelected] = useState<typeof students[0] | null>(null);
+    39→
+    40→  // Breakdown state — combine tuition + hostel in one receipt
+    41→  const [includeTuition, setIncludeTuition] = useState(true);
+    42→  const [includeHostel, setIncludeHostel] = useState(false);
+    43→  const [includeAdmission, setIncludeAdmission] = useState(false);
+    44→  const [customAmount, setCustomAmount] = useState<string>(""); // manual entry
+    45→  const [useCustom, setUseCustom] = useState(false);
+    46→  const [mode, setMode] = useState<"Cash" | "Cheque" | "Bank Transfer">("Cash");
+    47→
+    48→  const filtered = useMemo(() => {
+    49→    const q = (search || searchQuery).toLowerCase();
+    50→    return students.filter(s =>
+    51→      s.status === "Active" &&
+    52→      (feeClassFilter === "all" || s.class === feeClassFilter) &&
+    53→      (!q || `${s.name} ${s.id} ${s.fatherName} ${s.fatherPhone}`.toLowerCase().includes(q))
+    54→    );
+    55→  }, [students, search, searchQuery, feeClassFilter]);
+    56→
+    57→  // Auto-select student from cross-module navigation (defaulters → collect)
+    58→  useEffect(() => {
+    59→    if (selectedStudentId) {
+    60→      const s = students.find(st => st.id === selectedStudentId);
+    61→      if (s) {
+    62→        setSelected(s);
+    63→        setIncludeTuition(true);
+    64→        setIncludeHostel(s.isHosteller);
+    65→        setIncludeAdmission(false);
+    66→      }
+    67→    }
+    68→  }, [selectedStudentId, students]);
+    69→
+    70→  const openCollect = (s: typeof students[0]) => {
+    71→    setSelected(s);
+    72→    setIncludeTuition(true);
+    73→    setIncludeHostel(s.isHosteller);
+    74→    setIncludeAdmission(false);
+    75→    setUseCustom(false);
+    76→    setCustomAmount("");
+    77→  };
+    78→
+    79→  const tuitionAmt = includeTuition ? selected?.monthlyFee || 0 : 0;
+    80→  const hostelAmt = includeHostel && selected?.isHosteller ? HOSTEL_FEE : 0;
+    81→  const admissionAmt = includeAdmission ? (selected?.monthlyFee || 0) * ADMISSION_MULTIPLIER : 0;
+    82→  const checkboxTotal = tuitionAmt + hostelAmt + admissionAmt;
+    83→  const customAmt = useCustom && customAmount ? parseInt(customAmount) || 0 : 0;
+    84→  const total = useCustom ? customAmt : checkboxTotal;
+    85→
+    86→  const feeTypeLabel = useCustom
+    87→    ? "Manual Entry"
+    88→    : [
+    89→        includeTuition && "Tuition",
+    90→        includeHostel && "Hostel",
+    91→        includeAdmission && "Admission",
+    92→      ].filter(Boolean).join(" + ") || "Tuition";
+    93→
+    94→  const submit = async () => {
+    95→    if (!selected) return;
+    96→    if (total === 0) {
+    97→      toast({ title: "Select a fee type", description: "Please check at least one fee to collect.", variant: "destructive" });
+    98→      return;
+    99→    }
+   100→
+   101→    // Build the receipt object FIRST (before committing) so we can print and confirm
+   102→    const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
+   103→    const newCollection = {
+   104→      id: `FC-${Date.now()}`,
+   105→      receiptNo,
+   106→      studentId: selected.id,
+   107→      studentName: selected.name,
+   108→      class: selected.class,
+   109→      date: new Date().toISOString().split("T")[0],
+   110→      amount: total,
+   111→      mode,
+   112→      tuition: useCustom ? undefined : (tuitionAmt || undefined),
+   113→      hostel: useCustom ? undefined : (hostelAmt || undefined),
+   114→      admission: useCustom ? undefined : (admissionAmt || undefined),
+   115→      feeType: feeTypeLabel,
+   116→    };
+   117→
+   118→    // Generate PDF FIRST — if it fails, don't commit the fee
+   119→    try {
+   120→      await printFeeReceipt(newCollection, selected, school);
+   121→    } catch (e) {
+   122→      toast({
+   123→        title: "Print failed — fee NOT collected",
+   124→        description: "PDF could not be generated. The fee was not recorded. Try again.",
+   125→        variant: "destructive",
+   126→      });
+   127→      return;
+   128→    }
+   129→
+   130→    // PDF succeeded — now commit the fee to the store
+   131→    collectFee(
+   132→      selected.id,
+   133→      total,
+   134→      mode,
+   135→      feeTypeLabel,
+   136→      useCustom
+   137→        ? undefined
+   138→        : { tuition: tuitionAmt || undefined, hostel: hostelAmt || undefined, admission: admissionAmt || undefined }
+   139→    );
+   140→
+   141→    toast({
+   142→      title: "Fee Collected ✓",
+   143→      description: `Receipt ${receiptNo} • Rs. ${total.toLocaleString()} from ${selected.name}.`,
+   144→    });
+   145→
+   146→    setSelected(null);
+   147→  };
+   148→
+   149→  const reprintReceipt = async (f: typeof feeCollections[0]) => {
+   150→    const student = students.find(s => s.id === f.studentId);
+   151→    if (!student) {
+   152→      toast({
+   153→        title: "Cannot reprint",
+   154→        description: "This student no longer exists in the system.",
+   155→        variant: "destructive",
+   156→      });
+   157→      return;
+   158→    }
+   159→    toast({ title: "Opening receipt...", description: f.receiptNo });
+   160→    try {
+   161→      await printFeeReceipt(f, student, school);
+   162→    } catch {
+   163→      toast({ title: "Print failed", description: "Could not generate PDF.", variant: "destructive" });
+   164→    }
+   165→  };
+   166→
+   167→  const todayCollections = feeCollections.filter(f => f.date === new Date().toISOString().split("T")[0]);
+   168→
+   169→  return (
+   170→    <div className="space-y-3 fade-in">
+   171→      {/* KPI row */}
+   172→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   173→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   174→          <div className="rounded-lg bg-emerald-500/10 p-1.5"><DollarSign className="w-4 h-4 text-emerald-600" /></div>
+   175→          <div>
+   176→            <p className="text-xs text-muted-foreground">Collected Today</p>
+   177→            <p className="text-lg font-bold">Rs. {todayCollections.reduce((s, f) => s + f.amount, 0).toLocaleString()}</p>
+   178→          </div>
+   179→        </CardContent></Card>
+   180→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   181→          <div className="rounded-lg bg-primary/10 p-1.5"><Receipt className="w-4 h-4 text-primary" /></div>
+   182→          <div>
+   183→            <p className="text-xs text-muted-foreground">Receipts Today</p>
+   184→            <p className="text-xl font-bold">{todayCollections.length}</p>
+   185→          </div>
+   186→        </CardContent></Card>
+   187→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   188→          <div className="rounded-lg bg-accent/10 p-1.5"><Wallet className="w-4 h-4 text-accent" /></div>
+   189→          <div>
+   190→            <p className="text-xs text-muted-foreground">Total Outstanding</p>
+   191→            <p className="text-lg font-bold">Rs. {students.reduce((s, st) => s + st.outstandingAmount, 0).toLocaleString()}</p>
+   192→          </div>
+   193→        </CardContent></Card>
+   194→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   195→          <div className="rounded-lg bg-red-500/10 p-1.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div>
+   196→          <div>
+   197→            <p className="text-xs text-muted-foreground">Defaulters</p>
+   198→            <p className="text-xl font-bold">{students.filter(s => s.outstandingAmount > 0).length}</p>
+   199→          </div>
+   200→        </CardContent></Card>
+   201→      </div>
+   202→
+   203→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   204→        {/* Student lookup */}
+   205→        <Card className="lg:col-span-2 border-0 shadow-sm glass-card">
+   206→          <div className="p-4 border-b border-border/30 flex items-center gap-2 flex-wrap">
+   207→            <div className="relative flex-1 min-w-48">
+   208→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+   209→              <Input
+   210→                placeholder="Search student (name, ID, phone)..."
+   211→                className="pl-9 bg-background/60"
+   212→                value={search}
+   213→                onChange={(e) => setSearch(e.target.value)}
+   214→                autoFocus
+   215→              />
+   216→            </div>
+   217→            <Select value={feeClassFilter} onValueChange={setFeeClassFilter}>
+   218→              <SelectTrigger className="w-36 bg-background/60 h-9"><Filter className="w-3.5 h-3.5 mr-1.5" /><SelectValue /></SelectTrigger>
+   219→              <SelectContent>
+   220→                <SelectItem value="all">All Classes</SelectItem>
+   221→                {Array.from(new Set(students.filter(s => s.status === "Active").map(s => s.class))).sort().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+   222→              </SelectContent>
+   223→            </Select>
+   224→          </div>
+   225→          <div className="max-h-96 overflow-y-auto">
+   226→            {filtered.slice(0, 12).map(s => (
+   227→              <div
+   228→                key={s.id}
+   229→                className="flex items-center gap-3 p-3 border-b border-border/20 hover:bg-muted/30 cursor-pointer transition-colors"
+   230→                onClick={() => openCollect(s)}
+   231→              >
+   232→                <Avatar className="w-9 h-9">
+   233→                  <AvatarFallback className={cn("text-xs font-semibold", s.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>
+   234→                    {s.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   235→                  </AvatarFallback>
+   236→                </Avatar>
+   237→                <div className="flex-1 min-w-0">
+   238→                  <p className="text-sm font-medium truncate flex items-center gap-2">
+   239→                    {s.name}
+   240→                    {s.isHosteller && (
+   241→                      <Badge variant="outline" className="text-[9px] bg-accent/10 text-accent border-0 px-1 py-0">
+   242→                        <Home className="w-2.5 h-2.5 mr-0.5" />Hostel
+   243→                      </Badge>
+   244→                    )}
+   245→                  </p>
+   246→                  <p className="text-xs text-muted-foreground">{s.id} • {s.class}-{s.section} • Roll #{s.rollNo}</p>
+   247→                </div>
+   248→                <div className="text-right">
+   249→                  {s.outstandingAmount > 0 ? (
+   250→                    <Badge variant="destructive" className="text-[10px]">Rs. {s.outstandingAmount.toLocaleString()}</Badge>
+   251→                  ) : (
+   252→                    <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-0">Paid</Badge>
+   253→                  )}
+   254→                </div>
+   255→                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); openCollect(s); }}>Collect</Button>
+   256→              </div>
+   257→            ))}
+   258→            {filtered.length === 0 && (
+   259→              <div className="p-8 text-center text-sm text-muted-foreground">No students found.</div>
+   260→            )}
+   261→          </div>
+   262→        </Card>
+   263→
+   264→        {/* Recent receipts */}
+   265→        <Card className="border-0 shadow-sm glass-card">
+   266→          <div className="p-4 border-b border-border/30 flex items-center justify-between">
+   267→            <p className="text-sm font-semibold">Recent Receipts</p>
+   268→            <Button
+   269→              variant="ghost"
+   270→              size="sm"
+   271→              className="h-7 text-xs"
+   272→              onClick={() => {
+   273→                toast({ title: "Generating report...", description: "Opening PDF..." });
+   274→                printFeeCollectionReport(feeCollections.slice(0, 20), school);
+   275→              }}
+   276→            >
+   277→              <FileDown className="w-3 h-3 mr-1" />Report
+   278→            </Button>
+   279→          </div>
+   280→          <div className="max-h-96 overflow-y-auto">
+   281→            {feeCollections.slice(0, 10).map(f => (
+   282→              <div key={f.id} className="p-3 border-b border-border/20 hover:bg-muted/30 group">
+   283→                <div className="flex items-start justify-between gap-2">
+   284→                  <div className="flex-1 min-w-0">
+   285→                    <p className="text-xs font-mono text-muted-foreground">{f.receiptNo}</p>
+   286→                    <p className="text-sm font-medium truncate mt-0.5">{f.studentName}</p>
+   287→                    <p className="text-[10px] text-muted-foreground">{f.class} • {f.feeType} • {f.mode}</p>
+   288→                  </div>
+   289→                  <div className="text-right">
+   290→                    <p className="font-bold text-sm text-emerald-600">Rs. {f.amount.toLocaleString()}</p>
+   291→                    <p className="text-[10px] text-muted-foreground">{f.date.slice(5)}</p>
+   292→                  </div>
+   293→                </div>
+   294→                <button
+   295→                  onClick={() => reprintReceipt(f)}
+   296→                  className="mt-1.5 text-[10px] text-primary transition-opacity flex items-center gap-1 hover:underline"
+   297→                >
+   298→                  <Printer className="w-2.5 h-2.5" />Reprint Receipt
+   299→                </button>
+   300→              </div>
+   301→            ))}
+   302→          </div>
+   303→        </Card>
+   304→      </div>
+   305→
+   306→      {/* Collect dialog with combined fee breakdown */}
+   307→      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+   308→        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+   309→          {selected && (
+   310→            <>
+   311→              {/* Gradient hero header — student info */}
+   312→              <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-primary/70 px-5 py-4 text-white">
+   313→                <div className="absolute inset-0 opacity-10 pattern-grid" />
+   314→                <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+   315→                <div className="relative flex items-center gap-4">
+   316→                  <Avatar className="w-14 h-14 ring-4 ring-white/30 shadow-xl shrink-0">
+   317→                    {selected.photo ? (
+   318→                      // eslint-disable-next-line @next/next/no-img-element
+   319→                      <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover" />
+   320→                    ) : (
+   321→                      <AvatarFallback className="text-base font-bold bg-white/20 text-white border-0">
+   322→                        {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   323→                      </AvatarFallback>
+   324→                    )}
+   325→                  </Avatar>
+   326→                  <div className="flex-1 min-w-0">
+   327→                    <div className="flex items-center gap-2 flex-wrap">
+   328→                      <h2 className="text-lg font-bold tracking-tight truncate">{selected.name}</h2>
+   329→                      {selected.isHosteller && (
+   330→                        <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-white/20 font-medium">
+   331→                          <Home className="w-2.5 h-2.5" />Hosteller
+   332→                        </span>
+   333→                      )}
+   334→                    </div>
+   335→                    <p className="text-xs text-white/75 mt-0.5">
+   336→                      <span className="font-mono">{selected.id}</span> • {selected.class}-{selected.section} • Roll #{selected.rollNo}
+   337→                    </p>
+   338→                  </div>
+   339→                  <div className="hidden md:flex flex-col items-end text-right shrink-0">
+   340→                    <span className="text-[10px] uppercase tracking-wider text-white/60">Receipt #</span>
+   341→                    <span className="text-xs font-semibold mt-0.5 font-mono">RCPT-{new Date().toISOString().slice(0, 10).replace(/-/g, "")}-{String(feeCollections.length + 1).padStart(3, "0")}</span>
+   342→                  </div>
+   343→                </div>
+   344→                {/* Quick stats */}
+   345→                <div className="relative grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-white/20">
+   346→                  <div>
+   347→                    <p className="text-[10px] uppercase tracking-wider text-white/60">Monthly Fee</p>
+   348→                    <p className="text-base font-bold mt-0.5">Rs. {selected.monthlyFee.toLocaleString()}</p>
+   349→                  </div>
+   350→                  <div className="border-l border-white/20 pl-3">
+   351→                    <p className="text-[10px] uppercase tracking-wider text-white/60">Outstanding</p>
+   352→                    <p className="text-base font-bold mt-0.5 text-red-200">Rs. {selected.outstandingAmount.toLocaleString()}</p>
+   353→                  </div>
+   354→                  <div className="border-l border-white/20 pl-3">
+   355→                    <p className="text-[10px] uppercase tracking-wider text-white/60">Status</p>
+   356→                    <p className="text-base font-bold mt-0.5">
+   357→                      {selected.feePaidThisMonth ? "Paid ✓" : "Pending"}
+   358→                    </p>
+   359→                  </div>
+   360→                </div>
+   361→              </div>
+   362→
+   363→              {/* Form body */}
+   364→              <div className="px-5 py-4 space-y-3">
+   365→                {/* ─── Section: Fee Selection ─── */}
+   366→                <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   367→                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   368→                    <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   369→                      <BookOpen className="w-3.5 h-3.5 text-primary" />
+   370→                    </div>
+   371→                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">Select Fees to Collect</p>
+   372→                    <button
+   373→                      type="button"
+   374→                      onClick={() => setUseCustom(!useCustom)}
+   375→                      className={cn(
+   376→                        "ml-auto text-[10px] px-2 py-0.5 rounded-full border transition-all font-medium",
+   377→                        useCustom
+   378→                          ? "bg-accent/10 text-accent border-accent/30"
+   379→                          : "bg-muted text-muted-foreground border-border/40 hover:border-accent/30"
+   380→                      )}
+   381→                    >
+   382→                      {useCustom ? "✓ Manual Entry" : "Manual Entry"}
+   383→                    </button>
+   384→                  </div>
+   385→                  <div className="p-3 space-y-2">
+   386→                    {!useCustom && (
+   387→                      <div className="space-y-2">
+   388→                        {/* Tuition */}
+   389→                        <button
+   390→                          type="button"
+   391→                          onClick={() => setIncludeTuition(!includeTuition)}
+   392→                          className={cn(
+   393→                            "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+   394→                            includeTuition ? "border-primary bg-primary/5" : "border-border/40 hover:border-primary/30"
+   395→                          )}
+   396→                        >
+   397→                          <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0",
+   398→                            includeTuition ? "bg-primary border-primary" : "border-border")}>
+   399→                            {includeTuition && <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />}
+   400→                          </div>
+   401→                          <div className="flex-1 flex items-center gap-2 min-w-0">
+   402→                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", includeTuition ? "bg-primary/15" : "bg-muted")}>
+   403→                              <BookOpen className={cn("w-3.5 h-3.5", includeTuition ? "text-primary" : "text-muted-foreground")} />
+   404→                            </div>
+   405→                            <div className="text-left min-w-0">
+   406→                              <p className="text-sm font-medium truncate">Tuition Fee</p>
+   407→                              <p className="text-[10px] text-muted-foreground">Monthly</p>
+   408→                            </div>
+   409→                          </div>
+   410→                          <p className="font-bold text-sm shrink-0">Rs. {selected.monthlyFee.toLocaleString()}</p>
+   411→                        </button>
+   412→
+   413→                        {/* Hostel — only if hosteller */}
+   414→                        {selected.isHosteller && (
+   415→                          <button
+   416→                            type="button"
+   417→                            onClick={() => setIncludeHostel(!includeHostel)}
+   418→                            className={cn(
+   419→                              "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+   420→                              includeHostel ? "border-accent bg-accent/5" : "border-border/40 hover:border-accent/30"
+   421→                            )}
+   422→                          >
+   423→                            <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0",
+   424→                              includeHostel ? "bg-accent border-accent" : "border-border")}>
+   425→                              {includeHostel && <CheckCircle2 className="w-3.5 h-3.5 text-accent-foreground" />}
+   426→                            </div>
+   427→                            <div className="flex-1 flex items-center gap-2 min-w-0">
+   428→                              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", includeHostel ? "bg-accent/15" : "bg-muted")}>
+   429→                                <Home className={cn("w-3.5 h-3.5", includeHostel ? "text-accent" : "text-muted-foreground")} />
+   430→                              </div>
+   431→                              <div className="text-left min-w-0">
+   432→                                <p className="text-sm font-medium truncate">Hostel Fee</p>
+   433→                                <p className="text-[10px] text-muted-foreground">Monthly (boarding + meals)</p>
+   434→                              </div>
+   435→                            </div>
+   436→                            <p className="font-bold text-sm shrink-0">Rs. {HOSTEL_FEE.toLocaleString()}</p>
+   437→                          </button>
+   438→                        )}
+   439→
+   440→                        {/* Admission */}
+   441→                        <button
+   442→                          type="button"
+   443→                          onClick={() => setIncludeAdmission(!includeAdmission)}
+   444→                          className={cn(
+   445→                            "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+   446→                            includeAdmission ? "border-purple-500 bg-purple-500/5" : "border-border/40 hover:border-purple-500/30"
+   447→                          )}
+   448→                        >
+   449→                          <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0",
+   450→                            includeAdmission ? "bg-purple-500 border-purple-500" : "border-border")}>
+   451→                            {includeAdmission && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+   452→                          </div>
+   453→                          <div className="flex-1 flex items-center gap-2 min-w-0">
+   454→                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", includeAdmission ? "bg-purple-500/15" : "bg-muted")}>
+   455→                              <GraduationCap className={cn("w-3.5 h-3.5", includeAdmission ? "text-purple-600" : "text-muted-foreground")} />
+   456→                            </div>
+   457→                            <div className="text-left min-w-0">
+   458→                              <p className="text-sm font-medium truncate">Admission Fee</p>
+   459→                              <p className="text-[10px] text-muted-foreground">One-time (3 × monthly)</p>
+   460→                            </div>
+   461→                          </div>
+   462→                          <p className="font-bold text-sm shrink-0">Rs. {(selected.monthlyFee * ADMISSION_MULTIPLIER).toLocaleString()}</p>
+   463→                        </button>
+   464→                      </div>
+   465→                    )}
+   466→
+   467→                    {/* Manual amount entry */}
+   468→                    {useCustom && (
+   469→                      <div className="rounded-lg border-2 border-accent/30 bg-accent/5 p-3 space-y-2">
+   470→                        <div className="flex items-center gap-2">
+   471→                          <DollarSign className="w-4 h-4 text-accent" />
+   472→                          <p className="text-sm font-medium text-accent">Manual Amount Entry</p>
+   473→                        </div>
+   474→                        <p className="text-[10px] text-muted-foreground">Enter any custom amount (e.g., partial payment, fine, or other charge)</p>
+   475→                        <div className="relative">
+   476→                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">Rs.</span>
+   477→                          <Input
+   478→                            type="number"
+   479→                            value={customAmount}
+   480→                            onChange={(e) => setCustomAmount(e.target.value)}
+   481→                            placeholder="0"
+   482→                            className="pl-10 text-lg font-bold h-12"
+   483→                            autoFocus
+   484→                          />
+   485→                        </div>
+   486→                        {/* Quick amount buttons */}
+   487→                        <div className="flex flex-wrap gap-1.5">
+   488→                          {[500, 1000, 1500, 2000, 3000, 5000].map(amt => (
+   489→                            <button
+   490→                              key={amt}
+   491→                              type="button"
+   492→                              onClick={() => setCustomAmount(String(amt))}
+   493→                              className="px-2 py-1 text-[10px] rounded-md border border-border/40 bg-background hover:bg-accent/10 hover:border-accent/30 transition-colors"
+   494→                            >
+   495→                              {amt.toLocaleString()}
+   496→                            </button>
+   497→                          ))}
+   498→                          {selected.outstandingAmount > 0 && (
+   499→                            <button
+   500→                              type="button"
+   501→                              onClick={() => setCustomAmount(String(selected.outstandingAmount))}
+   502→                              className="px-2 py-1 text-[10px] rounded-md border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+   503→                            >
+   504→                              Full Outstanding ({selected.outstandingAmount.toLocaleString()})
+   505→                            </button>
+   506→                          )}
+   507→                        </div>
+   508→                      </div>
+   509→                    )}
+   510→                  </div>
+   511→                </div>
+   512→
+   513→                {/* ─── Section: Total & Payment ─── */}
+   514→                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   515→                  {/* Total */}
+   516→                  <div className="rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 p-3">
+   517→                    <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">Total Amount</p>
+   518→                    <p className="text-3xl font-bold text-primary mt-1">Rs. {total.toLocaleString()}</p>
+   519→                    <div className="mt-2 pt-2 border-t border-primary/15 space-y-0.5 text-[10px] text-muted-foreground">
+   520→                      {useCustom ? (
+   521→                        <div className="flex justify-between"><span>Manual Entry:</span><span className="font-medium text-foreground">Rs. {customAmt.toLocaleString()}</span></div>
+   522→                      ) : (
+   523→                        <>
+   524→                          {tuitionAmt > 0 && <div className="flex justify-between"><span>Tuition:</span><span className="font-medium text-foreground">Rs. {tuitionAmt.toLocaleString()}</span></div>}
+   525→                          {hostelAmt > 0 && <div className="flex justify-between"><span>Hostel:</span><span className="font-medium text-foreground">Rs. {hostelAmt.toLocaleString()}</span></div>}
+   526→                          {admissionAmt > 0 && <div className="flex justify-between"><span>Admission:</span><span className="font-medium text-foreground">Rs. {admissionAmt.toLocaleString()}</span></div>}
+   527→                        </>
+   528→                      )}
+   529→                    </div>
+   530→                  </div>
+   531→                  {/* Payment mode */}
+   532→                  <div className="rounded-xl border border-border/60 bg-card p-3">
+   533→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Payment Mode</p>
+   534→                    <Select value={mode} onValueChange={(v: "Cash" | "Cheque" | "Bank Transfer") => setMode(v)}>
+   535→                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+   536→                      <SelectContent>
+   537→                        <SelectItem value="Cash">Cash</SelectItem>
+   538→                        <SelectItem value="Cheque">Cheque</SelectItem>
+   539→                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+   540→                      </SelectContent>
+   541→                    </Select>
+   542→                    <div className="mt-2 rounded-md bg-muted/40 p-2 text-[10px] flex items-center gap-1.5">
+   543→                      <IdCard className="w-3 h-3 text-primary shrink-0" />
+   544→                      <span className="text-muted-foreground">Receipt opens in new tab for printing.</span>
+   545→                    </div>
+   546→                  </div>
+   547→                </div>
+   548→              </div>
+   549→
+   550→              {/* Sticky footer */}
+   551→              <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+   552→                <p className="text-[10px] text-muted-foreground">
+   553→                  {total > 0 ? (
+   554→                    <span>Ready to collect <span className="font-semibold text-foreground">Rs. {total.toLocaleString()}</span></span>
+   555→                  ) : (
+   556→                    <span>Select at least one fee to collect</span>
+   557→                  )}
+   558→                </p>
+   559→                <div className="flex gap-2">
+   560→                  <Button variant="outline" onClick={() => setSelected(null)} className="h-9">Cancel</Button>
+   561→                  <Button onClick={submit} className="bg-emerald-600 hover:bg-emerald-700 h-9 px-5 shadow-md" disabled={total === 0}>
+   562→                    <Printer className="w-4 h-4 mr-1.5" />Collect & Print Receipt
+   563→                  </Button>
+   564→                </div>
+   565→              </div>
+   566→            </>
+   567→          )}
+   568→        </DialogContent>
+   569→      </Dialog>
+   570→    </div>
+   571→  );
+   572→}
+   573→
+   574→export function DefaultersModule() {
+   575→  const { students, setActiveModule, setSelectedStudent, school } = useAppStore();
+   576→  const { toast } = useToast();
+   577→  const [classFilter, setClassFilter] = useState("all");
+   578→
+   579→  const defaulters = useMemo(() => {
+   580→    return students
+   581→      .filter(s => s.outstandingAmount > 0 && s.status === "Active")
+   582→      .filter(s => classFilter === "all" || s.class === classFilter)
+   583→      .sort((a, b) => b.outstandingAmount - a.outstandingAmount);
+   584→  }, [students, classFilter]);
+   585→
+   586→  const totalOutstanding = defaulters.reduce((s, d) => s + d.outstandingAmount, 0);
+   587→  const classes = Array.from(new Set(students.map(s => s.class)));
+   588→
+   589→  const handlePrint = () => {
+   590→    toast({ title: "Generating defaulter list PDF...", description: `${defaulters.length} defaulters • Rs. ${totalOutstanding.toLocaleString()} outstanding` });
+   591→    printDefaulterList(defaulters, school, { class: classFilter === "all" ? undefined : classFilter });
+   592→  };
+   593→
+   594→  return (
+   595→    <div className="space-y-3 fade-in">
+   596→      {/* Summary */}
+   597→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   598→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   599→          <div className="rounded-lg bg-red-500/10 p-1.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div>
+   600→          <div><p className="text-xs text-muted-foreground">Total Defaulters</p><p className="text-xl font-bold">{defaulters.length}</p></div>
+   601→        </CardContent></Card>
+   602→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   603→          <div className="rounded-lg bg-accent/10 p-1.5"><Wallet className="w-4 h-4 text-accent" /></div>
+   604→          <div><p className="text-xs text-muted-foreground">Outstanding</p><p className="text-lg font-bold">Rs. {totalOutstanding.toLocaleString()}</p></div>
+   605→        </CardContent></Card>
+   606→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   607→          <div className="rounded-lg bg-yellow-500/10 p-1.5"><Clock className="w-4 h-4 text-yellow-600" /></div>
+   608→          <div><p className="text-xs text-muted-foreground">Avg Outstanding</p><p className="text-lg font-bold">Rs. {defaulters.length > 0 ? Math.round(totalOutstanding / defaulters.length).toLocaleString() : 0}</p></div>
+   609→        </CardContent></Card>
+   610→        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+   611→          <div className="rounded-lg bg-primary/10 p-1.5"><TrendingUp className="w-4 h-4 text-primary" /></div>
+   612→          <div><p className="text-xs text-muted-foreground">Collection Rate</p><p className="text-xl font-bold">{students.length > 0 ? Math.round(Math.max(0, (1 - defaulters.length / students.length)) * 100) : 0}%</p></div>
+   613→        </CardContent></Card>
+   614→      </div>
+   615→
+   616→      {/* Toolbar */}
+   617→      <div className="flex items-center justify-between gap-3 flex-wrap">
+   618→        <div className="flex items-center gap-3">
+   619→          <Select value={classFilter} onValueChange={setClassFilter}>
+   620→            <SelectTrigger className="w-40 bg-background/60"><Filter className="w-3.5 h-3.5 mr-1.5" /><SelectValue /></SelectTrigger>
+   621→            <SelectContent>
+   622→              <SelectItem value="all">All Classes</SelectItem>
+   623→              {classes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+   624→            </SelectContent>
+   625→          </Select>
+   626→        </div>
+   627→        <div className="flex gap-2">
+   628→          <Button variant="outline" size="sm" className="border-accent/30 text-accent hover:bg-accent/10" onClick={() => setActiveModule("ai")}>
+   629→            <Brain className="w-4 h-4 mr-1.5" />AI Predict Defaulters
+   630→          </Button>
+   631→          <Button variant="outline" size="sm" onClick={() => {
+   632→            const headers = ["ID", "Name", "Class", "Father", "Phone", "Outstanding"];
+   633→            const rows = defaulters.map(d => [d.id, d.name, d.class, d.fatherName, d.fatherPhone, d.outstandingAmount]);
+   634→            const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+   635→            const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+   636→            const url = URL.createObjectURL(blob);
+   637→            const link = document.createElement("a");
+   638→            link.href = url;
+   639→            link.download = `defaulters_${new Date().toISOString().split("T")[0]}.csv`;
+   640→            document.body.appendChild(link);
+   641→            link.click();
+   642→            document.body.removeChild(link);
+   643→            URL.revokeObjectURL(url);
+   644→            toast({ title: "CSV Exported ✓", description: `${rows.length} defaulters downloaded.` });
+   645→          }}><FileDown className="w-4 h-4 mr-1.5" />Export Excel</Button>
+   646→          <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={handlePrint}>
+   647→            <Printer className="w-4 h-4 mr-1.5" />Print Defaulter List
+   648→          </Button>
+   649→        </div>
+   650→      </div>
+   651→
+   652→      {/* Defaulter table */}
+   653→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   654→        <div className="overflow-x-auto">
+   655→          <Table>
+   656→            <TableHeader>
+   657→              <TableRow className="hover:bg-transparent border-border/40">
+   658→                <TableHead className="w-12">#</TableHead>
+   659→                <TableHead>Student</TableHead>
+   660→                <TableHead>Class</TableHead>
+   661→                <TableHead>Father</TableHead>
+   662→                <TableHead>Phone</TableHead>
+   663→                <TableHead>Unpaid Months</TableHead>
+   664→                <TableHead className="text-right">Outstanding</TableHead>
+   665→                <TableHead className="text-right">Action</TableHead>
+   666→              </TableRow>
+   667→            </TableHeader>
+   668→            <TableBody>
+   669→              {defaulters.map((d, i) => (
+   670→                <TableRow key={d.id} className="border-border/30 hover:bg-muted/30">
+   671→                  <TableCell className="text-xs text-muted-foreground">{i + 1}</TableCell>
+   672→                  <TableCell>
+   673→                    <div className="flex items-center gap-2.5">
+   674→                      <Avatar className="w-8 h-8">
+   675→                        <AvatarFallback className={cn("text-xs font-semibold", d.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>
+   676→                          {d.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   677→                        </AvatarFallback>
+   678→                      </Avatar>
+   679→                      <div>
+   680→                        <p className="font-medium text-sm flex items-center gap-1.5">
+   681→                          {d.name}
+   682→                          {d.isHosteller && <Home className="w-3 h-3 text-accent" />}
+   683→                        </p>
+   684→                        <p className="text-[10px] text-muted-foreground font-mono">{d.id}</p>
+   685→                      </div>
+   686→                    </div>
+   687→                  </TableCell>
+   688→                  <TableCell><Badge variant="outline" className="text-xs">{d.class}-{d.section}</Badge></TableCell>
+   689→                  <TableCell className="text-sm">{d.fatherName}</TableCell>
+   690→                  <TableCell className="text-xs text-muted-foreground">{d.fatherPhone}</TableCell>
+   691→                  <TableCell><Badge variant="outline" className="text-xs bg-red-500/5">{(() => { const denom = d.monthlyFee + (d.isHosteller ? HOSTEL_FEE : 0); return denom > 0 ? Math.ceil(d.outstandingAmount / denom) : 0; })()} month(s)</Badge></TableCell>
+   692→                  <TableCell className="text-right"><span className="font-bold text-red-600">Rs. {d.outstandingAmount.toLocaleString()}</span></TableCell>
+   693→                  <TableCell className="text-right">
+   694→                    <Button
+   695→                      size="sm"
+   696→                      variant="outline"
+   697→                      className="h-7 text-xs bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+   698→                      onClick={() => {
+   699→                        setSelectedStudent(d.id);
+   700→                        setActiveModule("fees");
+   701→                      }}
+   702→                    >
+   703→                      <CheckCircle2 className="w-3 h-3 mr-1" />Collect
+   704→                    </Button>
+   705→                  </TableCell>
+   706→                </TableRow>
+   707→              ))}
+   708→            </TableBody>
+   709→          </Table>
+   710→        </div>
+   711→        {defaulters.length === 0 && (
+   712→          <div className="p-12 text-center">
+   713→            <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500 mb-3" />
+   714→            <p className="font-semibold text-sm">No defaulters!</p>
+   715→            <p className="text-xs text-muted-foreground mt-1">All students have paid their fees.</p>
+   716→          </div>
+   717→        )}
+   718→      </Card>
+   719→    </div>
+   720→  );
+   721→}
+   722→
