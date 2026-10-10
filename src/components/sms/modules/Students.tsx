@@ -431,8 +431,12 @@ export function StudentsModule() {
                   <div className="space-y-1">
                     <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class</Label>
                     <Select value={form.class} onValueChange={v => setForm({...form, class: v})}>
-                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                      <SelectTrigger className="h-9"><SelectValue placeholder={CLASSES.length === 0 ? "Add a class first" : "Select class"} /></SelectTrigger>
+                      <SelectContent>
+                        {CLASSES.length === 0 ? (
+                          <div className="px-3 py-2 text-xs text-muted-foreground text-center">No classes yet. Go to Classes module to add one.</div>
+                        ) : CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">

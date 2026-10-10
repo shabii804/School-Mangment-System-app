@@ -299,7 +299,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "3.0-clean";
+  const CURRENT_VERSION = "4.0-clean-classes";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];

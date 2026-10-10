@@ -48,7 +48,62 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 export function DashboardModule() {
-  const { setActiveModule, school, feeCollections } = useAppStore();
+  const { setActiveModule, school, feeCollections, students, teachers, staff, transactions, attendanceRecords, classes } = useAppStore();
+
+  // ─── Compute ALL KPIs from real store data ───
+  const todayStr = new Date().toISOString().split("T")[0];
+  const activeStudents = students.filter(s => s.status === "Active");
+  const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
+  const todayCollections = feeCollections.filter(f => f.date === todayStr);
+  const todayFeeCollection = todayCollections.reduce((s, f) => s + f.amount, 0);
+
+  // Today's attendance: from attendanceRecords for today
+  const todayAtt = attendanceRecords.filter(r => r.date === todayStr);
+  const presentToday = todayAtt.filter(r => r.status === "Present" || r.status === "Late").length;
+  const todayAttendancePct = todayAtt.length > 0 ? Math.round((presentToday / todayAtt.length) * 100) : 0;
+
+  // Monthly income: sum of this month's fee collections + income transactions
+  const monthStr = todayStr.slice(0, 7); // YYYY-MM
+  const monthlyFeeIncome = feeCollections.filter(f => f.date.startsWith(monthStr)).reduce((s, f) => s + f.amount, 0);
+  const monthlyOtherIncome = transactions.filter(t => t.type === "Income" && t.date.startsWith(monthStr)).reduce((s, t) => s + t.amount, 0);
+  const monthlyIncome = monthlyFeeIncome + monthlyOtherIncome;
+
+  // Pending fees: total outstanding across active students
+  const pendingFees = defaulters.reduce((s, d) => s + d.outstandingAmount, 0);
+
+  const KPI = {
+    totalStudents: activeStudents.length,
+    totalTeachers: teachers.length,
+    totalStaff: staff.length,
+    todayAttendancePct,
+    todayFeeCollection,
+    monthlyIncome,
+    pendingFees,
+    defaultersCount: defaulters.length,
+  };
+
+  // ─── Real fee trend — last 6 months from store ───
+  const feeTrend = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    const ms = d.toISOString().slice(0, 7);
+    const collected = feeCollections.filter(f => f.date.startsWith(ms)).reduce((s, f) => s + f.amount, 0);
+    return {
+      month: d.toLocaleDateString("en-GB", { month: "short" }),
+      collected: Math.round(collected / 1000), // in thousands
+      pending: Math.round(pendingFees / 1000),
+    };
+  });
+
+  // ─── Real student growth — last 6 months from admissionDate ───
+  const studentGrowth = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    const ms = d.toISOString().slice(0, 7);
+    const count = students.filter(s => s.admissionDate && s.admissionDate.startsWith(ms)).length;
+    const cumulative = students.filter(s => s.admissionDate && s.admissionDate <= ms + "-31").length;
+    return { month: d.toLocaleDateString("en-GB", { month: "short" }), students: count, total: cumulative };
+  });
 
   const quickActions = [
     { label: "Collect Fee", desc: "New receipt", icon: Receipt, module: "fees" as const, color: "bg-emerald-500/10 text-emerald-600", border: "hover:border-emerald-500/30" },
@@ -105,19 +160,19 @@ export function DashboardModule() {
             {/* Inline mini stats */}
             <div className="flex gap-4 mt-3">
               <div>
-                <p className="text-2xl font-bold tabular-nums">{STATS.totalStudents}</p>
+                <p className="text-2xl font-bold tabular-nums">{KPI.totalStudents}</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Students</p>
               </div>
               <div className="border-l border-white/15 pl-5">
-                <p className="text-2xl font-bold tabular-nums">{STATS.totalTeachers + STATS.totalStaff}</p>
+                <p className="text-2xl font-bold tabular-nums">{KPI.totalTeachers + KPI.totalStaff}</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Staff</p>
               </div>
               <div className="border-l border-white/15 pl-5">
-                <p className="text-2xl font-bold tabular-nums">{STATS.todayAttendancePct}%</p>
+                <p className="text-2xl font-bold tabular-nums">{KPI.todayAttendancePct}%</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Att.</p>
               </div>
               <div className="border-l border-white/15 pl-5">
-                <p className="text-2xl font-bold tabular-nums">Rs. {(STATS.todayFeeCollection / 1000).toFixed(0)}K</p>
+                <p className="text-2xl font-bold tabular-nums">Rs. {(KPI.todayFeeCollection / 1000).toFixed(0)}K</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Coll.</p>
               </div>
             </div>
@@ -133,7 +188,7 @@ export function DashboardModule() {
                 <Plus className="w-3.5 h-3.5" /> New Admission
               </button>
               <button onClick={() => setActiveModule("defaulters")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent/25 hover:bg-accent/35 text-xs font-semibold transition-all hover:scale-105 border border-accent/30 backdrop-blur-sm">
-                <AlertTriangle className="w-3.5 h-3.5" /> {STATS.defaultersCount} Defaulters
+                <AlertTriangle className="w-3.5 h-3.5" /> {KPI.defaultersCount} Defaulters
               </button>
             </div>
           </div>
@@ -147,7 +202,7 @@ export function DashboardModule() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Students</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums">{STATS.totalStudents}</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums">{KPI.totalStudents}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Active enrollment</p>
               </div>
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
@@ -157,7 +212,7 @@ export function DashboardModule() {
             {/* Mini sparkline */}
             <div className="mt-2 h-6">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={STUDENT_GROWTH.slice(-6)}>
+                <AreaChart data={studentGrowth}>
                   <defs><linearGradient id="sparkStudents" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#15857A" stopOpacity={0.4} /><stop offset="95%" stopColor="#15857A" stopOpacity={0} /></linearGradient></defs>
                   <Area type="monotone" dataKey="students" stroke="#15857A" strokeWidth={1.5} fill="url(#sparkStudents)" />
                 </AreaChart>
@@ -171,7 +226,7 @@ export function DashboardModule() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Attendance</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums">{STATS.todayAttendancePct}%</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums">{KPI.todayAttendancePct}%</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Mark today's attendance</p>
               </div>
               <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
@@ -192,8 +247,8 @@ export function DashboardModule() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Collection</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums">Rs. {STATS.todayFeeCollection.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{feeCollections.filter(f => f.date === new Date().toISOString().split("T")[0]).length} receipts today</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums">Rs. {KPI.todayFeeCollection.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{todayCollections.length} receipts today</p>
               </div>
               <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
                 <DollarSign className="w-4 h-4 text-accent" />
@@ -213,7 +268,7 @@ export function DashboardModule() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fee Defaulters</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums text-red-600">{STATS.defaultersCount}</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums text-red-600">{KPI.defaultersCount}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Past due date</p>
                 <div className="flex items-center gap-1 mt-2 text-xs text-red-600 font-medium">
                   <AlertTriangle className="w-3 h-3" /> Needs follow-up
@@ -225,9 +280,9 @@ export function DashboardModule() {
             </div>
             {/* Progress bar showing collection rate */}
             <div className="mt-2">
-              <div className="flex justify-between text-[9px] text-muted-foreground mb-1"><span>Collection Rate</span><span>{STATS.totalStudents > 0 ? Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100) : 0}%</span></div>
+              <div className="flex justify-between text-[9px] text-muted-foreground mb-1"><span>Collection Rate</span><span>{KPI.totalStudents > 0 ? Math.round((1 - KPI.defaultersCount / KPI.totalStudents) * 100) : 0}%</span></div>
               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full" style={{ width: `${STATS.totalStudents > 0 ? Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100) : 0}%` }} />
+                <div className="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full" style={{ width: `${KPI.totalStudents > 0 ? Math.round(Math.max(0, 1 - KPI.defaultersCount / KPI.totalStudents) * 100) : 0}%` }} />
               </div>
             </div>
           </div>
@@ -238,19 +293,19 @@ export function DashboardModule() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><GraduationCap className="w-4 h-4 text-purple-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Teaching Staff</p><p className="text-lg font-bold">{STATS.totalTeachers}</p></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Teaching Staff</p><p className="text-lg font-bold">{KPI.totalTeachers}</p></div>
         </div>
-        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><UserCog className="w-4 h-4 text-purple-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Support Staff</p><p className="text-lg font-bold">{STATS.totalStaff}</p></div>
-        </div>
+        <button onClick={() => setActiveModule("classes")} className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3 text-left hover:bg-muted/30 transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><School className="w-4 h-4 text-primary" /></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Classes</p><p className="text-lg font-bold">{classes.length}</p></div>
+        </button>
         <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><TrendingUp className="w-4 h-4 text-emerald-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Income</p><p className="text-lg font-bold">Rs. {(STATS.monthlyIncome / 1000).toFixed(0)}K</p></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Income</p><p className="text-lg font-bold">Rs. {(KPI.monthlyIncome / 1000).toFixed(0)}K</p></div>
         </div>
         <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center"><Wallet className="w-4 h-4 text-pink-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-lg font-bold text-red-600">Rs. {(STATS.pendingFees / 1000).toFixed(1)}K</p></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-lg font-bold text-red-600">Rs. {(KPI.pendingFees / 1000).toFixed(1)}K</p></div>
         </div>
       </div>
 
@@ -303,7 +358,7 @@ export function DashboardModule() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={FEE_TREND}>
+              <AreaChart data={feeTrend}>
                 <defs>
                   <linearGradient id="collectedGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#15857A" stopOpacity={0.5} />
@@ -512,7 +567,7 @@ export function DashboardModule() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={140}>
-            <BarChart data={STUDENT_GROWTH}>
+            <BarChart data={studentGrowth}>
               <defs>
                 <linearGradient id="studentsGrad2" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#15857A" />

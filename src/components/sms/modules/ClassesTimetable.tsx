@@ -50,7 +50,13 @@ export function ClassesModule() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {classes.map(cls => {
+        {classes.length === 0 ? (
+          <div className="col-span-full text-center py-16 text-sm text-muted-foreground">
+            <School className="w-10 h-10 mx-auto mb-2 opacity-40" />
+            <p className="font-medium">No classes added yet</p>
+            <p className="text-xs mt-1">Click "Add Class" above to create your first class.</p>
+          </div>
+        ) : classes.map(cls => {
           const studentCount = students.filter(s => s.class === cls.name && s.status === "Active").length;
           const totalCapacity = cls.sections.length * 30;
           return (
