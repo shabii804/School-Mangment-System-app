@@ -23,7 +23,7 @@ import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, AlertTriangle, FileText, Award, BarChart3, LineChart,
   BookOpen, Bus, Home, Package, Shield as DisciplineIcon, Percent,
-  ToggleLeft, ToggleRight, Boxes, Eye, EyeOff, Power, CheckCircle2,
+  ToggleLeft, ToggleRight, Boxes, Eye, EyeOff, Power, CheckCircle2, Brain,
   type LucideIcon,
 } from "lucide-react";
 import { useAppStore, type ModuleKey, ALWAYS_ON_MODULES } from "@/lib/sms-store";
@@ -176,6 +176,7 @@ const MODULE_CATALOG: ModuleMeta[] = [
   { key: "leave", label: "Staff Leave", description: "Leave requests & approvals", icon: CalendarDays, group: "facilities" },
   { key: "alumni", label: "Alumni", description: "Graduated students network", icon: Award, group: "facilities" },
   { key: "parent", label: "Parent Portal", description: "Parent access & communication", icon: Users, group: "facilities" },
+  { key: "ai", label: "AI Assistant", description: "Smart predictions & insights", icon: Brain, group: "system" },
   { key: "users", label: "User Management", description: "Staff accounts & permissions", icon: UserPlus, group: "system" },
   { key: "settings", label: "Settings", description: "School, fees, theme & modules", icon: Shield, group: "system", alwaysOn: true },
 ];

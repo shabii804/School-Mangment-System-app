@@ -10,7 +10,7 @@ export type ModuleKey =
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
   | "reports" | "analytics" | "users" | "settings" | "ledger"
   | "exam" | "library" | "transport" | "hostel" | "inventory" | "events"
-  | "discipline" | "alumni" | "parent" | "sms" | "leave" | "concession";
+  | "discipline" | "alumni" | "parent" | "sms" | "leave" | "concession" | "ai";
 
 export interface SchoolInfo {
   name: string;
@@ -229,7 +229,7 @@ const DEFAULT_ENABLED_MODULES: Record<ModuleKey, boolean> = {
   reports: true, analytics: true, users: true, settings: true,
   ledger: true, exam: true, library: true, transport: true,
   hostel: true, inventory: true, events: true, discipline: true,
-  alumni: true, parent: true, sms: true, leave: true, concession: true,
+  alumni: true, parent: true, sms: true, leave: true, concession: true, ai: true,
 };
 
 function loadEnabledModules(): Record<ModuleKey, boolean> {
@@ -299,7 +299,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "6.0-timetable-ai";
+  const CURRENT_VERSION = "7.0-ai-assistant";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];

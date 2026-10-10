@@ -8,7 +8,7 @@ import {
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, GraduationCap as Logo,
   ChevronLeft, ChevronRight, BookOpen, Bus, Home, Package, Calendar,
-  Shield, Percent, type LucideIcon,
+  Shield, Percent, Brain, type LucideIcon,
 } from "lucide-react";
 
 interface NavItem {
@@ -45,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "leave", label: "Staff Leave", icon: Calendar, group: "facilities" },
   { key: "alumni", label: "Alumni", icon: Award, group: "facilities" },
   { key: "parent", label: "Parent Portal", icon: Users, group: "facilities" },
+  { key: "ai", label: "AI Assistant", icon: Brain, group: "system" },
   { key: "users", label: "User Management", icon: UserPlus, group: "system" },
   { key: "settings", label: "Settings", icon: Settings, group: "system" },
 ];

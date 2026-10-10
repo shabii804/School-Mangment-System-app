@@ -18,7 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Edit, Trash2, FileText, Calendar, ClipboardList, Award,
-  GraduationCap, Printer, BookOpen,
+  GraduationCap, Printer, BookOpen, Brain,
 } from "lucide-react";
 import { type Exam, SUBJECTS, CLASSES, EXAMS } from "@/lib/sms-data";
 import { useAppStore } from "@/lib/sms-store";
@@ -39,7 +39,7 @@ function gradeFor(pct: number) {
 }
 
 export function ExamModule() {
-  const { classes: storeClasses, moduleData, addModuleItem, deleteModuleItem } = useAppStore();
+  const { classes: storeClasses, moduleData, addModuleItem, deleteModuleItem, setActiveModule } = useAppStore();
   const { toast } = useToast();
   const CLASSES = storeClasses;
   const exams = (moduleData.exams || []) as Exam[];
@@ -75,7 +75,12 @@ export function ExamModule() {
     <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage examinations, schedules, grades, and result compilation.</p>
-        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Create Exam</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="border-accent/30 text-accent hover:bg-accent/10" onClick={() => setActiveModule("ai")}>
+            <Brain className="w-4 h-4 mr-1.5" />AI Auto-Schedule
+          </Button>
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Create Exam</Button>
+        </div>
       </div>
 
       {/* Summary cards */}

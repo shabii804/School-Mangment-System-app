@@ -20,6 +20,7 @@ import { ExamModule } from "@/components/sms/modules/ExamModule";
 import { LibraryModule, TransportModule, HostelModule, InventoryModule, EventsModule } from "@/components/sms/modules/NewModules";
 import { DisciplineModule, AlumniModule, ParentModule } from "@/components/sms/modules/DisciplineAlumni";
 import { LeaveModule, ConcessionModule } from "@/components/sms/modules/LeaveConcession";
+import { AIAssistantModule } from "@/components/sms/modules/AIAssistant";
 import { Settings, Power } from "lucide-react";
 
 export default function Home() {
@@ -100,6 +101,7 @@ export default function Home() {
       case "parent": return <ParentModule />;
       case "leave": return <LeaveModule />;
       case "concession": return <ConcessionModule />;
+      case "ai": return <AIAssistantModule />;
       default: return <DashboardModule />;
     }
   };

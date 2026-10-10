@@ -19,7 +19,7 @@ import {
 import {
   Search, DollarSign, Receipt, Printer, AlertTriangle, Filter,
   CheckCircle2, Clock, TrendingUp, Wallet, FileDown, Home, BookOpen,
-  GraduationCap, IdCard,
+  GraduationCap, IdCard, Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -625,7 +625,24 @@ export function DefaultersModule() {
           </Select>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><FileDown className="w-4 h-4 mr-1.5" />Export Excel</Button>
+          <Button variant="outline" size="sm" className="border-accent/30 text-accent hover:bg-accent/10" onClick={() => setActiveModule("ai")}>
+            <Brain className="w-4 h-4 mr-1.5" />AI Predict Defaulters
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            const headers = ["ID", "Name", "Class", "Father", "Phone", "Outstanding"];
+            const rows = defaulters.map(d => [d.id, d.name, d.class, d.fatherName, d.fatherPhone, d.outstandingAmount]);
+            const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+            const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `defaulters_${new Date().toISOString().split("T")[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast({ title: "CSV Exported ✓", description: `${rows.length} defaulters downloaded.` });
+          }}><FileDown className="w-4 h-4 mr-1.5" />Export Excel</Button>
           <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-1.5" />Print Defaulter List
           </Button>
