@@ -272,161 +272,340 @@ export function StudentsModule() {
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1.5" />Admit Student</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-primary" />New Student Admission</DialogTitle>
-            </DialogHeader>
-
-            {/* Single-page compact form — all sections visible */}
-            <div className="space-y-2 py-1">
-              {/* Row 1: Photo + Personal */}
-              <div className="grid grid-cols-12 gap-2">
-                {/* Photo */}
-                <div className="col-span-12 md:col-span-3">
-                  <Label className="text-[10px] uppercase text-muted-foreground">Student Photo</Label>
-                  <div className="mt-1 w-full aspect-square rounded-xl border-2 border-dashed border-border/60 bg-muted/20 flex items-center justify-center overflow-hidden relative">
-                    {form.photo ? (
-                      <>
-                        <img src={form.photo} alt="Student" className="w-full h-full object-cover" />
-                        <button onClick={() => setForm({ ...form, photo: "" })} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center"><X className="w-3 h-3" /></button>
-                      </>
-                    ) : (
-                      <User className="w-10 h-10 text-muted-foreground/40" />
-                    )}
-                  </div>
-                  <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handlePhotoUpload} className="hidden" />
-                  <Button type="button" variant="outline" size="sm" className="w-full mt-1.5 h-7 text-xs" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="w-3 h-3 mr-1" />Upload
-                  </Button>
+          <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+            {/* Gradient hero header */}
+            <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-primary to-accent/80 px-5 py-4 text-primary-foreground">
+              <div className="absolute inset-0 opacity-10 pattern-grid" />
+              <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+              <div className="relative flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+                  <UserPlus className="w-6 h-6" />
                 </div>
-
-                {/* Personal fields */}
-                <div className="col-span-12 md:col-span-9 grid grid-cols-2 md:grid-cols-3 gap-2">
-                  <div className="col-span-2 md:col-span-2"><Label className="text-xs">Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Student's full name" className="h-8" /></div>
-                  <div>
-                    <Label className="text-xs">Gender</Label>
-                    <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label className="text-xs">Date of Birth</Label><Input type="date" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} className="h-8" /></div>
-                  <div><Label className="text-xs">CNIC / B-Form</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" className="h-8" /></div>
-                  <div>
-                    <Label className="text-xs">Blood Group</Label>
-                    <Select value={form.bloodGroup} onValueChange={v => setForm({...form, bloodGroup: v})}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>{BLOOD_GROUPS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Religion</Label>
-                    <Select value={form.religion} onValueChange={v => setForm({...form, religion: v})}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>{RELIGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label className="text-xs">Nationality</Label><Input value={form.nationality} onChange={e => setForm({...form, nationality: e.target.value})} className="h-8" /></div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold tracking-tight">New Student Admission</h2>
+                  <p className="text-xs text-white/75 mt-0.5">Complete the form below to register a new student record.</p>
                 </div>
-              </div>
-
-              {/* Row 2: Academic + Logistics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-lg bg-primary/5 border border-primary/20 p-2">
-                <div>
-                  <Label className="text-xs">Class</Label>
-                  <Select value={form.class} onValueChange={v => setForm({...form, class: v})}>
-                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                    <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                <div className="hidden md:flex flex-col items-end text-right">
+                  <span className="text-[10px] uppercase tracking-wider text-white/60">Admission Date</span>
+                  <span className="text-sm font-semibold mt-0.5">{new Date().toISOString().split("T")[0]}</span>
                 </div>
-                <div>
-                  <Label className="text-xs">Section</Label>
-                  <Select value={form.section} onValueChange={v => setForm({...form, section: v})}>
-                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-2"><Label className="text-xs">Previous School</Label><Input value={form.previousSchool} onChange={e => setForm({...form, previousSchool: e.target.value})} placeholder="If transfer" className="h-8" /></div>
-                <label className={cn("flex items-center gap-2 p-1.5 rounded-md border cursor-pointer", form.isHosteller ? "border-accent bg-accent/10" : "border-border/40")}>
-                  <input type="checkbox" checked={form.isHosteller} onChange={e => setForm({...form, isHosteller: e.target.checked})} className="w-3.5 h-3.5 accent-accent" />
-                  <span className="text-xs font-medium">🏠 Hosteller</span>
-                </label>
-                <label className={cn("flex items-center gap-2 p-1.5 rounded-md border cursor-pointer", form.transport ? "border-primary bg-primary/10" : "border-border/40")}>
-                  <input type="checkbox" checked={form.transport} onChange={e => setForm({...form, transport: e.target.checked})} className="w-3.5 h-3.5 accent-primary" />
-                  <span className="text-xs font-medium">🚌 Transport</span>
-                </label>
-                {form.transport ? (
-                  <div className="col-span-2"><Label className="text-xs">Transport Route</Label><Input value={form.transportRoute} onChange={e => setForm({...form, transportRoute: e.target.value})} placeholder="e.g., Route A — Area Name" className="h-8" /></div>
-                ) : (
-                  <div className="col-span-2"><Label className="text-xs">Siblings in School</Label><Input value={form.siblings} onChange={e => setForm({...form, siblings: e.target.value})} placeholder="e.g., Sara Khan (Grade 3)" className="h-8" /></div>
-                )}
-              </div>
-
-              {/* Row 3: Parents — compact */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Father */}
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-2">
-                  <p className="text-[10px] font-semibold text-primary uppercase mb-2">Father</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="col-span-2"><Label className="text-[10px]">Name *</Label><Input value={form.fatherName} onChange={e => setForm({...form, fatherName: e.target.value})} placeholder="Father's name" className="h-8" /></div>
-                    <div><Label className="text-[10px]">CNIC</Label><Input value={form.fatherCnic} onChange={e => setForm({...form, fatherCnic: e.target.value})} placeholder="42101-XXX" className="h-8" /></div>
-                    <div><Label className="text-[10px]">Phone *</Label><Input value={form.fatherPhone} onChange={e => setForm({...form, fatherPhone: e.target.value})} placeholder="+92 3xx" className="h-8" /></div>
-                    <div className="col-span-2"><Label className="text-[10px]">Occupation</Label><Input value={form.fatherOccupation} onChange={e => setForm({...form, fatherOccupation: e.target.value})} placeholder="Engineer" className="h-8" /></div>
-                  </div>
-                </div>
-                {/* Mother */}
-                <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-2">
-                  <p className="text-[10px] font-semibold text-purple-600 uppercase mb-2">Mother</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><Label className="text-[10px]">Name</Label><Input value={form.motherName} onChange={e => setForm({...form, motherName: e.target.value})} className="h-8" /></div>
-                    <div><Label className="text-[10px]">Phone</Label><Input value={form.motherPhone} onChange={e => setForm({...form, motherPhone: e.target.value})} className="h-8" /></div>
-                    <div className="col-span-2"><Label className="text-[10px]">Occupation</Label><Input value={form.motherOccupation} onChange={e => setForm({...form, motherOccupation: e.target.value})} placeholder="Housewife" className="h-8" /></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 4: Guardian + Emergency + Medical + Address */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Guardian (if parents unavailable)</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div><Label className="text-[10px]">Name</Label><Input value={form.guardianName} onChange={e => setForm({...form, guardianName: e.target.value})} className="h-8" /></div>
-                    <div><Label className="text-[10px]">Phone</Label><Input value={form.guardianPhone} onChange={e => setForm({...form, guardianPhone: e.target.value})} className="h-8" /></div>
-                    <div><Label className="text-[10px]">Relation</Label><Input value={form.guardianRelation} onChange={e => setForm({...form, guardianRelation: e.target.value})} placeholder="Uncle" className="h-8" /></div>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-accent/20 bg-accent/5 p-2">
-                  <p className="text-[10px] font-semibold text-accent uppercase mb-2">Emergency Contact</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><Label className="text-[10px]">Name</Label><Input value={form.emergencyName} onChange={e => setForm({...form, emergencyName: e.target.value})} className="h-8" /></div>
-                    <div><Label className="text-[10px]">Phone</Label><Input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} className="h-8" /></div>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2">
-                  <p className="text-[10px] font-semibold text-red-600 uppercase mb-2">Medical</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><Label className="text-[10px]">Conditions</Label><Input value={form.medicalConditions} onChange={e => setForm({...form, medicalConditions: e.target.value})} placeholder="None" className="h-8" /></div>
-                    <div><Label className="text-[10px]">Allergies</Label><Input value={form.allergies} onChange={e => setForm({...form, allergies: e.target.value})} placeholder="None" className="h-8" /></div>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Home Address</p>
-                  <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="House #, Street, Block, City" className="h-8" />
-                </div>
-              </div>
-
-              {/* Auto-generated info */}
-              <div className="rounded-lg bg-primary/5 border border-primary/20 p-2 text-[10px] text-muted-foreground">
-                <span className="font-medium text-primary">Auto on save:</span> Student ID (SCH-YYYY-XXXX) • Roll Number • QR Code • Monthly Fee: Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}{form.isHosteller ? " + hostel fee" : ""}
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => { setAddOpen(false); setForm(EMPTY_FORM); }}>Cancel</Button>
-              <Button onClick={handleAdd} disabled={!form.name || !form.fatherName} className="bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-1.5" />Save & Admit Student
-              </Button>
-            </DialogFooter>
+            {/* Form body */}
+            <div className="px-5 py-4 space-y-3">
+              {/* ─── Section 1: Personal Information ─── */}
+              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">Personal Information</p>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Basic bio & identity</span>
+                </div>
+                <div className="p-3 grid grid-cols-12 gap-3">
+                  {/* Photo upload — circular */}
+                  <div className="col-span-12 md:col-span-3 flex flex-col items-center">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative w-28 h-28 rounded-full border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-all group overflow-hidden flex items-center justify-center"
+                    >
+                      {form.photo ? (
+                        <>
+                          <img src={form.photo} alt="Student" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Upload className="w-5 h-5 text-white" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setForm({ ...form, photo: "" }); }}
+                            className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="text-center">
+                          <User className="w-8 h-8 text-primary/40 mx-auto" />
+                          <p className="text-[9px] text-muted-foreground mt-1 px-2">Click to upload</p>
+                        </div>
+                      )}
+                    </div>
+                    <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handlePhotoUpload} className="hidden" />
+                    <p className="text-[10px] text-muted-foreground mt-2 text-center">Max 500KB • PNG/JPG</p>
+                  </div>
+
+                  {/* Personal fields */}
+                  <div className="col-span-12 md:col-span-9 grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                    <div className="col-span-2 md:col-span-2 space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
+                      <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Ahmed Ali Khan" className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Gender</Label>
+                      <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date of Birth</Label>
+                      <Input type="date" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNIC / B-Form</Label>
+                      <Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Blood Group</Label>
+                      <Select value={form.bloodGroup} onValueChange={v => setForm({...form, bloodGroup: v})}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>{BLOOD_GROUPS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Religion</Label>
+                      <Select value={form.religion} onValueChange={v => setForm({...form, religion: v})}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>{RELIGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Nationality</Label>
+                      <Input value={form.nationality} onChange={e => setForm({...form, nationality: e.target.value})} className="h-9" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── Section 2: Academic & Logistics ─── */}
+              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+                  <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                    <GraduationCap className="w-3.5 h-3.5 text-accent" />
+                  </div>
+                  <p className="text-xs font-semibold text-accent uppercase tracking-wide">Academic & Logistics</p>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Class placement & facilities</span>
+                </div>
+                <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class</Label>
+                    <Select value={form.class} onValueChange={v => setForm({...form, class: v})}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Section</Label>
+                    <Select value={form.section} onValueChange={v => setForm({...form, section: v})}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Previous School</Label>
+                    <Input value={form.previousSchool} onChange={e => setForm({...form, previousSchool: e.target.value})} placeholder="If transfer student" className="h-9" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForm({...form, isHosteller: !form.isHosteller})}
+                    className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left", form.isHosteller ? "border-accent bg-accent/10" : "border-border/50 hover:border-accent/40")}
+                  >
+                    <Home className={cn("w-4 h-4", form.isHosteller ? "text-accent" : "text-muted-foreground")} />
+                    <div>
+                      <p className="text-xs font-semibold">Hosteller</p>
+                      <p className="text-[9px] text-muted-foreground">{form.isHosteller ? "Enabled" : "Click to enable"}</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({...form, transport: !form.transport})}
+                    className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left", form.transport ? "border-primary bg-primary/10" : "border-border/50 hover:border-primary/40")}
+                  >
+                    <Bus className={cn("w-4 h-4", form.transport ? "text-primary" : "text-muted-foreground")} />
+                    <div>
+                      <p className="text-xs font-semibold">Transport</p>
+                      <p className="text-[9px] text-muted-foreground">{form.transport ? "Enabled" : "Click to enable"}</p>
+                    </div>
+                  </button>
+                  {form.transport ? (
+                    <div className="col-span-2 space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Transport Route</Label>
+                      <Input value={form.transportRoute} onChange={e => setForm({...form, transportRoute: e.target.value})} placeholder="e.g., Route A — Area Name" className="h-9" />
+                    </div>
+                  ) : (
+                    <div className="col-span-2 space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Siblings in School</Label>
+                      <Input value={form.siblings} onChange={e => setForm({...form, siblings: e.target.value})} placeholder="e.g., Sara Khan (Grade 3)" className="h-9" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ─── Section 3: Parents Information ─── */}
+              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/5 border-b border-purple-500/15">
+                  <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                    <Users className="w-3.5 h-3.5 text-purple-600" />
+                  </div>
+                  <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Parents Information</p>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Father (primary) & mother details</span>
+                </div>
+                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Father */}
+                  <div className="rounded-lg border border-primary/25 bg-primary/[0.03] p-3">
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <div className="w-6 h-6 rounded-md bg-primary/15 flex items-center justify-center"><User className="w-3 h-3 text-primary" /></div>
+                      <p className="text-xs font-semibold text-primary">Father</p>
+                      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Primary</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="col-span-2 space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name <span className="text-red-500">*</span></Label>
+                        <Input value={form.fatherName} onChange={e => setForm({...form, fatherName: e.target.value})} placeholder="Father's full name" className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">CNIC</Label>
+                        <Input value={form.fatherCnic} onChange={e => setForm({...form, fatherCnic: e.target.value})} placeholder="42101-XXX" className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone <span className="text-red-500">*</span></Label>
+                        <Input value={form.fatherPhone} onChange={e => setForm({...form, fatherPhone: e.target.value})} placeholder="+92 3xx" className="h-8 text-xs" />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Occupation</Label>
+                        <Input value={form.fatherOccupation} onChange={e => setForm({...form, fatherOccupation: e.target.value})} placeholder="e.g., Engineer" className="h-8 text-xs" />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Mother */}
+                  <div className="rounded-lg border border-pink-500/25 bg-pink-500/[0.03] p-3">
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <div className="w-6 h-6 rounded-md bg-pink-500/15 flex items-center justify-center"><Heart className="w-3 h-3 text-pink-600" /></div>
+                      <p className="text-xs font-semibold text-pink-600">Mother</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name</Label>
+                        <Input value={form.motherName} onChange={e => setForm({...form, motherName: e.target.value})} placeholder="Mother's name" className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone</Label>
+                        <Input value={form.motherPhone} onChange={e => setForm({...form, motherPhone: e.target.value})} placeholder="+92 3xx" className="h-8 text-xs" />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Occupation</Label>
+                        <Input value={form.motherOccupation} onChange={e => setForm({...form, motherOccupation: e.target.value})} placeholder="e.g., Housewife" className="h-8 text-xs" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── Section 4: Guardian & Emergency ─── */}
+              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                  </div>
+                  <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Guardian & Emergency Contact</p>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Backup contact points</span>
+                </div>
+                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-border/40 bg-muted/20 p-3">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2.5 flex items-center gap-1.5">
+                      <UserCircle className="w-3 h-3" />Guardian <span className="text-muted-foreground/60 normal-case">(if parents unavailable)</span>
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name</Label>
+                        <Input value={form.guardianName} onChange={e => setForm({...form, guardianName: e.target.value})} className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone</Label>
+                        <Input value={form.guardianPhone} onChange={e => setForm({...form, guardianPhone: e.target.value})} className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Relation</Label>
+                        <Input value={form.guardianRelation} onChange={e => setForm({...form, guardianRelation: e.target.value})} placeholder="Uncle" className="h-8 text-xs" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-accent/25 bg-accent/[0.05] p-3">
+                    <p className="text-[10px] font-semibold text-accent uppercase mb-2.5 flex items-center gap-1.5">
+                      <AlertCircle className="w-3 h-3" />Emergency Contact
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name</Label>
+                        <Input value={form.emergencyName} onChange={e => setForm({...form, emergencyName: e.target.value})} className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone</Label>
+                        <Input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} className="h-8 text-xs" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── Section 5: Medical & Address ─── */}
+              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 bg-red-500/5 border-b border-red-500/15">
+                  <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
+                    <Stethoscope className="w-3.5 h-3.5 text-red-600" />
+                  </div>
+                  <p className="text-xs font-semibold text-red-600 uppercase tracking-wide">Medical & Address</p>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Health info & residence</span>
+                </div>
+                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-red-500/25 bg-red-500/[0.03] p-3">
+                    <p className="text-[10px] font-semibold text-red-600 uppercase mb-2.5 flex items-center gap-1.5">
+                      <Droplet className="w-3 h-3" />Medical History
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Conditions</Label>
+                        <Input value={form.medicalConditions} onChange={e => setForm({...form, medicalConditions: e.target.value})} placeholder="e.g., Asthma" className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Allergies</Label>
+                        <Input value={form.allergies} onChange={e => setForm({...form, allergies: e.target.value})} placeholder="e.g., Peanuts" className="h-8 text-xs" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border/40 bg-muted/20 p-3">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2.5 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3" />Home Address
+                    </p>
+                    <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="House #, Street, Block, City" className="h-8 text-xs" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Auto-generated info banner */}
+              <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <FileText className="w-3 h-3 text-primary" />
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  <span className="font-semibold text-primary">Auto-generated on save:</span> Student ID (SCH-YYYY-XXXX) • Roll Number • QR Code • Monthly Fee: <span className="font-semibold text-foreground">Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}</span>{form.isHosteller ? " + Hostel fee applied" : ""}
+                </p>
+              </div>
+            </div>
+
+            {/* Sticky footer */}
+            <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+              <p className="text-[10px] text-muted-foreground">
+                <span className="text-red-500">*</span> Required fields
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setAddOpen(false); setForm(EMPTY_FORM); }} className="h-9">Cancel</Button>
+                <Button onClick={handleAdd} disabled={!form.name || !form.fatherName} className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md">
+                  <Plus className="w-4 h-4 mr-1.5" />Save & Admit Student
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

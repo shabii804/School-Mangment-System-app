@@ -147,87 +147,189 @@ export function TeachersModule() {
 
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Teacher</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-1">
-            {/* Personal */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div className="col-span-2"><Label className="text-xs">Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Teacher's full name" className="h-8" /></div>
-              <div>
-                <Label className="text-xs">Gender</Label>
-                <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
-                </Select>
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+          {/* Gradient hero header */}
+          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-primary to-purple-600/80 px-5 py-4 text-primary-foreground">
+            <div className="absolute inset-0 opacity-10 pattern-grid" />
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+                <GraduationCap className="w-6 h-6" />
               </div>
-              <div><Label className="text-xs">CNIC</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXX-X" className="h-8" /></div>
-              <div><Label className="text-xs">Designation</Label><Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} className="h-8" /></div>
-              <div><Label className="text-xs">Qualification</Label><Input value={form.qualification} onChange={e => setForm({...form, qualification: e.target.value})} placeholder="M.Sc, B.Ed" className="h-8" /></div>
-              <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" className="h-8" /></div>
-              <div><Label className="text-xs">Joining Date</Label><Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} className="h-8" /></div>
-              <div><Label className="text-xs">Monthly Salary (Rs.)</Label><Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} className="h-8" /></div>
-            </div>
-
-            {/* Subject assignment — checkbox grid */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-2">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-semibold text-primary uppercase">Assign Subjects (click to toggle)</p>
-                {SUBJECTS.length === 0 && <span className="text-[9px] text-muted-foreground">No subjects yet — add in Classes module</span>}
+              <div className="flex-1">
+                <h2 className="text-xl font-bold tracking-tight">Add New Teacher</h2>
+                <p className="text-xs text-white/75 mt-0.5">Register a teaching staff member with subject & class assignments.</p>
               </div>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
-                {SUBJECTS.length === 0 ? (
-                  <p className="text-xs text-muted-foreground col-span-full text-center py-2">No subjects added. Go to Classes → Subjects tab to add.</p>
-                ) : SUBJECTS.map(subj => {
-                  const checked = form.subjects.includes(subj);
-                  return (
-                    <button
-                      key={subj}
-                      type="button"
-                      onClick={() => setForm({...form, subjects: checked ? form.subjects.filter(s => s !== subj) : [...form.subjects, subj]})}
-                      className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border transition-all text-left",
-                        checked ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border/40 hover:border-primary/30")}
-                    >
-                      <BookOpen className="w-2.5 h-2.5 inline mr-1" />{subj}
-                    </button>
-                  );
-                })}
+              <div className="hidden md:flex flex-col items-end text-right">
+                <span className="text-[10px] uppercase tracking-wider text-white/60">Teacher ID</span>
+                <span className="text-sm font-semibold mt-0.5 font-mono">{form.id}</span>
               </div>
-            </div>
-
-            {/* Class assignment — checkbox grid */}
-            <div className="rounded-lg border border-accent/20 bg-accent/5 p-2">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-semibold text-accent uppercase">Assign Classes (click to toggle)</p>
-                {CLASSES.length === 0 && <span className="text-[9px] text-muted-foreground">No classes yet</span>}
-              </div>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
-                {CLASSES.length === 0 ? (
-                  <p className="text-xs text-muted-foreground col-span-full text-center py-2">No classes added. Go to Classes module to add.</p>
-                ) : CLASSES.map(cls => {
-                  const checked = form.classes.includes(cls.name);
-                  return (
-                    <button
-                      key={cls.name}
-                      type="button"
-                      onClick={() => setForm({...form, classes: checked ? form.classes.filter(c => c !== cls.name) : [...form.classes, cls.name]})}
-                      className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border transition-all text-left",
-                        checked ? "bg-accent text-accent-foreground border-accent" : "bg-background border-border/40 hover:border-accent/30")}
-                    >
-                      <GraduationCap className="w-2.5 h-2.5 inline mr-1" />{cls.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="text-[10px] text-muted-foreground">
-              Selected: {form.subjects.length} subjects • {form.classes.length} classes
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.name}>Add Teacher</Button>
-          </DialogFooter>
+
+          {/* Form body */}
+          <div className="px-5 py-4 space-y-3">
+            {/* ─── Section 1: Personal Information ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Personal Information</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Identity & contact</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
+                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Ahmed Khan" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Gender</Label>
+                  <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNIC</Label>
+                  <Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXX-X" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Phone <span className="text-red-500">*</span></Label>
+                  <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Qualification</Label>
+                  <Input value={form.qualification} onChange={e => setForm({...form, qualification: e.target.value})} placeholder="M.Sc, B.Ed" className="h-9" />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section 2: Professional & Salary ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                  <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Professional & Salary</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Designation & compensation</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Designation</Label>
+                  <Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} placeholder="e.g., Senior Teacher" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Joining Date</Label>
+                  <Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} className="h-9" />
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Monthly Salary (Rs.) <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                    <Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} placeholder="e.g., 45000" className="h-9 pl-8" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section 3: Subject Assignment ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                  <BookOpen className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Assign Subjects</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">{form.subjects.length} selected</span>
+              </div>
+              <div className="p-3">
+                {SUBJECTS.length === 0 ? (
+                  <div className="text-center py-4">
+                    <BookOpen className="w-6 h-6 text-muted-foreground/30 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">No subjects added. Go to Classes → Subjects tab to add.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+                    {SUBJECTS.map(subj => {
+                      const checked = form.subjects.includes(subj);
+                      return (
+                        <button
+                          key={subj}
+                          type="button"
+                          onClick={() => setForm({...form, subjects: checked ? form.subjects.filter(s => s !== subj) : [...form.subjects, subj]})}
+                          className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border-2 transition-all text-left flex items-center gap-1",
+                            checked ? "bg-accent text-accent-foreground border-accent shadow-sm" : "bg-background border-border/40 hover:border-accent/40 hover:bg-accent/5")}
+                        >
+                          <BookOpen className={cn("w-2.5 h-2.5 shrink-0", checked ? "text-accent-foreground" : "text-muted-foreground")} />
+                          <span className="truncate">{subj}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ─── Section 4: Class Assignment ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Assign Classes</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">{form.classes.length} selected</span>
+              </div>
+              <div className="p-3">
+                {CLASSES.length === 0 ? (
+                  <div className="text-center py-4">
+                    <GraduationCap className="w-6 h-6 text-muted-foreground/30 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">No classes added. Go to Classes module to add.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+                    {CLASSES.map(cls => {
+                      const checked = form.classes.includes(cls.name);
+                      return (
+                        <button
+                          key={cls.name}
+                          type="button"
+                          onClick={() => setForm({...form, classes: checked ? form.classes.filter(c => c !== cls.name) : [...form.classes, cls.name]})}
+                          className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border-2 transition-all text-left flex items-center gap-1",
+                            checked ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-background border-border/40 hover:border-primary/40 hover:bg-primary/5")}
+                        >
+                          <GraduationCap className={cn("w-2.5 h-2.5 shrink-0", checked ? "text-primary-foreground" : "text-muted-foreground")} />
+                          <span className="truncate">{cls.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Summary banner */}
+            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Award className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-primary">Assignment summary:</span> {form.subjects.length} subject{form.subjects.length !== 1 ? "s" : ""} • {form.classes.length} class{form.classes.length !== 1 ? "es" : ""} • Monthly salary: <span className="font-semibold text-foreground">Rs. {form.monthlySalary.toLocaleString()}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Sticky footer */}
+          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+            <p className="text-[10px] text-muted-foreground">
+              <span className="text-red-500">*</span> Required fields
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+              <Button className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md" onClick={handleAdd} disabled={!form.name}>
+                <Plus className="w-4 h-4 mr-1.5" />Add Teacher
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -517,28 +619,126 @@ export function StaffModule() {
 
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Staff</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3 py-2">
-            <div className="col-span-2"><Label>Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-            <div><Label>CNIC</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" /></div>
-            <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" /></div>
-            <div><Label>Department</Label>
-              <Select value={form.department} onValueChange={v => setForm({...form, department: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {["Administration", "Accounts", "Security", "Transport", "Housekeeping", "IT", "Library", "Lab"].map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                </SelectContent>
-              </Select>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+          {/* Gradient hero header */}
+          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-accent via-accent to-primary/80 px-5 py-4 text-accent-foreground">
+            <div className="absolute inset-0 opacity-10 pattern-grid" />
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+                <UserCog className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold tracking-tight">Add New Staff Member</h2>
+                <p className="text-xs text-white/75 mt-0.5">Register a non-teaching staff member to the school team.</p>
+              </div>
+              <div className="hidden md:flex flex-col items-end text-right">
+                <span className="text-[10px] uppercase tracking-wider text-white/60">Staff ID</span>
+                <span className="text-sm font-semibold mt-0.5 font-mono">{form.id}</span>
+              </div>
             </div>
-            <div><Label>Designation</Label><Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} /></div>
-            <div><Label>Monthly Salary (Rs.)</Label><Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} /></div>
-            <div><Label>Joining Date</Label><Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => { addStaff(form); toast({ title: "Staff Added ✓", description: `${form.name} added to ${form.department}` }); setAddOpen(false); }} disabled={!form.name}>Add Staff</Button>
-          </DialogFooter>
+
+          {/* Form body */}
+          <div className="px-5 py-4 space-y-3">
+            {/* ─── Section 1: Personal Information ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Personal Information</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Identity & contact</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-2.5">
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
+                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Imran Sheikh" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNIC</Label>
+                  <Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Phone</Label>
+                  <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" className="h-9" />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section 2: Department & Designation ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                  <Building2 className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Department & Designation</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Workplace assignment</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Department</Label>
+                  <Select value={form.department} onValueChange={v => setForm({...form, department: v})}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["Administration", "Accounts", "Security", "Transport", "Housekeeping", "IT", "Library", "Lab"].map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Designation</Label>
+                  <Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} placeholder="e.g., Accountant" className="h-9" />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section 3: Salary & Joining ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                  <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Salary & Joining</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Compensation details</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Monthly Salary (Rs.)</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                    <Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} placeholder="e.g., 35000" className="h-9 pl-8" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Joining Date</Label>
+                  <Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} className="h-9" />
+                </div>
+              </div>
+            </div>
+
+            {/* Auto-generated info banner */}
+            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                <IdCard className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-primary">Auto-generated on save:</span> Staff ID (<span className="font-mono">ST-XXX</span>) • Attendance tracking enabled • Salary slip ready for monthly processing.
+              </p>
+            </div>
+          </div>
+
+          {/* Sticky footer */}
+          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+            <p className="text-[10px] text-muted-foreground">
+              <span className="text-red-500">*</span> Required fields
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+              <Button className="bg-accent hover:bg-accent/90 h-9 px-5 shadow-md" onClick={() => { addStaff(form); toast({ title: "Staff Added ✓", description: `${form.name} added to ${form.department}` }); setAddOpen(false); }} disabled={!form.name}>
+                <Plus className="w-4 h-4 mr-1.5" />Add Staff
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
