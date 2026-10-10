@@ -426,6 +426,7 @@ export function StaffModule() {
   const [addOpen, setAddOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<Staff | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Staff | null>(null);
+  const [selected, setSelected] = useState<Staff | null>(null);
   const [form, setForm] = useState<Staff>(EMPTY_STAFF);
   const [editForm, setEditForm] = useState<Partial<Staff>>({});
 
@@ -481,6 +482,7 @@ export function StaffModule() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-0.5">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View" onClick={() => setSelected(s)}><Eye className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" title="Edit" onClick={() => { setEditStaff(s); setEditForm(s); }}><Edit className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" title="Delete" onClick={() => setDeleteConfirm(s)}><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
@@ -577,6 +579,141 @@ export function StaffModule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Staff Profile slide-in panel */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Gradient banner header */}
+            <div className="relative bg-gradient-to-br from-accent via-accent to-accent/70 p-6 text-primary-foreground overflow-hidden">
+              <div className="absolute inset-0 opacity-10 pattern-grid" />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+              <div className="relative flex items-start gap-5">
+                <Avatar className="w-20 h-20 ring-4 ring-white/30 shadow-xl shrink-0">
+                  <AvatarFallback className="text-3xl font-bold bg-white/20 text-white">
+                    {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 pt-1">
+                  <h2 className="text-2xl font-bold">{selected.name}</h2>
+                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">{selected.id}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">{selected.designation}</span>
+                  </div>
+                  <p className="text-white/70 text-xs mt-2">{selected.department} Department • Joined {selected.joiningDate}</p>
+                </div>
+              </div>
+              {/* Quick stats */}
+              <div className="relative grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/20">
+                <div>
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Salary</p>
+                  <p className="text-xl font-bold mt-0.5">Rs. {(selected.monthlySalary / 1000).toFixed(0)}K</p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Per Day</p>
+                  <p className="text-xl font-bold mt-0.5">Rs. {Math.round(selected.monthlySalary / 26).toLocaleString()}</p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
+                  <p className="text-xl font-bold mt-0.5">
+                    {(() => {
+                      const total = selected.attendance.present + selected.attendance.late + selected.attendance.halfDay + selected.attendance.absent + selected.attendance.leave;
+                      return total > 0 ? Math.round((selected.attendance.present + selected.attendance.late * 0.75 + selected.attendance.halfDay * 0.5) / total * 100) : 0;
+                    })()}%
+                  </p>
+                </div>
+                <div className="border-l border-white/20 pl-3">
+                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Deductions</p>
+                  <p className="text-xl font-bold mt-0.5">
+                    {(() => {
+                      const perDay = Math.round(selected.monthlySalary / 26);
+                      const ded = selected.attendance.absent * perDay + selected.attendance.late * 500 + Math.round(selected.attendance.halfDay * perDay * 0.5);
+                      return ded > 0 ? `Rs. ${ded.toLocaleString()}` : "None";
+                    })()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action bar */}
+            <div className="flex items-center gap-2 px-6 py-3 border-b border-border/30 bg-muted/20">
+              <Button size="sm" variant="outline" onClick={() => { setEditStaff(selected); setEditForm(selected); setSelected(null); }}>
+                <Edit className="w-3.5 h-3.5 mr-1.5" />Edit Profile
+              </Button>
+              <Button size="sm" variant="outline" className="text-red-600" onClick={() => { setDeleteConfirm(selected); setSelected(null); }}>
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Personal info */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Personal Information</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                  <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><IdCard className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase">CNIC</p><p className="text-sm font-semibold">{selected.cnic || "—"}</p></div>
+                  </div>
+                  <div className="rounded-xl border border-border/30 p-3 bg-primary/5 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center"><Phone className="w-4 h-4 text-primary" /></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{selected.phone || "—"}</p></div>
+                  </div>
+                  <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><CalendarDays className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase">Joining Date</p><p className="text-sm font-semibold">{selected.joiningDate}</p></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Department & Salary */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Department & Salary</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center"><Briefcase className="w-4 h-4 text-accent" /></div>
+                      <p className="text-sm font-semibold text-accent">Department</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><p className="text-[10px] text-muted-foreground uppercase">Department</p><p className="text-sm font-semibold">{selected.department}</p></div>
+                      <div><p className="text-[10px] text-muted-foreground uppercase">Designation</p><p className="text-sm font-semibold">{selected.designation}</p></div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-emerald-600" /></div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">Monthly Salary</p>
+                      <p className="text-xl font-bold text-emerald-600">Rs. {selected.monthlySalary.toLocaleString()}</p>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <p className="text-[10px] text-muted-foreground uppercase">Per Day (26 days)</p>
+                      <p className="text-sm font-semibold">Rs. {Math.round(selected.monthlySalary / 26).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attendance summary */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Attendance Summary (Current Month)</p>
+                <div className="grid grid-cols-5 gap-2 text-center">
+                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3"><p className="text-2xl font-bold text-emerald-600">{selected.attendance.present}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Present</p></div>
+                  <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3"><p className="text-2xl font-bold text-yellow-600">{selected.attendance.late}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Late</p></div>
+                  <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 p-3"><p className="text-2xl font-bold text-orange-600">{selected.attendance.halfDay}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Half-Day</p></div>
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3"><p className="text-2xl font-bold text-red-600">{selected.attendance.absent}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Absent</p></div>
+                  <div className="rounded-xl bg-muted border border-border/30 p-3"><p className="text-2xl font-bold text-muted-foreground">{selected.attendance.leave}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Leave</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
