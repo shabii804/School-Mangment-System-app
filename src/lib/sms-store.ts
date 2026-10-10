@@ -5,6 +5,23 @@ import {
   type Student, type Teacher, type Staff, type FeeCollection, type Activity, type Role,
 } from "./sms-data";
 
+// ─── Local date helper ───
+// Returns YYYY-MM-DD in LOCAL time (not UTC).
+// Using toISOString().split("T")[0] returns UTC date which can be off by 1 day
+// in timezones east of GMT (e.g., Pakistan UTC+5 at 4am → previous day in UTC).
+export function localDateStr(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Returns YYYY-MM (current local month)
+export function localMonthStr(): string {
+  return localDateStr().slice(0, 7);
+}
+
 export type ModuleKey =
   | "dashboard" | "students" | "teachers" | "staff" | "classes" | "timetable"
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
@@ -307,7 +324,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "10.0-qa-fixed";
+  const CURRENT_VERSION = "11.0-qa-deep";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -319,6 +336,42 @@ if (typeof window !== "undefined") {
     }
     keysToRemove.forEach(k => { try { window.localStorage.removeItem(k); } catch {} });
     window.localStorage.setItem("edudesk_version", CURRENT_VERSION);
+  }
+
+  // ─── Auto-reset feePaidThisMonth on month boundary ───
+  // On every page load, check if the current calendar month differs from
+  // the students' lastPaidMonth. If so, reset feePaidThisMonth = false
+  // and recharge outstandingAmount for the new month.
+  // This prevents the "all students show Paid in January" bug.
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const lastResetMonth = window.localStorage.getItem("edudesk_lastFeeReset");
+  if (lastResetMonth !== currentMonth) {
+    // Month has changed (or first run) — reset fee flags for all students
+    try {
+      const rawStudents = window.localStorage.getItem("edudesk_students");
+      if (rawStudents) {
+        const studentsList = JSON.parse(rawStudents) as Student[];
+        let changed = false;
+        const updated = studentsList.map(s => {
+          if (s.status === "Active" && s.feePaidThisMonth) {
+            changed = true;
+            return {
+              ...s,
+              feePaidThisMonth: false,
+              // Add this month's fee to outstanding (since it hasn't been paid)
+              outstandingAmount: s.outstandingAmount + s.monthlyFee,
+              lastPaidMonth: s.lastPaidMonth || lastResetMonth || currentMonth,
+            };
+          }
+          return s;
+        });
+        if (changed) {
+          window.localStorage.setItem("edudesk_students", JSON.stringify(updated));
+          console.log(`[Auto-Reset] Fee flags reset for new month: ${currentMonth} (was ${lastResetMonth || "never"})`);
+        }
+      }
+      window.localStorage.setItem("edudesk_lastFeeReset", currentMonth);
+    } catch {}
   }
 }
 
@@ -563,7 +616,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       studentId,
       studentName: student.name,
       class: student.class,
-      date: new Date().toISOString().split("T")[0],
+      date: localDateStr(),
       amount,
       mode,
       tuition: breakdown?.tuition,
@@ -590,6 +643,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         return {
           ...s,
           feePaidThisMonth: fullyPaid,
+          lastPaidMonth: fullyPaid ? new Date().toISOString().slice(0, 7) : s.lastPaidMonth,
           outstandingAmount: newOutstanding,
         };
       }),

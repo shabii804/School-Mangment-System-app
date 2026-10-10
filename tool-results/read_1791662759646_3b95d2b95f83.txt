@@ -1,0 +1,734 @@
+     1→// Global app store using Zustand
+     2→import { create } from "zustand";
+     3→import {
+     4→  STUDENTS, TEACHERS, STAFF, FEE_COLLECTIONS, ACTIVITIES,
+     5→  type Student, type Teacher, type Staff, type FeeCollection, type Activity, type Role,
+     6→} from "./sms-data";
+     7→
+     8→export type ModuleKey =
+     9→  | "dashboard" | "students" | "teachers" | "staff" | "classes" | "timetable"
+    10→  | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
+    11→  | "reports" | "analytics" | "users" | "settings" | "ledger"
+    12→  | "exam" | "library" | "transport" | "hostel" | "inventory" | "events"
+    13→  | "discipline" | "alumni" | "parent" | "sms" | "leave" | "concession" | "ai";
+    14→
+    15→export interface SchoolInfo {
+    16→  name: string;
+    17→  tagline: string;
+    18→  address: string;
+    19→  phone: string;
+    20→  email: string;
+    21→  logo: string | null; // base64 data URL
+    22→  session: string;
+    23→}
+    24→
+    25→export interface FeeStructureConfig {
+    26→  // Per-class tuition fees (class name → monthly tuition)
+    27→  classFees: Record<string, number>;
+    28→  // Global hostel fee (applied to all hostellers)
+    29→  hostelFee: number;
+    30→  // Admission fee = multiplier × monthly tuition
+    31→  admissionMultiplier: number;
+    32→  // Late payment fine (flat, after due date)
+    33→  lateFee: number;
+    34→  // Fee due date (day of month, 1-28)
+    35→  dueDate: number;
+    36→}
+    37→
+    38→export interface StudentDocument {
+    39→  id: string;
+    40→  studentId: string;
+    41→  name: string;
+    42→  type: "Birth Certificate" | "Photo" | "Transfer Certificate" | "Report Card" | "Medical Record" | "Other";
+    43→  uploadDate: string;
+    44→  dataUrl: string; // base64
+    45→  size: number; // bytes
+    46→}
+    47→
+    48→export interface CommunicationLog {
+    49→  id: string;
+    50→  studentId: string;
+    51→  type: "Phone Call" | "Meeting" | "SMS" | "Email" | "Note";
+    52→  date: string;
+    53→  direction: "Incoming" | "Outgoing";
+    54→  subject: string;
+    55→  notes: string;
+    56→  user: string;
+    57→}
+    58→
+    59→export interface Transaction {
+    60→  id: string;
+    61→  date: string;
+    62→  type: "Income" | "Expense";
+    63→  category: string;
+    64→  description: string;
+    65→  amount: number;
+    66→  mode: "Cash" | "Bank" | "Cheque";
+    67→}
+    68→
+    69→export interface Notification {
+    70→  id: string;
+    71→  title: string;
+    72→  description: string;
+    73→  time: string;
+    74→  type: "fee" | "attendance" | "admission" | "salary" | "system" | "birthday";
+    75→  read: boolean;
+    76→  action?: { module: ModuleKey; label: string };
+    77→}
+    78→
+    79→interface AppState {
+    80→  // Auth
+    81→  role: Role;
+    82→  setRole: (role: Role) => void;
+    83→  userName: string;
+    84→
+    85→  // Navigation
+    86→  activeModule: ModuleKey;
+    87→  setActiveModule: (m: ModuleKey) => void;
+    88→
+    89→  // Module visibility (on/off)
+    90→  enabledModules: Record<ModuleKey, boolean>;
+    91→  toggleModule: (m: ModuleKey) => void;
+    92→  setModuleEnabled: (m: ModuleKey, enabled: boolean) => void;
+    93→  setAllModulesEnabled: (enabled: boolean) => void;
+    94→
+    95→  // School branding
+    96→  school: SchoolInfo;
+    97→  updateSchool: (patch: Partial<SchoolInfo>) => void;
+    98→  setLogo: (logo: string | null) => void;
+    99→
+   100→  // Fee structure config
+   101→  feeStructure: FeeStructureConfig;
+   102→  updateFeeStructure: (patch: Partial<FeeStructureConfig>) => void;
+   103→  setClassFee: (className: string, amount: number) => void;
+   104→
+   105→  // Managed collections (CRUD via store so they persist)
+   106→  classes: { name: string; sections: string[]; monthlyFee: number; classTeacher?: string }[];
+   107→  subjects: string[];
+   108→  addClass: (cls: { name: string; sections: string[]; monthlyFee: number }) => void;
+   109→  updateClass: (name: string, patch: Partial<{ sections: string[]; monthlyFee: number; classTeacher: string }>) => void;
+   110→  deleteClass: (name: string) => void;
+   111→  addSubject: (subject: string) => void;
+   112→  deleteSubject: (subject: string) => void;
+   113→
+   114→  // Data
+   115→  students: Student[];
+   116→  teachers: Teacher[];
+   117→  staff: Staff[];
+   118→  feeCollections: FeeCollection[];
+   119→  activities: Activity[];
+   120→  documents: StudentDocument[];
+   121→  commLogs: CommunicationLog[];
+   122→  transactions: Transaction[];
+   123→
+   124→  // Theme
+   125→  isDark: boolean;
+   126→  toggleTheme: () => void;
+   127→
+   128→  // ─── Database sync state ───
+   129→  syncStatus: "idle" | "syncing" | "online" | "offline" | "error";
+   130→  lastSyncAt: string | null;
+   131→  dbStats: { size: number; collections: number; lastSync: string | null } | null;
+   132→  setSyncStatus: (s: AppState["syncStatus"]) => void;
+   133→  syncToDatabase: () => Promise<boolean>;
+   134→  loadFromDatabase: () => Promise<boolean>;
+   135→
+   136→  // Search
+   137→  searchQuery: string;
+   138→  setSearchQuery: (q: string) => void;
+   139→
+   140→  // Command palette
+   141→  commandOpen: boolean;
+   142→  setCommandOpen: (open: boolean) => void;
+   143→
+   144→  // Notifications
+   145→  notifications: Notification[];
+   146→  markNotificationRead: (id: string) => void;
+   147→  markAllNotificationsRead: () => void;
+   148→  unreadCount: () => number;
+   149→
+   150→  // Selected student for cross-module navigation
+   151→  selectedStudentId: string | null;
+   152→  setSelectedStudent: (id: string | null) => void;
+   153→
+   154→  // Actions
+   155→  addStudent: (s: Student) => void;
+   156→  updateStudent: (id: string, patch: Partial<Student>) => void;
+   157→  deleteStudent: (id: string) => void;
+   158→  promoteStudent: (id: string, newClass: string, newSection: string) => void;
+   159→  addTeacher: (t: Teacher) => void;
+   160→  updateTeacher: (id: string, patch: Partial<Teacher>) => void;
+   161→  deleteTeacher: (id: string) => void;
+   162→  addStaff: (s: Staff) => void;
+   163→  updateStaff: (id: string, patch: Partial<Staff>) => void;
+   164→  deleteStaff: (id: string) => void;
+   165→  collectFee: (studentId: string, amount: number, mode: "Cash" | "Cheque" | "Bank Transfer", feeType: string, breakdown?: { tuition?: number; admission?: number; hostel?: number }) => void;
+   166→  markAttendance: (studentIds: string[], status: "Present" | "Absent" | "Late" | "Leave") => void;
+   167→
+   168→  // Document vault
+   169→  addDocument: (doc: StudentDocument) => void;
+   170→  deleteDocument: (id: string) => void;
+   171→
+   172→  // Communication log
+   173→  addCommLog: (log: CommunicationLog) => void;
+   174→  deleteCommLog: (id: string) => void;
+   175→
+   176→  // Transactions (income/expense ledger)
+   177→  addTransaction: (t: Transaction) => void;
+   178→  deleteTransaction: (id: string) => void;
+   179→
+   180→  // === Generic module data store ===
+   181→  // For entities that don't have dedicated typed collections (exams, leave, concessions, incidents, alumni, books, routes, inventory, events, hostel rooms).
+   182→  // Each collection is keyed by name and persisted to localStorage.
+   183→  moduleData: Record<string, any[]>;
+   184→  addModuleItem: (collection: string, item: any) => void;
+   185→  updateModuleItem: (collection: string, id: string, patch: any) => void;
+   186→  deleteModuleItem: (collection: string, id: string) => void;
+   187→  setModuleData: (collection: string, items: any[]) => void;
+   188→
+   189→  // Attendance records (per-student, per-day)
+   190→  attendanceRecords: AttendanceRecord[];
+   191→  saveAttendance: (records: AttendanceRecord[]) => void;
+   192→}
+   193→
+   194→// Attendance record — one per student per day
+   195→export interface AttendanceRecord {
+   196→  id: string;
+   197→  studentId: string;
+   198→  date: string; // ISO date YYYY-MM-DD
+   199→  status: "Present" | "Absent" | "Late" | "Leave";
+   200→  markedBy: string;
+   201→  markedAt: string;
+   202→}
+   203→
+   204→const ROLE_NAMES: Record<Role, string> = {
+   205→  admin: "Administrator",
+   206→  accountant: "Accountant",
+   207→  teacher: "Teacher",
+   208→};
+   209→
+   210→const DEFAULT_SCHOOL: SchoolInfo = {
+   211→  name: "",
+   212→  tagline: "",
+   213→  address: "",
+   214→  phone: "",
+   215→  email: "",
+   216→  logo: null,
+   217→  session: "",
+   218→};
+   219→
+   220→const DEFAULT_FEE_STRUCTURE: FeeStructureConfig = {
+   221→  classFees: {},
+   222→  hostelFee: 0,
+   223→  admissionMultiplier: 0,
+   224→  lateFee: 0,
+   225→  dueDate: 0,
+   226→};
+   227→
+   228→// === Module Control ===
+   229→// Modules that are always ON and cannot be disabled (system essentials)
+   230→export const ALWAYS_ON_MODULES: ModuleKey[] = ["dashboard", "settings"];
+   231→
+   232→// Default module config — all modules enabled by default
+   233→const DEFAULT_ENABLED_MODULES: Record<ModuleKey, boolean> = {
+   234→  dashboard: true, students: true, teachers: true, staff: true,
+   235→  classes: true, timetable: true, attendance: true, salary: true,
+   236→  fees: true, defaulters: true, results: true, certificates: true,
+   237→  reports: true, analytics: true, users: true, settings: true,
+   238→  ledger: true, exam: true, library: true, transport: true,
+   239→  hostel: true, inventory: true, events: true, discipline: true,
+   240→  alumni: true, parent: true, sms: true, leave: true, concession: true, ai: true,
+   241→};
+   242→
+   243→function loadEnabledModules(): Record<ModuleKey, boolean> {
+   244→  if (typeof window === "undefined") return DEFAULT_ENABLED_MODULES;
+   245→  try {
+   246→    const raw = window.localStorage.getItem("edudesk_modules");
+   247→    if (raw) {
+   248→      const parsed = JSON.parse(raw);
+   249→      // Merge with defaults to handle new modules added in updates
+   250→      return { ...DEFAULT_ENABLED_MODULES, ...parsed };
+   251→    }
+   252→  } catch {}
+   253→  return DEFAULT_ENABLED_MODULES;
+   254→}
+   255→
+   256→function saveEnabledModules(modules: Record<ModuleKey, boolean>) {
+   257→  if (typeof window === "undefined") return;
+   258→  try { window.localStorage.setItem("edudesk_modules", JSON.stringify(modules)); } catch {}
+   259→}
+   260→
+   261→function loadFeeStructure(): FeeStructureConfig {
+   262→  if (typeof window === "undefined") return DEFAULT_FEE_STRUCTURE;
+   263→  try {
+   264→    const raw = window.localStorage.getItem("edudesk_fees");
+   265→    if (raw) return { ...DEFAULT_FEE_STRUCTURE, ...JSON.parse(raw) };
+   266→  } catch {}
+   267→  return DEFAULT_FEE_STRUCTURE;
+   268→}
+   269→
+   270→function saveFeeStructure(fs: FeeStructureConfig) {
+   271→  if (typeof window === "undefined") return;
+   272→  try { window.localStorage.setItem("edudesk_fees", JSON.stringify(fs)); } catch {}
+   273→}
+   274→
+   275→// Load persisted school info from localStorage (client-side only)
+   276→function loadSchool(): SchoolInfo {
+   277→  if (typeof window === "undefined") return DEFAULT_SCHOOL;
+   278→  try {
+   279→    const raw = window.localStorage.getItem("edudesk_school");
+   280→    if (raw) return { ...DEFAULT_SCHOOL, ...JSON.parse(raw) };
+   281→  } catch {}
+   282→  return DEFAULT_SCHOOL;
+   283→}
+   284→
+   285→function saveSchool(s: SchoolInfo) {
+   286→  if (typeof window === "undefined") return;
+   287→  try { window.localStorage.setItem("edudesk_school", JSON.stringify(s)); } catch {}
+   288→}
+   289→
+   290→// Generic persistence helpers for collections
+   291→function loadCollection<T>(key: string, fallback: T): T {
+   292→  if (typeof window === "undefined") return fallback;
+   293→  try {
+   294→    const raw = window.localStorage.getItem(`edudesk_${key}`);
+   295→    if (raw) return JSON.parse(raw) as T;
+   296→  } catch {}
+   297→  return fallback;
+   298→}
+   299→
+   300→function saveCollection<T>(key: string, data: T) {
+   301→  if (typeof window === "undefined") return;
+   302→  try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(data)); } catch {}
+   303→}
+   304→
+   305→const INITIAL_NOTIFICATIONS: Notification[] = [];
+   306→
+   307→// === CRITICAL: Clear old seed data BEFORE store creation ===
+   308→// This runs once on page load — if version changed, wipe ALL old data
+   309→if (typeof window !== "undefined") {
+   310→  const CURRENT_VERSION = "10.0-qa-fixed";
+   311→  const storedVersion = window.localStorage.getItem("edudesk_version");
+   312→  if (storedVersion !== CURRENT_VERSION) {
+   313→    const keysToRemove: string[] = [];
+   314→    for (let i = 0; i < window.localStorage.length; i++) {
+   315→      const k = window.localStorage.key(i);
+   316→      if (k && k.startsWith("edudesk_") && k !== "edudesk_version") {
+   317→        keysToRemove.push(k);
+   318→      }
+   319→    }
+   320→    keysToRemove.forEach(k => { try { window.localStorage.removeItem(k); } catch {} });
+   321→    window.localStorage.setItem("edudesk_version", CURRENT_VERSION);
+   322→  }
+   323→}
+   324→
+   325→export const useAppStore = create<AppState>((set, get) => ({
+   326→  role: "admin",
+   327→  setRole: (role) => set({ role, userName: ROLE_NAMES[role] }),
+   328→  userName: ROLE_NAMES.admin,
+   329→
+   330→  activeModule: "dashboard",
+   331→  setActiveModule: (m) => set({ activeModule: m }),
+   332→
+   333→  // Module visibility (on/off)
+   334→  enabledModules: loadEnabledModules(),
+   335→  toggleModule: (m) => set((state) => {
+   336→    if (ALWAYS_ON_MODULES.includes(m)) return state; // skip always-on
+   337→    const next = { ...state.enabledModules, [m]: !state.enabledModules[m] };
+   338→    saveEnabledModules(next);
+   339→    return { enabledModules: next };
+   340→  }),
+   341→  setModuleEnabled: (m, enabled) => set((state) => {
+   342→    if (ALWAYS_ON_MODULES.includes(m)) return state;
+   343→    const next = { ...state.enabledModules, [m]: enabled };
+   344→    saveEnabledModules(next);
+   345→    return { enabledModules: next };
+   346→  }),
+   347→  setAllModulesEnabled: (enabled) => set((state) => {
+   348→    const next = { ...state.enabledModules };
+   349→    (Object.keys(next) as ModuleKey[]).forEach(k => {
+   350→      if (!ALWAYS_ON_MODULES.includes(k)) next[k] = enabled;
+   351→    });
+   352→    saveEnabledModules(next);
+   353→    return { enabledModules: next };
+   354→  }),
+   355→
+   356→  school: loadSchool(),
+   357→  updateSchool: (patch) => {
+   358→    const next = { ...get().school, ...patch };
+   359→    saveSchool(next);
+   360→    set({ school: next });
+   361→  },
+   362→  setLogo: (logo) => {
+   363→    const next = { ...get().school, logo };
+   364→    saveSchool(next);
+   365→    set({ school: next });
+   366→  },
+   367→
+   368→  feeStructure: loadFeeStructure(),
+   369→  updateFeeStructure: (patch) => {
+   370→    const next = { ...get().feeStructure, ...patch };
+   371→    saveFeeStructure(next);
+   372→    set({ feeStructure: next });
+   373→  },
+   374→  setClassFee: (className, amount) => {
+   375→    const next = { ...get().feeStructure, classFees: { ...get().feeStructure.classFees, [className]: amount } };
+   376→    saveFeeStructure(next);
+   377→    set({ feeStructure: next });
+   378→  },
+   379→
+   380→  classes: loadCollection("classes", []),
+   381→  subjects: loadCollection("subjects", []),
+   382→  addClass: (cls) => set((state) => ({ classes: [...state.classes, cls] })),
+   383→  updateClass: (name, patch) => set((state) => ({ classes: state.classes.map(c => c.name === name ? { ...c, ...patch } : c) })),
+   384→  deleteClass: (name) => set((state) => ({ classes: state.classes.filter(c => c.name !== name) })),
+   385→  addSubject: (subject) => set((state) => ({ subjects: [...state.subjects, subject] })),
+   386→  deleteSubject: (subject) => set((state) => ({ subjects: state.subjects.filter(s => s !== subject) })),
+   387→
+   388→  students: loadCollection("students", STUDENTS),
+   389→  teachers: loadCollection("teachers", TEACHERS),
+   390→  staff: loadCollection("staff", STAFF),
+   391→  feeCollections: loadCollection("feeCollections", FEE_COLLECTIONS),
+   392→  activities: loadCollection("activities", ACTIVITIES),
+   393→
+   394→  isDark: false,
+   395→  toggleTheme: () => set((s) => ({ isDark: !s.isDark })),
+   396→
+   397→  // ─── Database sync ───
+   398→  syncStatus: "idle",
+   399→  lastSyncAt: null,
+   400→  dbStats: null,
+   401→  setSyncStatus: (s) => set({ syncStatus: s }),
+   402→  syncToDatabase: async () => {
+   403→    set({ syncStatus: "syncing" });
+   404→    try {
+   405→      const state = get();
+   406→      const stateToSave = {
+   407→        students: state.students,
+   408→        teachers: state.teachers,
+   409→        staff: state.staff,
+   410→        feeCollections: state.feeCollections,
+   411→        activities: state.activities,
+   412→        documents: state.documents,
+   413→        commLogs: state.commLogs,
+   414→        transactions: state.transactions,
+   415→        classes: state.classes,
+   416→        subjects: state.subjects,
+   417→        moduleData: state.moduleData,
+   418→        attendanceRecords: state.attendanceRecords,
+   419→        school: state.school,
+   420→        feeStructure: state.feeStructure,
+   421→        enabledModules: state.enabledModules,
+   422→      };
+   423→      const res = await fetch("/api/state", {
+   424→        method: "POST",
+   425→        headers: { "Content-Type": "application/json" },
+   426→        body: JSON.stringify({ state: stateToSave }),
+   427→      });
+   428→      const data = await res.json();
+   429→      if (data.success) {
+   430→        set({ syncStatus: "online", lastSyncAt: new Date().toISOString(), dbStats: data.stats });
+   431→        return true;
+   432→      } else {
+   433→        set({ syncStatus: "error" });
+   434→        return false;
+   435→      }
+   436→    } catch (e) {
+   437→      // Network error — we're offline, data is still in localStorage
+   438→      set({ syncStatus: "offline" });
+   439→      return false;
+   440→    }
+   441→  },
+   442→  loadFromDatabase: async () => {
+   443→    // Set the flag IMMEDIATELY (synchronously, before any async work)
+   444→    // This prevents the subscribe block from syncing empty state to SQLite
+   445→    // before we've had a chance to load the real data
+   446→    isInitialLoadStarted = true;
+   447→    set({ syncStatus: "syncing" });
+   448→    try {
+   449→      const res = await fetch("/api/state", { method: "GET" });
+   450→      const data = await res.json();
+   451→      if (data.success && data.state) {
+   452→        const s = data.state;
+   453→        // Only update collections that exist in the database (don't overwrite with undefined)
+   454→        const patch: Partial<AppState> = { syncStatus: "online", dbStats: data.stats, lastSyncAt: new Date().toISOString() };
+   455→        if (s.students) patch.students = s.students;
+   456→        if (s.teachers) patch.teachers = s.teachers;
+   457→        if (s.staff) patch.staff = s.staff;
+   458→        if (s.feeCollections) patch.feeCollections = s.feeCollections;
+   459→        if (s.activities) patch.activities = s.activities;
+   460→        if (s.documents) patch.documents = s.documents;
+   461→        if (s.commLogs) patch.commLogs = s.commLogs;
+   462→        if (s.transactions) patch.transactions = s.transactions;
+   463→        if (s.classes) patch.classes = s.classes;
+   464→        if (s.subjects) patch.subjects = s.subjects;
+   465→        if (s.moduleData) patch.moduleData = s.moduleData;
+   466→        if (s.attendanceRecords) patch.attendanceRecords = s.attendanceRecords;
+   467→        if (s.school) patch.school = s.school;
+   468→        if (s.feeStructure) patch.feeStructure = s.feeStructure;
+   469→        if (s.enabledModules) patch.enabledModules = s.enabledModules;
+   470→        set(patch);
+   471→        // Also update localStorage as cache
+   472→        if (typeof window !== "undefined") {
+   473→          Object.entries(s).forEach(([key, value]) => {
+   474→            try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(value)); } catch {}
+   475→          });
+   476→        }
+   477→        // Mark initial load complete AFTER state is set
+   478→        // Use setTimeout to ensure the set() above (which triggers subscribe) completes first
+   479→        // with isInitialLoadComplete still false, THEN enable auto-sync
+   480→        setTimeout(() => { isInitialLoadComplete = true; }, 500);
+   481→        return true;
+   482→      }
+   483→      // Even if SQLite was empty, enable auto-sync so future changes are saved
+   484→      setTimeout(() => { isInitialLoadComplete = true; }, 500);
+   485→      set({ syncStatus: "offline" });
+   486→      return false;
+   487→    } catch (e) {
+   488→      // On error, enable auto-sync so localStorage data gets saved to SQLite
+   489→      setTimeout(() => { isInitialLoadComplete = true; }, 500);
+   490→      set({ syncStatus: "offline" });
+   491→      return false;
+   492→    }
+   493→  },
+   494→
+   495→  searchQuery: "",
+   496→  setSearchQuery: (q) => set({ searchQuery: q }),
+   497→
+   498→  commandOpen: false,
+   499→  setCommandOpen: (open) => set({ commandOpen: open }),
+   500→
+   501→  notifications: INITIAL_NOTIFICATIONS,
+   502→  markNotificationRead: (id) => set((s) => ({
+   503→    notifications: s.notifications.map(n => n.id === id ? { ...n, read: true } : n),
+   504→  })),
+   505→  markAllNotificationsRead: () => set((s) => ({
+   506→    notifications: s.notifications.map(n => ({ ...n, read: true })),
+   507→  })),
+   508→  unreadCount: () => get().notifications.filter(n => !n.read).length,
+   509→
+   510→  selectedStudentId: null,
+   511→  setSelectedStudent: (id) => set({ selectedStudentId: id }),
+   512→
+   513→  addStudent: (s) => set((state) => ({ students: [s, ...state.students] })),
+   514→
+   515→  updateStudent: (id, patch) => set((state) => ({
+   516→    students: state.students.map(s => s.id === id ? { ...s, ...patch } : s),
+   517→  })),
+   518→
+   519→  deleteStudent: (id) => set((state) => ({
+   520→    students: state.students.filter(s => s.id !== id),
+   521→    // Clean up PII: delete all documents belonging to this student
+   522→    documents: state.documents.filter(d => d.studentId !== id),
+   523→    // Clean up communication logs
+   524→    commLogs: state.commLogs.filter(l => l.studentId !== id),
+   525→    // NOTE: feeCollections and attendanceRecords are kept for audit trail
+   526→    // (the student's name is still embedded in feeCollections.studentName)
+   527→  })),
+   528→
+   529→  promoteStudent: (id, newClass, newSection) => set((state) => ({
+   530→    students: state.students.map(s =>
+   531→      s.id === id ? { ...s, class: newClass, section: newSection, rollNo: String(Math.floor(Math.random() * 30) + 1).padStart(2, "0") } : s
+   532→    ),
+   533→  })),
+   534→
+   535→  addTeacher: (t) => set((state) => ({ teachers: [t, ...state.teachers] })),
+   536→
+   537→  updateTeacher: (id, patch) => set((state) => ({
+   538→    teachers: state.teachers.map(t => t.id === id ? { ...t, ...patch } : t),
+   539→  })),
+   540→
+   541→  deleteTeacher: (id) => set((state) => ({
+   542→    teachers: state.teachers.filter(t => t.id !== id),
+   543→  })),
+   544→
+   545→  addStaff: (s) => set((state) => ({ staff: [s, ...state.staff] })),
+   546→
+   547→  updateStaff: (id, patch) => set((state) => ({
+   548→    staff: state.staff.map(s => s.id === id ? { ...s, ...patch } : s),
+   549→  })),
+   550→
+   551→  deleteStaff: (id) => set((state) => ({
+   552→    staff: state.staff.filter(s => s.id !== id),
+   553→  })),
+   554→
+   555→  collectFee: (studentId, amount, mode, feeType, breakdown) => {
+   556→    const state = get();
+   557→    const student = state.students.find(s => s.id === studentId);
+   558→    if (!student) return;
+   559→    const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
+   560→    const newCollection: FeeCollection = {
+   561→      id: `FC-${Date.now()}`,
+   562→      receiptNo,
+   563→      studentId,
+   564→      studentName: student.name,
+   565→      class: student.class,
+   566→      date: new Date().toISOString().split("T")[0],
+   567→      amount,
+   568→      mode,
+   569→      tuition: breakdown?.tuition,
+   570→      admission: breakdown?.admission,
+   571→      hostel: breakdown?.hostel,
+   572→      feeType,
+   573→    };
+   574→    const newActivity: Activity = {
+   575→      id: `A${state.activities.length + 1}`,
+   576→      timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
+   577→      user: state.userName,
+   578→      action: "Fee Collected",
+   579→      description: `Rs. ${amount.toLocaleString()} from ${student.name} (${student.class}) — ${feeType}`,
+   580→      type: "fee",
+   581→    };
+   582→    set({
+   583→      feeCollections: [newCollection, ...state.feeCollections],
+   584→      students: state.students.map(s => {
+   585→        if (s.id !== studentId) return s;
+   586→        const newOutstanding = Math.max(0, s.outstandingAmount - amount);
+   587→        // Only mark feePaidThisMonth = true when outstanding reaches 0
+   588→        // Partial payments keep the flag false so the student still appears in Defaulters
+   589→        const fullyPaid = newOutstanding <= 0;
+   590→        return {
+   591→          ...s,
+   592→          feePaidThisMonth: fullyPaid,
+   593→          outstandingAmount: newOutstanding,
+   594→        };
+   595→      }),
+   596→      activities: [newActivity, ...state.activities],
+   597→    });
+   598→  },
+   599→
+   600→  markAttendance: (studentIds, status) => {
+   601→    const state = get();
+   602→    const newActivity: Activity = {
+   603→      id: `A${state.activities.length + 1}`,
+   604→      timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
+   605→      user: state.userName,
+   606→      action: "Attendance Marked",
+   607→      description: `${studentIds.length} students marked as ${status}`,
+   608→      type: "attendance",
+   609→    };
+   610→    set({ activities: [newActivity, ...state.activities] });
+   611→  },
+   612→
+   613→  documents: [],
+   614→  addDocument: (doc) => set((state) => ({ documents: [doc, ...state.documents] })),
+   615→  deleteDocument: (id) => set((state) => ({ documents: state.documents.filter(d => d.id !== id) })),
+   616→
+   617→  commLogs: [],
+   618→  addCommLog: (log) => set((state) => ({ commLogs: [log, ...state.commLogs] })),
+   619→  deleteCommLog: (id) => set((state) => ({ commLogs: state.commLogs.filter(l => l.id !== id) })),
+   620→
+   621→  transactions: [],
+   622→  addTransaction: (t) => set((state) => ({ transactions: [t, ...state.transactions] })),
+   623→  deleteTransaction: (id) => set((state) => ({ transactions: state.transactions.filter(t => t.id !== id) })),
+   624→
+   625→  // === Generic module data store ===
+   626→  moduleData: loadCollection("moduleData", {}),
+   627→  addModuleItem: (collection, item) => set((state) => {
+   628→    const current = state.moduleData[collection] || [];
+   629→    const next = { ...state.moduleData, [collection]: [item, ...current] };
+   630→    saveCollection("moduleData", next);
+   631→    return { moduleData: next };
+   632→  }),
+   633→  updateModuleItem: (collection, id, patch) => set((state) => {
+   634→    const current = state.moduleData[collection] || [];
+   635→    const next = { ...state.moduleData, [collection]: current.map((it: any) => it.id === id ? { ...it, ...patch } : it) };
+   636→    saveCollection("moduleData", next);
+   637→    return { moduleData: next };
+   638→  }),
+   639→  deleteModuleItem: (collection, id) => set((state) => {
+   640→    const current = state.moduleData[collection] || [];
+   641→    const next = { ...state.moduleData, [collection]: current.filter((it: any) => it.id !== id) };
+   642→    saveCollection("moduleData", next);
+   643→    return { moduleData: next };
+   644→  }),
+   645→  setModuleData: (collection, items) => set((state) => {
+   646→    const next = { ...state.moduleData, [collection]: items };
+   647→    saveCollection("moduleData", next);
+   648→    return { moduleData: next };
+   649→  }),
+   650→
+   651→  // Attendance records (per-student, per-day)
+   652→  attendanceRecords: loadCollection("attendanceRecords", []),
+   653→  saveAttendance: (records) => set((state) => {
+   654→    // Merge: replace any existing record with same studentId+date
+   655→    const existing = state.attendanceRecords.filter(r =>
+   656→      !records.some(nr => nr.studentId === r.studentId && nr.date === r.date)
+   657→    );
+   658→    const next = [...records, ...existing];
+   659→    saveCollection("attendanceRecords", next);
+   660→    return { attendanceRecords: next };
+   661→  }),
+   662→}));
+   663→
+   664→// Auto-persist key collections to localStorage on every change (instant)
+   665→// + debounce-sync to SQLite (source of truth)
+   666→// IMPORTANT: Skip SQLite auto-sync until loadFromDatabase() has run, to avoid
+   667→// overwriting seeded data with the initial empty state
+   668→let sqliteSyncTimer: ReturnType<typeof setTimeout> | null = null;
+   669→let isInitialLoadStarted = false; // set true synchronously when loadFromDatabase() is called
+   670→let isInitialLoadComplete = false; // set true after loadFromDatabase() finishes
+   671→
+   672→useAppStore.subscribe((state) => {
+   673→  // 1. Instant localStorage save (offline cache) — always do this
+   674→  saveCollection("students", state.students);
+   675→  saveCollection("teachers", state.teachers);
+   676→  saveCollection("staff", state.staff);
+   677→  saveCollection("feeCollections", state.feeCollections);
+   678→  saveCollection("activities", state.activities);
+   679→  saveCollection("documents", state.documents);
+   680→  saveCollection("commLogs", state.commLogs);
+   681→  saveCollection("transactions", state.transactions);
+   682→  saveCollection("classes", state.classes);
+   683→  saveCollection("subjects", state.subjects);
+   684→  saveCollection("moduleData", state.moduleData);
+   685→  saveCollection("attendanceRecords", state.attendanceRecords);
+   686→
+   687→  // 2. Debounced SQLite sync (source of truth) — 2 second delay after last change
+   688→  // SKIP until initial load from SQLite has completed — prevents overwriting seeded data
+   689→  if (!isInitialLoadComplete) return;
+   690→  if (sqliteSyncTimer) clearTimeout(sqliteSyncTimer);
+   691→  sqliteSyncTimer = setTimeout(async () => {
+   692→    try {
+   693→      const stateToSave = {
+   694→        students: state.students,
+   695→        teachers: state.teachers,
+   696→        staff: state.staff,
+   697→        feeCollections: state.feeCollections,
+   698→        activities: state.activities,
+   699→        documents: state.documents,
+   700→        commLogs: state.commLogs,
+   701→        transactions: state.transactions,
+   702→        classes: state.classes,
+   703→        subjects: state.subjects,
+   704→        moduleData: state.moduleData,
+   705→        attendanceRecords: state.attendanceRecords,
+   706→        school: state.school,
+   707→        feeStructure: state.feeStructure,
+   708→        enabledModules: state.enabledModules,
+   709→      };
+   710→      const res = await fetch("/api/state", {
+   711→        method: "POST",
+   712→        headers: { "Content-Type": "application/json" },
+   713→        body: JSON.stringify({ state: stateToSave }),
+   714→      });
+   715→      const data = await res.json();
+   716→      if (data.success) {
+   717→        useAppStore.setState({ syncStatus: "online", lastSyncAt: new Date().toISOString(), dbStats: data.stats });
+   718→      }
+   719→    } catch (e) {
+   720→      // Offline — data is safe in localStorage, will sync when back online
+   721→      useAppStore.setState({ syncStatus: "offline" });
+   722→    }
+   723→  }, 2000);
+   724→});
+   725→
+   726→// ─── enableAutoSync is no longer needed ───
+   727→// loadFromDatabase() now sets isInitialLoadComplete = true via setTimeout
+   728→// after the state has been loaded, which automatically enables auto-sync.
+   729→// This prevents the race condition where the subscribe block would overwrite
+   730→// seeded data before loadFromDatabase() had a chance to run.
+   731→export function enableAutoSync() {
+   732→  isInitialLoadComplete = true;
+   733→}
+   734→

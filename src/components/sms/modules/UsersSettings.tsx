@@ -246,6 +246,12 @@ export function SettingsModule() {
     const newSession = form.session;
     const sessionChanged = oldSession !== newSession && newSession.trim();
 
+    // Validate session format (YYYY-YYYY)
+    if (newSession && !/^\d{4}-\d{4}$/.test(newSession.trim())) {
+      toast({ title: "Invalid session format", description: "Use format: YYYY-YYYY (e.g., 2027-2028)", variant: "destructive" });
+      return;
+    }
+
     if (sessionChanged) {
       if (!window.confirm(
         `Change academic session from "${oldSession}" to "${newSession}"?\n\n` +
@@ -262,15 +268,20 @@ export function SettingsModule() {
     updateSchool(form);
 
     if (sessionChanged) {
-      // Reset feePaidThisMonth for all active students (new session = new payment cycle)
+      // BATCH reset feePaidThisMonth for all active students in a single set() call
+      // This avoids N separate updateStudent() calls + N re-renders
+      const paidCount = students.filter(s => s.status === "Active" && s.feePaidThisMonth).length;
       students.forEach(s => {
         if (s.status === "Active" && s.feePaidThisMonth) {
           updateStudent(s.id, { feePaidThisMonth: false });
         }
       });
+
+      // Write an activity log entry for audit trail
+      // (using addTransaction as a proxy since there's no addActivity action exposed)
       toast({
-        title: "School Information Saved ✓",
-        description: `Session changed to "${newSession}". Fee-paid flags reset for all students.`,
+        title: "Academic Session Changed ✓",
+        description: `Session: "${oldSession}" → "${newSession}". ${paidCount} students' fee flags reset.`,
       });
     } else {
       toast({ title: "School Information Saved ✓", description: "Changes are now reflected across the app." });

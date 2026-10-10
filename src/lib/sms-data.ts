@@ -4,6 +4,7 @@
 export type Role = "admin" | "accountant" | "teacher";
 
 export type StudentStatus = "Active" | "Left";
+export type AcademicStatus = "Promoted" | "Detained" | "New" | "Continuing";
 export interface Student {
   id: string;
   rollNo: string;
@@ -46,8 +47,10 @@ export interface Student {
   photo?: string; // base64 data URL
   // Status
   status: StudentStatus;
+  academicStatus?: AcademicStatus; // "Promoted" | "Detained" | "New" | "Continuing"
   attendancePct: number;
   feePaidThisMonth: boolean;
+  lastPaidMonth?: string; // YYYY-MM format — auto-resets feePaidThisMonth when month changes
   outstandingAmount: number;
   isHosteller: boolean;
   transport: boolean;

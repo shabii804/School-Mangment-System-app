@@ -778,6 +778,14 @@ export function StudentsModule() {
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" title="Promote" aria-label={`Promote ${s.name}`}
                         onClick={(e) => { e.stopPropagation(); setPromoteTarget(s); setPromoteClass(s.class); setPromoteSection(s.section); }}
                       ><ArrowUpCircle className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-orange-600" title="Detain (repeat class)" aria-label={`Detain ${s.name}`}
+                        onClick={(e) => { e.stopPropagation();
+                          if (window.confirm(`Detain ${s.name} in ${s.class}-${s.section}?\n\nThis will:\n• Mark the student as "Detained" (repeating the class)\n• Keep the same class, section, and roll number\n• Reset attendance to 100%\n• Keep fee structure unchanged\n\nContinue?`)) {
+                            updateStudent(s.id, { academicStatus: "Detained" as any, attendancePct: 100 });
+                            toast({ title: "Student Detained", description: `${s.name} will repeat ${s.class}-${s.section}.`, variant: "destructive" });
+                          }
+                        }}
+                      ><AlertCircle className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" title="Delete" aria-label={`Delete ${s.name}`}
                         onClick={(e) => { e.stopPropagation(); setDeleteConfirm(s); }}
                       ><Trash2 className="w-3.5 h-3.5" /></Button>
@@ -1360,19 +1368,32 @@ export function StudentsModule() {
                 section: promoteSection,
                 monthlyFee: newFee,
                 rollNo: newRollNo,
+                academicStatus: "Promoted" as any,
+                attendancePct: 100, // Reset attendance for new class/session
               };
 
-              // If fee increased and student already paid this month, reset the paid flag
-              // and add the difference to outstanding
-              if (newFee > oldFee && promoteTarget.feePaidThisMonth) {
-                patch.feePaidThisMonth = false;
-                patch.outstandingAmount = promoteTarget.outstandingAmount + (newFee - oldFee);
+              // Fee adjustment logic:
+              // - If fee INCREASES: student owes the difference (whether paid or not)
+              //   - If already paid: reset feePaidThisMonth + add difference to outstanding
+              //   - If not paid: add difference to outstanding (they owe old + new difference)
+              // - If fee DECREASES: student gets credit (reduce outstanding if they had any)
+              // - If same fee: no adjustment needed
+              const feeDiff = newFee - oldFee;
+              if (feeDiff > 0) {
+                // Fee increased — student owes the difference
+                patch.outstandingAmount = promoteTarget.outstandingAmount + feeDiff;
+                if (promoteTarget.feePaidThisMonth) {
+                  patch.feePaidThisMonth = false;
+                }
+              } else if (feeDiff < 0 && promoteTarget.outstandingAmount > 0) {
+                // Fee decreased — reduce outstanding by the credit
+                patch.outstandingAmount = Math.max(0, promoteTarget.outstandingAmount + feeDiff);
               }
 
               updateStudent(promoteTarget.id, patch);
               toast({
                 title: "Student Promoted ✓",
-                description: `${promoteTarget.name} → ${promoteClass}-${promoteSection} • Roll #${newRollNo} • Fee: Rs. ${newFee.toLocaleString()}/month${newFee > oldFee && promoteTarget.feePaidThisMonth ? " • Fee paid flag reset (fee increased)" : ""}`,
+                description: `${promoteTarget.name} → ${promoteClass}-${promoteSection} • Roll #${newRollNo} • Fee: Rs. ${newFee.toLocaleString()}/month${feeDiff !== 0 ? ` • Outstanding adjusted by Rs. ${Math.abs(feeDiff).toLocaleString()}` : ""}`,
               });
               setPromoteTarget(null);
             }}><ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote Student</Button>

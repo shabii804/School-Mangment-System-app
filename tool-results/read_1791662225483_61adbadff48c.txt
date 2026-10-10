@@ -1,0 +1,907 @@
+     1→"use client";
+     2→
+     3→import { useState, useRef } from "react";
+     4→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     5→import { Button } from "@/components/ui/button";
+     6→import { Input } from "@/components/ui/input";
+     7→import { Label } from "@/components/ui/label";
+     8→import { Badge } from "@/components/ui/badge";
+     9→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    10→import { Switch } from "@/components/ui/switch";
+    11→import {
+    12→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    13→} from "@/components/ui/table";
+    14→import {
+    15→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    16→} from "@/components/ui/dialog";
+    17→import {
+    18→  Tabs, TabsContent, TabsList, TabsTrigger,
+    19→} from "@/components/ui/tabs";
+    20→import {
+    21→  UserPlus, Shield, Database, Palette, Calendar, DollarSign,
+    22→  KeyRound, Download, Upload, Moon, Sun, Building2, Trash2, Image as ImageIcon,
+    23→  LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
+    24→  ClipboardCheck, Wallet, AlertTriangle, FileText, Award, BarChart3, LineChart,
+    25→  BookOpen, Bus, Home, Package, Shield as DisciplineIcon, Percent,
+    26→  ToggleLeft, ToggleRight, Boxes, Eye, EyeOff, Power, CheckCircle2, Brain,
+    27→  type LucideIcon,
+    28→} from "lucide-react";
+    29→import { useAppStore, type ModuleKey, ALWAYS_ON_MODULES } from "@/lib/sms-store";
+    30→import { useToast } from "@/hooks/use-toast";
+    31→import { exportFeeStructureCSV } from "@/lib/pdf-service";
+    32→import { cn } from "@/lib/utils";
+    33→
+    34→const USERS: { id: number; name: string; username: string; role: string; email: string; status: string; lastLogin: string }[] = [];
+    35→
+    36→const ROLE_COLORS: Record<string, string> = {
+    37→  Admin: "bg-primary/15 text-primary",
+    38→  Accountant: "bg-accent/15 text-accent",
+    39→  Teacher: "bg-purple-500/15 text-purple-600",
+    40→};
+    41→
+    42→export function UsersModule() {
+    43→  const [addOpen, setAddOpen] = useState(false);
+    44→  const { toast } = useToast();
+    45→
+    46→  return (
+    47→    <div className="space-y-3">
+    48→      <div className="flex justify-between items-center">
+    49→        <p className="text-sm text-muted-foreground">Role-based user accounts with permission control.</p>
+    50→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><UserPlus className="w-4 h-4 mr-1.5" />Add User</Button>
+    51→      </div>
+    52→
+    53→      {/* Role cards */}
+    54→      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    55→        {[
+    56→          { role: "Admin", count: USERS.filter(u => u.role === "Admin").length, color: "bg-primary/10 text-primary", desc: "Full access to all modules" },
+    57→          { role: "Accountant", count: USERS.filter(u => u.role === "Accountant").length, color: "bg-accent/10 text-accent", desc: "Fees, salary, and reports" },
+    58→          { role: "Teacher", count: USERS.filter(u => u.role === "Teacher").length, color: "bg-purple-500/10 text-purple-600", desc: "Attendance and results only" },
+    59→        ].map(r => (
+    60→          <Card key={r.role} className="border-0 shadow-sm glass-card">
+    61→            <CardContent className="p-3 flex items-center gap-2">
+    62→              <div className={cn("rounded-xl p-3", r.color)}><Shield className="w-5 h-5" /></div>
+    63→              <div>
+    64→                <p className="font-bold text-2xl">{r.count}</p>
+    65→                <p className="text-xs text-muted-foreground">{r.role} • {r.desc}</p>
+    66→              </div>
+    67→            </CardContent>
+    68→          </Card>
+    69→        ))}
+    70→      </div>
+    71→
+    72→      {/* Users table */}
+    73→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+    74→        <div className="overflow-x-auto">
+    75→          <Table>
+    76→            <TableHeader>
+    77→              <TableRow className="hover:bg-transparent border-border/40">
+    78→                <TableHead>User</TableHead>
+    79→                <TableHead>Username</TableHead>
+    80→                <TableHead>Role</TableHead>
+    81→                <TableHead>Email</TableHead>
+    82→                <TableHead>Last Login</TableHead>
+    83→                <TableHead>Status</TableHead>
+    84→                <TableHead className="text-right">Actions</TableHead>
+    85→              </TableRow>
+    86→            </TableHeader>
+    87→            <TableBody>
+    88→              {USERS.map(u => (
+    89→                <TableRow key={u.id} className="border-border/30 hover:bg-muted/30">
+    90→                  <TableCell>
+    91→                    <div className="flex items-center gap-2.5">
+    92→                      <Avatar className="w-8 h-8">
+    93→                        <AvatarFallback className="text-xs font-semibold bg-muted">{u.name.split(" ").map(w => w[0]).join("").slice(0, 2)}</AvatarFallback>
+    94→                      </Avatar>
+    95→                      <span className="font-medium text-sm">{u.name}</span>
+    96→                    </div>
+    97→                  </TableCell>
+    98→                  <TableCell className="font-mono text-xs text-muted-foreground">@{u.username}</TableCell>
+    99→                  <TableCell><Badge className={cn("text-xs border-0", ROLE_COLORS[u.role])}>{u.role}</Badge></TableCell>
+   100→                  <TableCell className="text-xs text-muted-foreground">{u.email}</TableCell>
+   101→                  <TableCell className="text-xs text-muted-foreground">{u.lastLogin}</TableCell>
+   102→                  <TableCell>
+   103→                    <Badge variant={u.status === "Active" ? "default" : "secondary"} className={cn("text-xs", u.status === "Active" ? "bg-emerald-500/15 text-emerald-700" : "")}>{u.status}</Badge>
+   104→                  </TableCell>
+   105→                  <TableCell className="text-right">
+   106→                    <Button variant="ghost" size="sm" className="h-7 text-xs"><KeyRound className="w-3 h-3 mr-1" />Reset</Button>
+   107→                  </TableCell>
+   108→                </TableRow>
+   109→              ))}
+   110→            </TableBody>
+   111→          </Table>
+   112→        </div>
+   113→      </Card>
+   114→
+   115→      {/* Add user dialog */}
+   116→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   117→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   118→          <DialogHeader><DialogTitle>Add New User</DialogTitle></DialogHeader>
+   119→          <div className="space-y-2 py-1">
+   120→            <div><Label>Full Name</Label><Input placeholder="e.g., Mr. Ali Khan" /></div>
+   121→            <div><Label>Username</Label><Input placeholder="e.g., ali.khan" /></div>
+   122→            <div><Label>Email</Label><Input type="email" placeholder="user@greenwood.edu" /></div>
+   123→            <div><Label>Role</Label>
+   124→              <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+   125→                <option>Admin</option><option>Accountant</option><option>Teacher</option>
+   126→              </select>
+   127→            </div>
+   128→            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-muted-foreground">
+   129→              A temporary password will be generated and the user will be prompted to change it on first login.
+   130→            </div>
+   131→          </div>
+   132→          <DialogFooter>
+   133→            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+   134→            <Button onClick={() => { setAddOpen(false); toast({ title: "User Created", description: "Temporary password sent." }); }}>Create User</Button>
+   135→          </DialogFooter>
+   136→        </DialogContent>
+   137→      </Dialog>
+   138→    </div>
+   139→  );
+   140→}
+   141→
+   142→// === Module Control catalog ===
+   143→interface ModuleMeta {
+   144→  key: ModuleKey;
+   145→  label: string;
+   146→  description: string;
+   147→  icon: LucideIcon;
+   148→  group: "main" | "operations" | "finance" | "academics" | "facilities" | "system";
+   149→  alwaysOn?: boolean;
+   150→}
+   151→
+   152→const MODULE_CATALOG: ModuleMeta[] = [
+   153→  { key: "dashboard", label: "Dashboard", description: "Overview KPIs, charts & recent activity", icon: LayoutDashboard, group: "main", alwaysOn: true },
+   154→  { key: "students", label: "Students", description: "Admit, search, profile & ID cards", icon: Users, group: "main" },
+   155→  { key: "teachers", label: "Teachers", description: "Teaching staff, subjects & classes", icon: GraduationCap, group: "main" },
+   156→  { key: "staff", label: "Staff", description: "Non-teaching staff & departments", icon: UserCog, group: "main" },
+   157→  { key: "classes", label: "Classes", description: "Classes, sections & monthly fees", icon: School, group: "main" },
+   158→  { key: "timetable", label: "Timetable", description: "Period-wise class schedules", icon: CalendarDays, group: "operations" },
+   159→  { key: "attendance", label: "Attendance", description: "Daily student & staff attendance", icon: ClipboardCheck, group: "operations" },
+   160→  { key: "fees", label: "Fee Collection", description: "Collect tuition, hostel & admission fees", icon: DollarSign, group: "finance" },
+   161→  { key: "defaulters", label: "Defaulters", description: "Students with outstanding fees", icon: AlertTriangle, group: "finance" },
+   162→  { key: "salary", label: "Salary & Fine", description: "Payroll, fines & salary slips", icon: Wallet, group: "finance" },
+   163→  { key: "ledger", label: "Income & Expense", description: "General ledger & transactions", icon: BookOpen, group: "finance" },
+   164→  { key: "concession", label: "Concessions", description: "Sibling & need-based fee waivers", icon: Percent, group: "finance" },
+   165→  { key: "results", label: "Results", description: "Grade entry & report cards", icon: FileText, group: "academics" },
+   166→  { key: "exam", label: "Examinations", description: "Exam scheduling & grading", icon: GraduationCap, group: "academics" },
+   167→  { key: "certificates", label: "Certificates", description: "Bonafide, leaving & character certs", icon: Award, group: "academics" },
+   168→  { key: "reports", label: "Reports", description: "Standard & custom PDF reports", icon: BarChart3, group: "academics" },
+   169→  { key: "analytics", label: "Analytics", description: "Trends, comparisons & insights", icon: LineChart, group: "academics" },
+   170→  { key: "library", label: "Library", description: "Books, issues & returns", icon: BookOpen, group: "facilities" },
+   171→  { key: "transport", label: "Transport", description: "Routes, vehicles & pickup points", icon: Bus, group: "facilities" },
+   172→  { key: "hostel", label: "Hostel", description: "Rooms, allocation & mess", icon: Home, group: "facilities" },
+   173→  { key: "inventory", label: "Inventory", description: "Stock items & supplies", icon: Package, group: "facilities" },
+   174→  { key: "events", label: "Event Calendar", description: "Holidays, events & reminders", icon: CalendarDays, group: "facilities" },
+   175→  { key: "discipline", label: "Discipline", description: "Incidents, warnings & actions", icon: DisciplineIcon, group: "facilities" },
+   176→  { key: "leave", label: "Staff Leave", description: "Leave requests & approvals", icon: CalendarDays, group: "facilities" },
+   177→  { key: "alumni", label: "Alumni", description: "Graduated students network", icon: Award, group: "facilities" },
+   178→  { key: "parent", label: "Parent Portal", description: "Parent access & communication", icon: Users, group: "facilities" },
+   179→  { key: "ai", label: "AI Assistant", description: "Smart predictions & insights", icon: Brain, group: "system" },
+   180→  { key: "users", label: "User Management", description: "Staff accounts & permissions", icon: UserPlus, group: "system" },
+   181→  { key: "settings", label: "Settings", description: "School, fees, theme & modules", icon: Shield, group: "system", alwaysOn: true },
+   182→];
+   183→
+   184→const GROUP_LABELS_MODULE: Record<ModuleMeta["group"], string> = {
+   185→  main: "Core Modules",
+   186→  operations: "Daily Operations",
+   187→  finance: "Finance & Fees",
+   188→  academics: "Academics",
+   189→  facilities: "Facilities & Extras",
+   190→  system: "System",
+   191→};
+   192→
+   193→const GROUP_ORDER: ModuleMeta["group"][] = ["main", "operations", "finance", "academics", "facilities", "system"];
+   194→
+   195→export function SettingsModule() {
+   196→  const { toast } = useToast();
+   197→  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee, enabledModules, toggleModule, setAllModulesEnabled, students, updateStudent } = useAppStore();
+   198→  const [autoBackup, setAutoBackup] = useState(true);
+   199→  const [lateFine, setLateFine] = useState("500");
+   200→  const [dueDate, setDueDate] = useState("10");
+   201→  const fileInputRef = useRef<HTMLInputElement>(null);
+   202→  const [classFeeDraft, setClassFeeDraft] = useState<Record<string, string>>(feeStructure.classFees);
+   203→
+   204→  // Module control counts
+   205→  const totalModules = MODULE_CATALOG.filter(m => !m.alwaysOn).length;
+   206→  const enabledCount = MODULE_CATALOG.filter(m => !m.alwaysOn && enabledModules[m.key]).length;
+   207→  const disabledCount = totalModules - enabledCount;
+   208→
+   209→  // Local form state synced with store
+   210→  const [form, setForm] = useState({
+   211→    name: school.name,
+   212→    tagline: school.tagline,
+   213→    address: school.address,
+   214→    phone: school.phone,
+   215→    email: school.email,
+   216→    session: school.session,
+   217→  });
+   218→
+   219→  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+   220→    const file = e.target.files?.[0];
+   221→    if (!file) return;
+   222→    if (!file.type.startsWith("image/")) {
+   223→      toast({ title: "Invalid file", description: "Please upload an image file (PNG, JPG, SVG).", variant: "destructive" });
+   224→      return;
+   225→    }
+   226→    if (file.size > 500 * 1024) {
+   227→      toast({ title: "File too large", description: "Logo must be under 500KB.", variant: "destructive" });
+   228→      return;
+   229→    }
+   230→    const reader = new FileReader();
+   231→    reader.onload = () => {
+   232→      setLogo(reader.result as string);
+   233→      toast({ title: "Logo Updated ✓", description: "School logo saved and will appear across the app." });
+   234→    };
+   235→    reader.readAsDataURL(file);
+   236→  };
+   237→
+   238→  const removeLogo = () => {
+   239→    setLogo(null);
+   240→    toast({ title: "Logo Removed", description: "Reverted to default EduDesk icon." });
+   241→  };
+   242→
+   243→  const saveSchoolInfo = () => {
+   244→    // Check if session is changing
+   245→    const oldSession = school.session;
+   246→    const newSession = form.session;
+   247→    const sessionChanged = oldSession !== newSession && newSession.trim();
+   248→
+   249→    if (sessionChanged) {
+   250→      if (!window.confirm(
+   251→        `Change academic session from "${oldSession}" to "${newSession}"?\n\n` +
+   252→        `This will:\n` +
+   253→        `• Reset all students' "fee paid this month" flags\n` +
+   254→        `• Keep all student/teacher/class data intact\n` +
+   255→        `• Previous attendance and fee records remain for audit\n\n` +
+   256→        `Continue?`
+   257→      )) {
+   258→        return;
+   259→      }
+   260→    }
+   261→
+   262→    updateSchool(form);
+   263→
+   264→    if (sessionChanged) {
+   265→      // Reset feePaidThisMonth for all active students (new session = new payment cycle)
+   266→      students.forEach(s => {
+   267→        if (s.status === "Active" && s.feePaidThisMonth) {
+   268→          updateStudent(s.id, { feePaidThisMonth: false });
+   269→        }
+   270→      });
+   271→      toast({
+   272→        title: "School Information Saved ✓",
+   273→        description: `Session changed to "${newSession}". Fee-paid flags reset for all students.`,
+   274→      });
+   275→    } else {
+   276→      toast({ title: "School Information Saved ✓", description: "Changes are now reflected across the app." });
+   277→    }
+   278→  };
+   279→
+   280→  return (
+   281→    <div className="space-y-3 fade-in">
+   282→      <Tabs defaultValue="school">
+   283→        <TabsList className="grid w-full max-w-2xl grid-cols-8">
+   284→          <TabsTrigger value="school">School</TabsTrigger>
+   285→          <TabsTrigger value="modules" className="text-primary font-semibold">Modules</TabsTrigger>
+   286→          <TabsTrigger value="feestructure">Fee Structure</TabsTrigger>
+   287→          <TabsTrigger value="fines">Fines</TabsTrigger>
+   288→          <TabsTrigger value="fees">Fees</TabsTrigger>
+   289→          <TabsTrigger value="backup">Backup</TabsTrigger>
+   290→          <TabsTrigger value="theme">Theme</TabsTrigger>
+   291→          <TabsTrigger value="about">About</TabsTrigger>
+   292→        </TabsList>
+   293→
+   294→        {/* School info — with logo upload */}
+   295→        <TabsContent value="school">
+   296→          <Card className="border-0 shadow-sm glass-card">
+   297→            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Building2 className="w-4 h-4 text-primary" />School Information</CardTitle></CardHeader>
+   298→            <CardContent className="space-y-5">
+   299→              {/* Logo upload section */}
+   300→              <div className="rounded-xl border-2 border-dashed border-border/60 p-5 bg-muted/20">
+   301→                <div className="flex items-center gap-5">
+   302→                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shadow-lg shrink-0">
+   303→                    {school.logo ? (
+   304→                      // eslint-disable-next-line @next/next/no-img-element
+   305→                      <img src={school.logo} alt="School logo" className="w-full h-full object-cover" />
+   306→                    ) : (
+   307→                      <Building2 className="w-10 h-10 text-primary-foreground" />
+   308→                    )}
+   309→                  </div>
+   310→                  <div className="flex-1">
+   311→                    <p className="font-semibold text-sm">School Logo</p>
+   312→                    <p className="text-xs text-muted-foreground mt-0.5">PNG, JPG or SVG • Max 500KB • Square recommended</p>
+   313→                    <div className="flex gap-2 mt-3">
+   314→                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+   315→                        <Upload className="w-3.5 h-3.5 mr-1.5" />Upload Logo
+   316→                      </Button>
+   317→                      {school.logo && (
+   318→                        <Button variant="outline" size="sm" onClick={removeLogo} className="text-red-600 hover:text-red-700">
+   319→                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />Remove
+   320→                        </Button>
+   321→                      )}
+   322→                    </div>
+   323→                    <input
+   324→                      ref={fileInputRef}
+   325→                      type="file"
+   326→                      accept="image/png,image/jpeg,image/svg+xml"
+   327→                      onChange={handleLogoUpload}
+   328→                      className="hidden"
+   329→                    />
+   330→                  </div>
+   331→                </div>
+   332→              </div>
+   333→
+   334→              <div className="grid grid-cols-2 gap-4">
+   335→                <div><Label>School Name</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+   336→                <div><Label>Tagline</Label><Input value={form.tagline} onChange={e => setForm({...form, tagline: e.target.value})} /></div>
+   337→                <div className="col-span-2"><Label>Address</Label><Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+   338→                <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+   339→                <div><Label>Email</Label><Input value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
+   340→                <div><Label>Academic Session</Label><Input value={form.session} onChange={e => setForm({...form, session: e.target.value})} /></div>
+   341→                <div><Label>Website</Label><Input defaultValue="www.greenwood.edu" /></div>
+   342→              </div>
+   343→              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+   344→                <p className="font-medium text-primary flex items-center gap-1.5"><ImageIcon className="w-3.5 h-3.5" />Live Preview</p>
+   345→                <p className="text-muted-foreground mt-1">
+   346→                  Your school name &ldquo;{form.name}&rdquo; and logo appear on the sidebar, dashboard hero, receipts, certificates, and salary slips.
+   347→                </p>
+   348→              </div>
+   349→              <Button className="bg-primary hover:bg-primary/90" onClick={saveSchoolInfo}>Save Changes</Button>
+   350→            </CardContent>
+   351→          </Card>
+   352→        </TabsContent>
+   353→
+   354→        {/* === Module Control === */}
+   355→        <TabsContent value="modules">
+   356→          <Card className="border-0 shadow-sm glass-card">
+   357→            <CardHeader>
+   358→              <div className="flex items-center justify-between flex-wrap gap-3">
+   359→                <CardTitle className="text-base flex items-center gap-2">
+   360→                  <Boxes className="w-4 h-4 text-primary" />Module Control Center
+   361→                </CardTitle>
+   362→                <div className="flex gap-2">
+   363→                  <Button
+   364→                    variant="outline"
+   365→                    size="sm"
+   366→                    className="h-8 text-xs"
+   367→                    onClick={() => {
+   368→                      setAllModulesEnabled(true);
+   369→                      toast({ title: "All Modules Enabled ✓", description: "Every module is now visible in the sidebar." });
+   370→                    }}
+   371→                  >
+   372→                    <Eye className="w-3.5 h-3.5 mr-1.5" />Enable All
+   373→                  </Button>
+   374→                  <Button
+   375→                    variant="outline"
+   376→                    size="sm"
+   377→                    className="h-8 text-xs"
+   378→                    onClick={() => {
+   379→                      setAllModulesEnabled(false);
+   380→                      toast({ title: "All Optional Modules Disabled", description: "Only Dashboard & Settings remain visible." });
+   381→                    }}
+   382→                  >
+   383→                    <EyeOff className="w-3.5 h-3.5 mr-1.5" />Disable All
+   384→                  </Button>
+   385→                </div>
+   386→              </div>
+   387→            </CardHeader>
+   388→            <CardContent className="space-y-4">
+   389→              {/* Summary stats banner */}
+   390→              <div className="grid grid-cols-3 gap-3">
+   391→                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
+   392→                  <div className="flex items-center justify-center gap-1.5 mb-1">
+   393→                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+   394→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Enabled</p>
+   395→                  </div>
+   396→                  <p className="text-2xl font-bold text-emerald-600">{enabledCount}</p>
+   397→                  <p className="text-[10px] text-muted-foreground mt-0.5">optional modules</p>
+   398→                </div>
+   399→                <div className="rounded-lg border border-border/40 bg-muted/30 p-3 text-center">
+   400→                  <div className="flex items-center justify-center gap-1.5 mb-1">
+   401→                    <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
+   402→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Disabled</p>
+   403→                  </div>
+   404→                  <p className="text-2xl font-bold text-muted-foreground">{disabledCount}</p>
+   405→                  <p className="text-[10px] text-muted-foreground mt-0.5">hidden from sidebar</p>
+   406→                </div>
+   407→                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
+   408→                  <div className="flex items-center justify-center gap-1.5 mb-1">
+   409→                    <Power className="w-3.5 h-3.5 text-primary" />
+   410→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Always On</p>
+   411→                  </div>
+   412→                  <p className="text-2xl font-bold text-primary">{ALWAYS_ON_MODULES.length}</p>
+   413→                  <p className="text-[10px] text-muted-foreground mt-0.5">system essentials</p>
+   414→                </div>
+   415→              </div>
+   416→
+   417→              {/* Info banner */}
+   418→              <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-3 text-xs flex items-start gap-2">
+   419→                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+   420→                  <Boxes className="w-3 h-3 text-primary" />
+   421→                </div>
+   422→                <p className="text-muted-foreground leading-relaxed">
+   423→                  <span className="font-semibold text-primary">How module control works:</span> Toggle any module on or off below.
+   424→                  Disabled modules disappear from the sidebar and command palette (Ctrl+K). Their data is preserved —
+   425→                  re-enabling a module restores everything instantly. <span className="font-medium text-foreground">Dashboard</span> and <span className="font-medium text-foreground">Settings</span> are always on.
+   426→                </p>
+   427→              </div>
+   428→
+   429→              {/* Grouped module toggles */}
+   430→              {GROUP_ORDER.map(group => {
+   431→                const groupModules = MODULE_CATALOG.filter(m => m.group === group);
+   432→                if (groupModules.length === 0) return null;
+   433→                const groupEnabledCount = groupModules.filter(m => m.alwaysOn || enabledModules[m.key]).length;
+   434→                return (
+   435→                  <div key={group}>
+   436→                    <div className="flex items-center gap-2 mb-2">
+   437→                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+   438→                        {GROUP_LABELS_MODULE[group]}
+   439→                      </p>
+   440→                      <div className="flex-1 h-px bg-border/40" />
+   441→                      <span className="text-[10px] text-muted-foreground font-medium">
+   442→                        {groupEnabledCount}/{groupModules.length} on
+   443→                      </span>
+   444→                    </div>
+   445→                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+   446→                      {groupModules.map(m => {
+   447→                        const Icon = m.icon;
+   448→                        const isEnabled = m.alwaysOn || enabledModules[m.key];
+   449→                        return (
+   450→                          <button
+   451→                            key={m.key}
+   452→                            type="button"
+   453→                            onClick={() => {
+   454→                              if (m.alwaysOn) return;
+   455→                              toggleModule(m.key);
+   456→                              toast({
+   457→                                title: isEnabled ? "Module Disabled" : "Module Enabled ✓",
+   458→                                description: `${m.label} ${isEnabled ? "hidden from" : "now visible in"} the sidebar.`,
+   459→                              });
+   460→                            }}
+   461→                            className={cn(
+   462→                              "relative text-left rounded-xl border-2 p-3 transition-all overflow-hidden group",
+   463→                              isEnabled
+   464→                                ? "border-primary/30 bg-primary/[0.03] hover:border-primary/50"
+   465→                                : "border-border/40 bg-muted/10 opacity-60 hover:opacity-100 hover:border-border/60",
+   466→                              m.alwaysOn && "cursor-not-allowed"
+   467→                            )}
+   468→                          >
+   469→                            {/* Status indicator dot */}
+   470→                            <div className={cn(
+   471→                              "absolute top-2.5 right-2.5 w-2 h-2 rounded-full transition-colors",
+   472→                              isEnabled ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]" : "bg-muted-foreground/30"
+   473→                            )} />
+   474→
+   475→                            <div className="flex items-start gap-2.5">
+   476→                              <div className={cn(
+   477→                                "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+   478→                                isEnabled ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+   479→                              )}>
+   480→                                <Icon className="w-4 h-4" />
+   481→                              </div>
+   482→                              <div className="flex-1 min-w-0">
+   483→                                <div className="flex items-center gap-1.5">
+   484→                                  <p className={cn(
+   485→                                    "text-xs font-semibold truncate",
+   486→                                    isEnabled ? "text-foreground" : "text-muted-foreground"
+   487→                                  )}>
+   488→                                    {m.label}
+   489→                                  </p>
+   490→                                  {m.alwaysOn && (
+   491→                                    <span className="text-[8px] px-1 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase shrink-0">
+   492→                                      Always
+   493→                                    </span>
+   494→                                  )}
+   495→                                </div>
+   496→                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight">
+   497→                                  {m.description}
+   498→                                </p>
+   499→                              </div>
+   500→                            </div>
+   501→
+   502→                            {/* Toggle switch */}
+   503→                            <div className={cn(
+   504→                              "mt-2.5 flex items-center justify-between text-[10px]",
+   505→                              isEnabled ? "text-emerald-600" : "text-muted-foreground"
+   506→                            )}>
+   507→                              <span className="font-medium uppercase tracking-wide">
+   508→                                {isEnabled ? "Active" : "Hidden"}
+   509→                              </span>
+   510→                              <div className={cn(
+   511→                                "relative w-9 h-5 rounded-full transition-colors shrink-0",
+   512→                                isEnabled ? "bg-primary" : "bg-muted-foreground/30",
+   513→                                m.alwaysOn && "opacity-50"
+   514→                              )}>
+   515→                                <div
+   516→                                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all"
+   517→                                  style={{ left: isEnabled ? "calc(100% - 1.125rem)" : "0.125rem" }}
+   518→                                />
+   519→                              </div>
+   520→                            </div>
+   521→                          </button>
+   522→                        );
+   523→                      })}
+   524→                    </div>
+   525→                  </div>
+   526→                );
+   527→              })}
+   528→
+   529→              {/* Bottom action bar */}
+   530→              <div className="rounded-lg border border-border/40 bg-muted/20 p-3 flex items-center justify-between flex-wrap gap-3">
+   531→                <div className="text-xs">
+   532→                  <p className="font-medium">Changes are saved automatically</p>
+   533→                  <p className="text-muted-foreground mt-0.5">Module visibility persists across sessions & reloads.</p>
+   534→                </div>
+   535→                <Button
+   536→                  variant="outline"
+   537→                  size="sm"
+   538→                  className="h-8 text-xs"
+   539→                  onClick={() => {
+   540→                    setAllModulesEnabled(true);
+   541→                    toast({ title: "All Modules Reset ✓", description: "Every module is enabled (default state)." });
+   542→                  }}
+   543→                >
+   544→                  <ToggleRight className="w-3.5 h-3.5 mr-1.5" />Reset to Default
+   545→                </Button>
+   546→              </div>
+   547→            </CardContent>
+   548→          </Card>
+   549→        </TabsContent>
+   550→
+   551→        {/* Fee Structure management */}
+   552→        <TabsContent value="feestructure">
+   553→          <Card className="border-0 shadow-sm glass-card">
+   554→            <CardHeader><CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Fee Structure Configuration</CardTitle></CardHeader>
+   555→            <CardContent className="space-y-5">
+   556→              {/* Global fee settings */}
+   557→              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   558→                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+   559→                  <Label className="text-[10px] uppercase text-muted-foreground">Hostel Fee (monthly)</Label>
+   560→                  <div className="flex items-center gap-1 mt-1">
+   561→                    <span className="text-sm text-muted-foreground">Rs.</span>
+   562→                    <Input
+   563→                      type="number"
+   564→                      value={feeStructure.hostelFee}
+   565→                      onChange={e => updateFeeStructure({ hostelFee: Number(e.target.value) })}
+   566→                      className="h-8 font-bold"
+   567→                    />
+   568→                  </div>
+   569→                </div>
+   570→                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+   571→                  <Label className="text-[10px] uppercase text-muted-foreground">Admission Multiplier</Label>
+   572→                  <div className="flex items-center gap-1 mt-1">
+   573→                    <span className="text-sm text-muted-foreground">×</span>
+   574→                    <Input
+   575→                      type="number"
+   576→                      value={feeStructure.admissionMultiplier}
+   577→                      onChange={e => updateFeeStructure({ admissionMultiplier: Number(e.target.value) })}
+   578→                      className="h-8 font-bold"
+   579→                    />
+   580→                  </div>
+   581→                  <p className="text-[9px] text-muted-foreground mt-0.5">× monthly tuition</p>
+   582→                </div>
+   583→                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+   584→                  <Label className="text-[10px] uppercase text-muted-foreground">Late Fee</Label>
+   585→                  <div className="flex items-center gap-1 mt-1">
+   586→                    <span className="text-sm text-muted-foreground">Rs.</span>
+   587→                    <Input
+   588→                      type="number"
+   589→                      value={feeStructure.lateFee}
+   590→                      onChange={e => updateFeeStructure({ lateFee: Number(e.target.value) })}
+   591→                      className="h-8 font-bold"
+   592→                    />
+   593→                  </div>
+   594→                </div>
+   595→                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
+   596→                  <Label className="text-[10px] uppercase text-muted-foreground">Due Date (day)</Label>
+   597→                  <Input
+   598→                    type="number"
+   599→                    min={1}
+   600→                    max={28}
+   601→                    value={feeStructure.dueDate}
+   602→                    onChange={e => updateFeeStructure({ dueDate: Number(e.target.value) })}
+   603→                    className="h-8 font-bold mt-1"
+   604→                  />
+   605→                </div>
+   606→              </div>
+   607→
+   608→              {/* Per-class tuition fees table */}
+   609→              <div>
+   610→                <div className="flex items-center justify-between mb-2">
+   611→                  <p className="text-sm font-semibold">Per-Class Tuition Fees</p>
+   612→                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-0">{Object.keys(feeStructure.classFees).length} classes</Badge>
+   613→                </div>
+   614→                <div className="rounded-lg border border-border/40 overflow-hidden">
+   615→                  <Table>
+   616→                    <TableHeader>
+   617→                      <TableRow className="border-border/40">
+   618→                        <TableHead>Class</TableHead>
+   619→                        <TableHead className="text-right">Monthly Tuition (Rs.)</TableHead>
+   620→                        <TableHead className="text-right">Admission Fee (Rs.)</TableHead>
+   621→                        <TableHead className="text-right">Hosteller Total (Rs.)</TableHead>
+   622→                      </TableRow>
+   623→                    </TableHeader>
+   624→                    <TableBody>
+   625→                      {Object.entries(feeStructure.classFees).map(([className, fee]) => (
+   626→                        <TableRow key={className} className="border-border/30 hover:bg-muted/20">
+   627→                          <TableCell className="font-medium text-sm">{className}</TableCell>
+   628→                          <TableCell className="text-right">
+   629→                            <Input
+   630→                              type="number"
+   631→                              value={classFeeDraft[className] ?? fee}
+   632→                              onChange={e => setClassFeeDraft({ ...classFeeDraft, [className]: e.target.value })}
+   633→                              onBlur={e => {
+   634→                                const val = Number(e.target.value);
+   635→                                if (val > 0) {
+   636→                                  setClassFee(className, val);
+   637→                                  toast({ title: "Fee Updated", description: `${className}: Rs. ${val.toLocaleString()}/month` });
+   638→                                }
+   639→                              }}
+   640→                              className="h-7 w-28 text-right ml-auto"
+   641→                            />
+   642→                          </TableCell>
+   643→                          <TableCell className="text-right text-sm text-muted-foreground">Rs. {(fee * feeStructure.admissionMultiplier).toLocaleString()}</TableCell>
+   644→                          <TableCell className="text-right text-sm text-accent">Rs. {(fee + feeStructure.hostelFee).toLocaleString()}</TableCell>
+   645→                        </TableRow>
+   646→                      ))}
+   647→                    </TableBody>
+   648→                  </Table>
+   649→                </div>
+   650→              </div>
+   651→
+   652→              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+   653→                <p className="font-medium text-primary">How fees are calculated:</p>
+   654→                <p className="text-muted-foreground mt-1">
+   655→                  • <strong>Tuition</strong> = per-class amount shown above<br/>
+   656→                  • <strong>Hostel</strong> = Rs. {feeStructure.hostelFee.toLocaleString()}/month (only for hostellers)<br/>
+   657→                  • <strong>Admission</strong> = Tuition × {feeStructure.admissionMultiplier} (one-time)<br/>
+   658→                  • <strong>Late Fee</strong> = Rs. {feeStructure.lateFee.toLocaleString()} (after day {feeStructure.dueDate} of each month)
+   659→                </p>
+   660→              </div>
+   661→
+   662→              <div className="flex gap-2">
+   663→                <Button
+   664→                  className="bg-primary hover:bg-primary/90"
+   665→                  onClick={() => toast({ title: "Fee Structure Saved ✓", description: "All fee settings persisted. Fee Collection will use new amounts." })}
+   666→                >
+   667→                  Save Fee Structure
+   668→                </Button>
+   669→                <Button
+   670→                  variant="outline"
+   671→                  onClick={() => {
+   672→                    exportFeeStructureCSV(feeStructure.classFees, feeStructure.hostelFee, feeStructure.admissionMultiplier, feeStructure.lateFee, feeStructure.dueDate);
+   673→                    toast({ title: "Fee Structure Exported ✓", description: "CSV file downloaded — opens in Excel" });
+   674→                  }}
+   675→                >
+   676→                  <Download className="w-4 h-4 mr-1.5" />Export to Excel
+   677→                </Button>
+   678→              </div>
+   679→            </CardContent>
+   680→          </Card>
+   681→        </TabsContent>
+   682→
+   683→        {/* Fine rules */}
+   684→        <TabsContent value="fines">
+   685→          <Card className="border-0 shadow-sm glass-card">
+   686→            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" />Attendance Fine Rules</CardTitle></CardHeader>
+   687→            <CardContent className="space-y-3">
+   688→              <div className="grid grid-cols-2 gap-4">
+   689→                <div>
+   690→                  <Label>Late Arrival Fine (Rs.)</Label>
+   691→                  <Input type="number" value={lateFine} onChange={e => setLateFine(e.target.value)} />
+   692→                  <p className="text-[10px] text-muted-foreground mt-1">Fixed deduction per late occurrence</p>
+   693→                </div>
+   694→                <div>
+   695→                  <Label>Half-Day Deduction (%)</Label>
+   696→                  <Input type="number" defaultValue="50" />
+   697→                  <p className="text-[10px] text-muted-foreground mt-1">Percentage of one day's salary</p>
+   698→                </div>
+   699→                <div>
+   700→                  <Label>Per-Day Salary Basis</Label>
+   701→                  <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+   702→                    <option>Working Days (recommended)</option>
+   703→                    <option>Calendar Days (30)</option>
+   704→                  </select>
+   705→                </div>
+   706→                <div>
+   707→                  <Label>Leave Type</Label>
+   708→                  <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+   709→                    <option>Paid (if balance available)</option>
+   710→                    <option>Unpaid</option>
+   711→                  </select>
+   712→                </div>
+   713→              </div>
+   714→              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+   715→                <p className="font-medium text-primary">Example Calculation:</p>
+   716→                <p className="text-muted-foreground mt-1">
+   717→                  Salary Rs. 50,000 / 26 working days = Rs. 1,923 per day.
+   718→                  2 absences = -Rs. 3,846. 1 late = -Rs. 500. Net deduction: Rs. 4,346.
+   719→                </p>
+   720→              </div>
+   721→              <Button className="bg-primary hover:bg-primary/90" onClick={() => toast({ title: "Fine Rules Saved" })}>Save Rules</Button>
+   722→            </CardContent>
+   723→          </Card>
+   724→        </TabsContent>
+   725→
+   726→        {/* Fee settings */}
+   727→        <TabsContent value="fees">
+   728→          <Card className="border-0 shadow-sm glass-card">
+   729→            <CardHeader><CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Fee Settings</CardTitle></CardHeader>
+   730→            <CardContent className="grid grid-cols-2 gap-4">
+   731→              <div>
+   732→                <Label>Monthly Fee Due Date</Label>
+   733→                <Input type="number" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+   734→                <p className="text-[10px] text-muted-foreground mt-1">Day of month (1-28)</p>
+   735→              </div>
+   736→              <div>
+   737→                <Label>Late Fee Amount (Rs.)</Label>
+   738→                <Input type="number" defaultValue="200" />
+   739→              </div>
+   740→              <div>
+   741→                <Label>Receipt Number Prefix</Label>
+   742→                <Input defaultValue="RCPT-YYYYMMDD-" />
+   743→              </div>
+   744→              <div>
+   745→                <Label>Receipt Paper Size</Label>
+   746→                <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+   747→                  <option>A5 (148 × 210 mm)</option>
+   748→                  <option>Thermal 80mm</option>
+   749→                </select>
+   750→              </div>
+   751→              <div className="col-span-2 flex items-center gap-2">
+   752→                <Switch defaultChecked />
+   753→                <Label>Allow partial fee payments</Label>
+   754→              </div>
+   755→              <div className="col-span-2">
+   756→                <Button className="bg-primary hover:bg-primary/90" onClick={() => toast({ title: "Fee Settings Saved" })}>Save Settings</Button>
+   757→              </div>
+   758→            </CardContent>
+   759→          </Card>
+   760→        </TabsContent>
+   761→
+   762→        {/* Backup */}
+   763→        <TabsContent value="backup">
+   764→          <Card className="border-0 shadow-sm glass-card">
+   765→            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Database className="w-4 h-4 text-primary" />Backup & Restore</CardTitle></CardHeader>
+   766→            <CardContent className="space-y-3">
+   767→              <div className="flex items-center justify-between rounded-lg border border-border/40 p-4">
+   768→                <div>
+   769→                  <p className="font-medium text-sm">Automatic Daily Backup</p>
+   770→                  <p className="text-xs text-muted-foreground">Runs at 11:00 PM daily • Keeps last 7 backups</p>
+   771→                </div>
+   772→                <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
+   773→              </div>
+   774→              <div className="grid grid-cols-2 gap-3">
+   775→                <Button variant="outline" className="h-16 flex-col" onClick={async () => {
+   776→                  // Download a JSON backup of all data from SQLite
+   777→                  try {
+   778→                    const res = await fetch("/api/state");
+   779→                    const data = await res.json();
+   780→                    if (data.success) {
+   781→                      const blob = new Blob([JSON.stringify(data.state, null, 2)], { type: "application/json" });
+   782→                      const url = URL.createObjectURL(blob);
+   783→                      const link = document.createElement("a");
+   784→                      link.href = url;
+   785→                      link.download = `school-backup-${new Date().toISOString().split("T")[0]}.json`;
+   786→                      document.body.appendChild(link);
+   787→                      link.click();
+   788→                      document.body.removeChild(link);
+   789→                      URL.revokeObjectURL(url);
+   790→                      toast({ title: "Backup Downloaded ✓", description: "All data saved to your downloads folder." });
+   791→                    } else {
+   792→                      toast({ title: "Backup failed", description: "Could not read from database.", variant: "destructive" });
+   793→                    }
+   794→                  } catch (e) {
+   795→                    toast({ title: "Backup failed", description: "Server error. Try again.", variant: "destructive" });
+   796→                  }
+   797→                }}>
+   798→                  <Download className="w-5 h-5 mb-1" />
+   799→                  <span>Backup Now (JSON)</span>
+   800→                </Button>
+   801→                <Button variant="outline" className="h-16 flex-col" onClick={() => toast({ title: "Restore from file", description: "Upload a .json backup file to restore. (Coming soon — use Danger Zone reset for now.)" })}>
+   802→                  <Upload className="w-5 h-5 mb-1" />
+   803→                  <span>Restore from File</span>
+   804→                </Button>
+   805→              </div>
+   806→              <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3 text-xs">
+   807→                <p className="font-medium text-emerald-700 flex items-center gap-1.5">
+   808→                  <Database className="w-3.5 h-3.5" /> SQLite Database Active
+   809→                </p>
+   810→                <p className="text-muted-foreground mt-1">Your data is automatically saved to a local SQLite database file (school.db). This file persists across server restarts and is the source of truth. The download above creates a portable JSON backup you can keep anywhere.</p>
+   811→              </div>
+   812→              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+   813→                <p className="text-xs font-semibold text-red-600 mb-2">⚠️ Danger Zone</p>
+   814→                <p className="text-xs text-muted-foreground mb-2">Reset all data to original demo state. This will clear all students, teachers, staff, fees, and transactions you've added.</p>
+   815→                <Button
+   816→                  variant="outline"
+   817→                  size="sm"
+   818→                  className="text-red-600 border-red-500/30 hover:bg-red-500/10 h-7 text-xs"
+   819→                  onClick={async () => {
+   820→                    if (!window.confirm("Are you sure? This will permanently delete ALL data from both localStorage AND the SQLite database. This cannot be undone.")) return;
+   821→                    // Clear localStorage
+   822→                    ["students", "teachers", "staff", "feeCollections", "activities", "documents", "commLogs", "transactions", "classes", "subjects", "moduleData", "attendanceRecords"].forEach(k => {
+   823→                      try { window.localStorage.removeItem(`edudesk_${k}`); } catch {}
+   824→                    });
+   825→                    // Clear SQLite database
+   826→                    try {
+   827→                      await fetch("/api/state", { method: "DELETE" });
+   828→                    } catch {}
+   829→                    toast({ title: "Data Reset ✓", description: "All data cleared from localStorage + SQLite. Reloading...", variant: "destructive" });
+   830→                    setTimeout(() => window.location.reload(), 1500);
+   831→                  }}
+   832→                >
+   833→                  <Trash2 className="w-3 h-3 mr-1" />Reset All Data
+   834→                </Button>
+   835→              </div>
+   836→            </CardContent>
+   837→          </Card>
+   838→        </TabsContent>
+   839→
+   840→        {/* Theme */}
+   841→        <TabsContent value="theme">
+   842→          <Card className="border-0 shadow-sm glass-card">
+   843→            <CardHeader><CardTitle className="text-base flex items-center gap-2"><Palette className="w-4 h-4 text-primary" />Appearance</CardTitle></CardHeader>
+   844→            <CardContent className="space-y-3">
+   845→              <div className="flex items-center justify-between rounded-lg border border-border/40 p-4">
+   846→                <div className="flex items-center gap-3">
+   847→                  {isDark ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-accent" />}
+   848→                  <div>
+   849→                    <p className="font-medium text-sm">{isDark ? "Dark Theme" : "Light Theme"}</p>
+   850→                    <p className="text-xs text-muted-foreground">Toggle between light and dark mode</p>
+   851→                  </div>
+   852→                </div>
+   853→                <Switch checked={isDark} onCheckedChange={toggleTheme} />
+   854→              </div>
+   855→              <div>
+   856→                <Label>Currency Symbol</Label>
+   857→                <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm mt-1">
+   858→                  <option>Rs. (PKR)</option><option>₹ (INR)</option><option>$ (USD)</option><option>€ (EUR)</option>
+   859→                </select>
+   860→              </div>
+   861→              <div>
+   862→                <Label>Date Format</Label>
+   863→                <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm mt-1">
+   864→                  <option>DD/MM/YYYY</option><option>MM/DD/YYYY</option><option>YYYY-MM-DD</option>
+   865→                </select>
+   866→              </div>
+   867→            </CardContent>
+   868→          </Card>
+   869→        </TabsContent>
+   870→
+   871→        {/* About */}
+   872→        <TabsContent value="about">
+   873→          <Card className="border-0 shadow-sm glass-card">
+   874→            <CardContent className="p-6 text-center">
+   875→              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mx-auto overflow-hidden ring-2 ring-primary/20 shadow-lg">
+   876→                {school.logo ? (
+   877→                  // eslint-disable-next-line @next/next/no-img-element
+   878→                  <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
+   879→                ) : (
+   880→                  <Building2 className="w-10 h-10 text-primary-foreground" />
+   881→                )}
+   882→              </div>
+   883→              <p className="font-bold text-lg mt-3">{school.name}</p>
+   884→              <p className="text-sm text-muted-foreground">EduDesk SMS v1.0 • Session {school.session}</p>
+   885→              <p className="text-xs text-muted-foreground mt-1">Built with React + Tauri v2 + Rust + SQLite</p>
+   886→              <div className="grid grid-cols-3 gap-3 mt-6">
+   887→                <div className="rounded-lg bg-muted/30 p-3">
+   888→                  <p className="text-xs text-muted-foreground">Database Size</p>
+   889→                  <p className="font-bold text-sm mt-1">4.2 MB</p>
+   890→                </div>
+   891→                <div className="rounded-lg bg-muted/30 p-3">
+   892→                  <p className="text-xs text-muted-foreground">Records</p>
+   893→                  <p className="font-bold text-sm mt-1">2,847</p>
+   894→                </div>
+   895→                <div className="rounded-lg bg-muted/30 p-3">
+   896→                  <p className="text-xs text-muted-foreground">Uptime</p>
+   897→                  <p className="font-bold text-sm mt-1">3h 24m</p>
+   898→                </div>
+   899→              </div>
+   900→            </CardContent>
+   901→          </Card>
+   902→        </TabsContent>
+   903→      </Tabs>
+   904→    </div>
+   905→  );
+   906→}
+   907→
