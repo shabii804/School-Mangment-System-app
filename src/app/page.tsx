@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAppStore } from "@/lib/sms-store";
+import { useAppStore, enableAutoSync } from "@/lib/sms-store";
 import { Sidebar } from "@/components/sms/Sidebar";
 import { Topbar } from "@/components/sms/Topbar";
 import { CommandPalette } from "@/components/sms/CommandPalette";
@@ -42,6 +42,9 @@ export default function Home() {
       } else {
         console.log("[Sync] Using localStorage cache (offline mode)");
       }
+      // Enable auto-sync AFTER initial load completes — this prevents the subscribe block
+      // from overwriting seeded data with the initial empty state
+      setTimeout(() => enableAutoSync(), 100);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

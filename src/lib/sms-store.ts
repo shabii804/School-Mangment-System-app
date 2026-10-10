@@ -307,7 +307,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "8.0-sqlite";
+  const CURRENT_VERSION = "9.0-seeded";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -470,6 +470,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(value)); } catch {}
           });
         }
+        // Mark initial load complete — now auto-sync to SQLite is safe
+        // (done via a setTimeout in page.tsx to avoid race with the set() above triggering subscribe)
         return true;
       }
       set({ syncStatus: "offline" });
@@ -638,9 +640,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
 // Auto-persist key collections to localStorage on every change (instant)
 // + debounce-sync to SQLite (source of truth)
+// IMPORTANT: Skip auto-sync during initial load to avoid overwriting seeded data
 let sqliteSyncTimer: ReturnType<typeof setTimeout> | null = null;
+let isInitialLoadComplete = false;
+
 useAppStore.subscribe((state) => {
-  // 1. Instant localStorage save (offline cache)
+  // 1. Instant localStorage save (offline cache) — always do this
   saveCollection("students", state.students);
   saveCollection("teachers", state.teachers);
   saveCollection("staff", state.staff);
@@ -655,6 +660,8 @@ useAppStore.subscribe((state) => {
   saveCollection("attendanceRecords", state.attendanceRecords);
 
   // 2. Debounced SQLite sync (source of truth) — 2 second delay after last change
+  // SKIP during initial load to avoid overwriting seeded data before loadFromDatabase() runs
+  if (!isInitialLoadComplete) return;
   if (sqliteSyncTimer) clearTimeout(sqliteSyncTimer);
   sqliteSyncTimer = setTimeout(async () => {
     try {
@@ -690,3 +697,9 @@ useAppStore.subscribe((state) => {
     }
   }, 2000);
 });
+
+// ─── Call this after loadFromDatabase() completes to enable auto-sync ───
+// Without this, the subscribe block would overwrite seeded data with the initial empty state
+export function enableAutoSync() {
+  isInitialLoadComplete = true;
+}
