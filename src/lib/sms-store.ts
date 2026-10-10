@@ -419,9 +419,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     const student = state.students.find(s => s.id === studentId);
     if (!student) return;
-    const receiptNo = `RCPT-20260702-${String(state.feeCollections.length + 1).padStart(3, "0")}`;
+    const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
     const newCollection: FeeCollection = {
-      id: `FC-${String(state.feeCollections.length + 1).padStart(4, "0")}`,
+      id: `FC-${Date.now()}`,
       receiptNo,
       studentId,
       studentName: student.name,

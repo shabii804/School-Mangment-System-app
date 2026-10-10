@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { type Exam, SUBJECTS, CLASSES, EXAMS } from "@/lib/sms-data";
 import { useAppStore } from "@/lib/sms-store";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const GRADE_BANDS = [
@@ -39,6 +40,7 @@ function gradeFor(pct: number) {
 
 export function ExamModule() {
   const { classes: storeClasses } = useAppStore();
+  const { toast } = useToast();
   const CLASSES = storeClasses;
   const [tab, setTab] = useState("schedule");
   const [addOpen, setAddOpen] = useState(false);
@@ -55,7 +57,7 @@ export function ExamModule() {
   const handleAdd = () => {
     if (!form.name || !form.startDate) return;
     const newExam = {
-      id: `E${exams.length + 1}`,
+      id: `E-${String(Date.now()).slice(-6)}`,
       name: form.name,
       type: form.type as any,
       startDate: form.startDate,
@@ -63,6 +65,7 @@ export function ExamModule() {
       classes: selectedClasses.length > 0 ? selectedClasses : form.classes.split(",").map(c => c.trim()),
     };
     setExams([...exams, newExam]);
+    toast({ title: "Exam Created ✓", description: `${newExam.name} scheduled from ${newExam.startDate}.` });
     setAddOpen(false);
     setForm({ name: "", type: "Monthly", startDate: "", endDate: "", classes: "Grade 6, Grade 7, Grade 8, Grade 9, Grade 10" });
     setSelectedClasses([]);
@@ -134,8 +137,8 @@ export function ExamModule() {
                         <TableCell><Badge variant="outline" className={cn("text-xs border-0", statusColor)}>{status}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-0.5">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Printer className="w-3 h-3" /></Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600"><Trash2 className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label={`Print schedule for ${e.name}`} title="Print Schedule" onClick={() => toast({ title: "Opening exam schedule...", description: e.name })}><Printer className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" aria-label={`Delete exam ${e.name}`} title="Delete Exam" onClick={() => { setExams(exams.filter(x => x.id !== e.id)); toast({ title: "Exam Deleted", description: e.name, variant: "destructive" }); }}><Trash2 className="w-3 h-3" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -250,10 +253,10 @@ export function ExamModule() {
                   <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Monthly">📅 Monthly</SelectItem>
-                      <SelectItem value="Mid-Term">📋 Mid-Term</SelectItem>
-                      <SelectItem value="Final">🎓 Final</SelectItem>
-                      <SelectItem value="Quiz">✏️ Quiz</SelectItem>
+                      <SelectItem value="Monthly">Monthly</SelectItem>
+                      <SelectItem value="Mid-Term">Mid-Term</SelectItem>
+                      <SelectItem value="Final">Final</SelectItem>
+                      <SelectItem value="Quiz">Quiz</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

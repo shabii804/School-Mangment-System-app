@@ -97,20 +97,12 @@ export function FeesModule() {
       toast({ title: "Select a fee type", description: "Please check at least one fee to collect.", variant: "destructive" });
       return;
     }
-    collectFee(
-      selected.id,
-      total,
-      mode,
-      feeTypeLabel,
-      useCustom
-        ? undefined // no breakdown for manual entry
-        : { tuition: tuitionAmt || undefined, hostel: hostelAmt || undefined, admission: admissionAmt || undefined }
-    );
 
-    // Find the just-created collection (most recent)
+    // Build the receipt object FIRST (before committing) so we can print and confirm
+    const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
     const newCollection = {
-      id: `FC-${String(feeCollections.length + 1).padStart(4, "0")}`,
-      receiptNo: `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(feeCollections.length + 1).padStart(3, "0")}`,
+      id: `FC-${Date.now()}`,
+      receiptNo,
       studentId: selected.id,
       studentName: selected.name,
       class: selected.class,
@@ -123,23 +115,47 @@ export function FeesModule() {
       feeType: feeTypeLabel,
     };
 
-    toast({
-      title: "Fee Collected ✓",
-      description: `Rs. ${total.toLocaleString()} from ${selected.name}. Opening print preview...`,
-    });
-
-    // Open real PDF receipt in new tab
+    // Generate PDF FIRST — if it fails, don't commit the fee
     try {
       await printFeeReceipt(newCollection, selected, school);
     } catch (e) {
-      toast({ title: "Print failed", description: "Could not generate PDF.", variant: "destructive" });
+      toast({
+        title: "Print failed — fee NOT collected",
+        description: "PDF could not be generated. The fee was not recorded. Try again.",
+        variant: "destructive",
+      });
+      return;
     }
+
+    // PDF succeeded — now commit the fee to the store
+    collectFee(
+      selected.id,
+      total,
+      mode,
+      feeTypeLabel,
+      useCustom
+        ? undefined
+        : { tuition: tuitionAmt || undefined, hostel: hostelAmt || undefined, admission: admissionAmt || undefined }
+    );
+
+    toast({
+      title: "Fee Collected ✓",
+      description: `Receipt ${receiptNo} • Rs. ${total.toLocaleString()} from ${selected.name}.`,
+    });
 
     setSelected(null);
   };
 
   const reprintReceipt = async (f: typeof feeCollections[0]) => {
     const student = students.find(s => s.id === f.studentId);
+    if (!student) {
+      toast({
+        title: "Cannot reprint",
+        description: "This student no longer exists in the system.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({ title: "Opening receipt...", description: f.receiptNo });
     try {
       await printFeeReceipt(f, student, school);
@@ -236,7 +252,7 @@ export function FeesModule() {
                     <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-0">Paid</Badge>
                   )}
                 </div>
-                <Button size="sm" variant="outline" className="h-7 text-xs">Collect</Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); openCollect(s); }}>Collect</Button>
               </div>
             ))}
             {filtered.length === 0 && (
@@ -277,7 +293,7 @@ export function FeesModule() {
                 </div>
                 <button
                   onClick={() => reprintReceipt(f)}
-                  className="mt-1.5 text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 hover:underline"
+                  className="mt-1.5 text-[10px] text-primary transition-opacity flex items-center gap-1 hover:underline"
                 >
                   <Printer className="w-2.5 h-2.5" />Reprint Receipt
                 </button>
@@ -518,9 +534,9 @@ export function FeesModule() {
                     <Select value={mode} onValueChange={(v: "Cash" | "Cheque" | "Bank Transfer") => setMode(v)}>
                       <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Cash">💵 Cash</SelectItem>
-                        <SelectItem value="Cheque">📝 Cheque</SelectItem>
-                        <SelectItem value="Bank Transfer">🏦 Bank Transfer</SelectItem>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Cheque">Cheque</SelectItem>
+                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                       </SelectContent>
                     </Select>
                     <div className="mt-2 rounded-md bg-muted/40 p-2 text-[10px] flex items-center gap-1.5">
@@ -593,7 +609,7 @@ export function DefaultersModule() {
         </CardContent></Card>
         <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
           <div className="rounded-lg bg-primary/10 p-1.5"><TrendingUp className="w-4 h-4 text-primary" /></div>
-          <div><p className="text-xs text-muted-foreground">Collection Rate</p><p className="text-xl font-bold">{Math.round((1 - defaulters.length / students.length) * 100)}%</p></div>
+          <div><p className="text-xs text-muted-foreground">Collection Rate</p><p className="text-xl font-bold">{students.length > 0 ? Math.round(Math.max(0, (1 - defaulters.length / students.length)) * 100) : 0}%</p></div>
         </CardContent></Card>
       </div>
 
@@ -655,7 +671,7 @@ export function DefaultersModule() {
                   <TableCell><Badge variant="outline" className="text-xs">{d.class}-{d.section}</Badge></TableCell>
                   <TableCell className="text-sm">{d.fatherName}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{d.fatherPhone}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs bg-red-500/5">{Math.ceil(d.outstandingAmount / (d.monthlyFee + (d.isHosteller ? HOSTEL_FEE : 0)))} month(s)</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs bg-red-500/5">{(() => { const denom = d.monthlyFee + (d.isHosteller ? HOSTEL_FEE : 0); return denom > 0 ? Math.ceil(d.outstandingAmount / denom) : 0; })()} month(s)</Badge></TableCell>
                   <TableCell className="text-right"><span className="font-bold text-red-600">Rs. {d.outstandingAmount.toLocaleString()}</span></TableCell>
                   <TableCell className="text-right">
                     <Button

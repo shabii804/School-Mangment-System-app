@@ -82,7 +82,7 @@ export function LedgerModule() {
   const handleAdd = () => {
     if (!form.description || form.amount <= 0) return;
     addTransaction({
-      id: `TX-${String(transactions.length + 1).padStart(3, "0")}`,
+      id: `TX-${String(Date.now()).slice(-6)}`,
       ...form,
     });
     setAddOpen(false);
@@ -226,7 +226,12 @@ export function LedgerModule() {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" onClick={() => deleteTransaction(t.id)}>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" aria-label={`Delete transaction ${t.description}`} title="Delete" onClick={() => {
+                      if (window.confirm(`Delete this transaction?\n\n"${t.description}" — Rs. ${t.amount.toLocaleString()}\n\nThis action cannot be undone.`)) {
+                        deleteTransaction(t.id);
+                        toast({ title: "Transaction Deleted", description: t.description, variant: "destructive" });
+                      }
+                    }}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </TableCell>
@@ -360,9 +365,9 @@ export function LedgerModule() {
                   <Select value={form.mode} onValueChange={(v: any) => setForm({...form, mode: v})}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Cash">💵 Cash</SelectItem>
-                      <SelectItem value="Bank">🏦 Bank</SelectItem>
-                      <SelectItem value="Cheque">📝 Cheque</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Bank">Bank</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

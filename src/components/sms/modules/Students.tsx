@@ -49,7 +49,7 @@ const EMPTY_FORM = {
 };
 
 export function StudentsModule() {
-  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog, collectFee, classes: storeClasses } = useAppStore();
+  const { students, searchQuery, setSearchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog, collectFee, classes: storeClasses } = useAppStore();
   const CLASSES = storeClasses.length > 0 ? storeClasses : [];
   const { toast } = useToast();
   const [classFilter, setClassFilter] = useState("all");
@@ -94,13 +94,34 @@ export function StudentsModule() {
     });
   }, [students, searchQuery, classFilter, statusFilter]);
 
+  // Compute all stats in a single pass over `filtered`
+  const stats = useMemo(() => {
+    let active = 0, hostellers = 0, transport = 0, defaulters = 0;
+    for (const s of filtered) {
+      if (s.status === "Active") active++;
+      if (s.isHosteller) hostellers++;
+      if (s.transport) transport++;
+      if (s.outstandingAmount > 0) defaulters++;
+    }
+    return { total: filtered.length, active, hostellers, transport, defaulters };
+  }, [filtered]);
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) return;
-    if (file.size > 500 * 1024) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file type", description: "Please upload a PNG or JPG image.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      toast({ title: "File too large", description: "Photo must be under 500KB. Please compress it first.", variant: "destructive" });
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = () => setForm({ ...form, photo: reader.result as string });
+    reader.onload = () => {
+      setForm({ ...form, photo: reader.result as string });
+      toast({ title: "Photo uploaded ✓", description: `${file.name} ready to save.` });
+    };
     reader.readAsDataURL(file);
   };
 
@@ -116,8 +137,8 @@ export function StudentsModule() {
     const monthlyFee = cls?.monthlyFee ?? 0;
     const hostelFee = form.isHosteller ? (useAppStore.getState().feeStructure.hostelFee || 0) : 0;
     const newStudent: Student = {
-      id: `SCH-${new Date().getFullYear()}-${String(students.length + 1).padStart(4, "0")}`,
-      rollNo: String(filtered.length + 1).padStart(2, "0"),
+      id: `SCH-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+      rollNo: String(students.length + 1).padStart(2, "0"),
       name: form.name,
       class: form.class,
       section: form.section,
@@ -171,7 +192,10 @@ export function StudentsModule() {
   const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selected) return;
-    if (file.size > 2 * 1024 * 1024) return; // 2MB limit
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Document must be under 2MB.", variant: "destructive" });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       addDocument({
@@ -183,6 +207,7 @@ export function StudentsModule() {
         dataUrl: reader.result as string,
         size: file.size,
       });
+      toast({ title: "Document uploaded ✓", description: `${file.name} saved to ${selected.name}'s vault.` });
     };
     reader.readAsDataURL(file);
   };
@@ -251,7 +276,22 @@ export function StudentsModule() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-60">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search by name, ID, CNIC, father, phone..." className="pl-9 bg-background/60" />
+          <Input
+            placeholder="Search by name, ID, CNIC, father, phone..."
+            className="pl-9 bg-background/60"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search students"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-muted hover:bg-muted/70 flex items-center justify-center text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
         <Select value={classFilter} onValueChange={setClassFilter}>
           <SelectTrigger className="w-40 bg-background/60"><Filter className="w-3.5 h-3.5 mr-1.5" /><SelectValue /></SelectTrigger>
@@ -614,23 +654,23 @@ export function StudentsModule() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
           <div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div>
-          <div><p className="text-xs text-muted-foreground">Total</p><p className="text-xl font-bold">{filtered.length}</p></div>
+          <div><p className="text-xs text-muted-foreground">Total</p><p className="text-xl font-bold">{stats.total}</p></div>
         </CardContent></Card>
         <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
           <div className="rounded-lg bg-emerald-500/10 p-1.5"><UserCheck className="w-4 h-4 text-emerald-600" /></div>
-          <div><p className="text-xs text-muted-foreground">Active</p><p className="text-xl font-bold">{filtered.filter(s => s.status === "Active").length}</p></div>
+          <div><p className="text-xs text-muted-foreground">Active</p><p className="text-xl font-bold">{stats.active}</p></div>
         </CardContent></Card>
         <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
           <div className="rounded-lg bg-accent/10 p-1.5"><Home className="w-4 h-4 text-accent" /></div>
-          <div><p className="text-xs text-muted-foreground">Hostellers</p><p className="text-xl font-bold">{filtered.filter(s => s.isHosteller).length}</p></div>
+          <div><p className="text-xs text-muted-foreground">Hostellers</p><p className="text-xl font-bold">{stats.hostellers}</p></div>
         </CardContent></Card>
         <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
           <div className="rounded-lg bg-primary/10 p-1.5"><Bus className="w-4 h-4 text-primary" /></div>
-          <div><p className="text-xs text-muted-foreground">Transport</p><p className="text-xl font-bold">{filtered.filter(s => s.transport).length}</p></div>
+          <div><p className="text-xs text-muted-foreground">Transport</p><p className="text-xl font-bold">{stats.transport}</p></div>
         </CardContent></Card>
         <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
           <div className="rounded-lg bg-red-500/10 p-1.5"><Filter className="w-4 h-4 text-red-600" /></div>
-          <div><p className="text-xs text-muted-foreground">Defaulters</p><p className="text-xl font-bold">{filtered.filter(s => s.outstandingAmount > 0).length}</p></div>
+          <div><p className="text-xs text-muted-foreground">Defaulters</p><p className="text-xl font-bold">{stats.defaulters}</p></div>
         </CardContent></Card>
       </div>
 
@@ -669,7 +709,14 @@ export function StudentsModule() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.slice(0, 30).map(s => (
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-12 text-sm text-muted-foreground">
+                    <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    No students found. {searchQuery ? "Try a different search." : "Click \"Admit Student\" to add one."}
+                  </TableCell>
+                </TableRow>
+              ) : filtered.slice(0, 30).map(s => (
                 <TableRow key={s.id} className={cn("border-border/30 hover:bg-muted/30 cursor-pointer", selectedIds.has(s.id) && "bg-primary/5")} onClick={() => setSelected(s)}>
                   <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={selectedIds.has(s.id)} onChange={() => toggleSelect(s.id)} className="w-4 h-4 accent-primary cursor-pointer" />
@@ -712,16 +759,16 @@ export function StudentsModule() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-0.5">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View"
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View" aria-label={`View ${s.name} profile`}
                         onClick={(e) => { e.stopPropagation(); setSelected(s); }}
                       ><Eye className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-primary" title="Edit"
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-primary" title="Edit" aria-label={`Edit ${s.name}`}
                         onClick={(e) => { e.stopPropagation(); setEditStudent(s); setEditForm(s); }}
                       ><Edit className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" title="Promote"
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" title="Promote" aria-label={`Promote ${s.name}`}
                         onClick={(e) => { e.stopPropagation(); setPromoteTarget(s); setPromoteClass(s.class); setPromoteSection(s.section); }}
                       ><ArrowUpCircle className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" title="Delete"
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" title="Delete" aria-label={`Delete ${s.name}`}
                         onClick={(e) => { e.stopPropagation(); setDeleteConfirm(s); }}
                       ><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
@@ -740,9 +787,15 @@ export function StudentsModule() {
 
       {/* Profile slide-in panel */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+        <div
+          className="fixed inset-0 z-50 flex justify-end"
+          onClick={() => setSelected(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Student profile: ${selected.name}`}
+        >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
           {/* Panel */}
           <div
             className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right"
@@ -751,6 +804,7 @@ export function StudentsModule() {
             {/* Close button */}
             <button
               onClick={() => setSelected(null)}
+              aria-label="Close profile"
               className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
             >
               <X className="w-4 h-4" />

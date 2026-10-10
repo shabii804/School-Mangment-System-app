@@ -404,10 +404,15 @@ export function DashboardModule() {
               </CardTitle>
               <p className="text-xs text-muted-foreground">Latest 7 events in the system</p>
             </div>
-            <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground">View all</Button>
+            <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground" onClick={() => setActiveModule("reports")}>View all</Button>
           </CardHeader>
           <CardContent className="space-y-1 max-h-[220px] overflow-y-auto">
-            {ACTIVITIES.map(act => {
+            {ACTIVITIES.length === 0 ? (
+              <div className="text-center py-8 text-xs text-muted-foreground">
+                <ActivityIcon className="w-6 h-6 mx-auto mb-1.5 opacity-40" />
+                No recent activity yet. Actions you take will appear here.
+              </div>
+            ) : ACTIVITIES.map(act => {
               const Icon = ACTIVITY_ICONS[act.type] || ActivityIcon;
               return (
                 <div key={act.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors group">

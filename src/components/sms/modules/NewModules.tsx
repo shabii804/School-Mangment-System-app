@@ -121,7 +121,7 @@ export function LibraryModule() {
             </div>
             <div className="grid grid-cols-2 gap-3"><div><Label>ISBN</Label><Input value={form.isbn} onChange={e => setForm({...form, isbn: e.target.value})} /></div><div><Label>Shelf Location</Label><Input value={form.shelf} onChange={e => setForm({...form, shelf: e.target.value})} placeholder="A-12" /></div></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => { if (!form.title) return; setBooks([{ id: `BK-${String(books.length + 1).padStart(3, "0")}`, title: form.title, author: form.author, category: form.category, isbn: form.isbn, totalCopies: form.copies, availableCopies: form.copies, shelf: form.shelf || "—" }, ...books]); setAddOpen(false); setForm({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" }); }}>Add Book</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => { if (!form.title) return; setBooks([{ id: `BK-${String(Date.now()).slice(-6)}`, title: form.title, author: form.author, category: form.category, isbn: form.isbn, totalCopies: form.copies, availableCopies: form.copies, shelf: form.shelf || "—" }, ...books]); setAddOpen(false); setForm({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" }); }}>Add Book</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -147,9 +147,27 @@ export function LibraryModule() {
 export function TransportModule() {
   const [addOpen, setAddOpen] = useState(false);
   const [routes, setRoutes] = useState<BusRoute[]>(BUS_ROUTES);
+  const [form, setForm] = useState({ routeName: "", vehicleNo: "", capacity: 25, driverName: "", driverPhone: "", stops: "" });
 
   const totalCapacity = routes.reduce((s, r) => s + r.capacity, 0);
   const totalOccupied = routes.reduce((s, r) => s + r.occupied, 0);
+
+  const handleAdd = () => {
+    if (!form.routeName.trim()) return;
+    const newRoute: BusRoute = {
+      id: `RT-${String(Date.now()).slice(-6)}`,
+      routeName: form.routeName,
+      vehicleNo: form.vehicleNo || "—",
+      capacity: Number(form.capacity) || 0,
+      occupied: 0,
+      driverName: form.driverName || "—",
+      driverPhone: form.driverPhone || "—",
+      stops: form.stops.split(",").map(s => s.trim()).filter(Boolean),
+    };
+    setRoutes([newRoute, ...routes]);
+    setAddOpen(false);
+    setForm({ routeName: "", vehicleNo: "", capacity: 25, driverName: "", driverPhone: "", stops: "" });
+  };
 
   return (
     <div className="space-y-3 fade-in">
@@ -167,7 +185,7 @@ export function TransportModule() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {routes.map(r => {
-          const pct = Math.round((r.occupied / r.capacity) * 100);
+          const pct = r.capacity > 0 ? Math.round((r.occupied / r.capacity) * 100) : 0;
           return (
             <Card key={r.id} className="border-0 shadow-sm glass-card card-hover">
               <CardContent className="p-4">
@@ -197,12 +215,12 @@ export function TransportModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Bus Route</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Route Name *</Label><Input placeholder="Route F — Clifton" /></div>
-            <div className="grid grid-cols-2 gap-3"><div><Label>Vehicle No.</Label><Input placeholder="KHI-XXXX" /></div><div><Label>Capacity</Label><Input type="number" defaultValue={25} /></div></div>
-            <div className="grid grid-cols-2 gap-3"><div><Label>Driver Name</Label><Input /></div><div><Label>Driver Phone</Label><Input placeholder="+92 3xx" /></div></div>
-            <div><Label>Stops (comma-separated)</Label><Input placeholder="Stop 1, Stop 2, Stop 3" /></div>
+            <div><Label>Route Name *</Label><Input value={form.routeName} onChange={e => setForm({...form, routeName: e.target.value})} placeholder="Route F — Clifton" /></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label>Vehicle No.</Label><Input value={form.vehicleNo} onChange={e => setForm({...form, vehicleNo: e.target.value})} placeholder="KHI-XXXX" /></div><div><Label>Capacity</Label><Input type="number" value={form.capacity} onChange={e => setForm({...form, capacity: Number(e.target.value)})} /></div></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label>Driver Name</Label><Input value={form.driverName} onChange={e => setForm({...form, driverName: e.target.value})} /></div><div><Label>Driver Phone</Label><Input value={form.driverPhone} onChange={e => setForm({...form, driverPhone: e.target.value})} placeholder="+92 3xx" /></div></div>
+            <div><Label>Stops (comma-separated)</Label><Input value={form.stops} onChange={e => setForm({...form, stops: e.target.value})} placeholder="Stop 1, Stop 2, Stop 3" /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(false)}>Add Route</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.routeName.trim()}>Add Route</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -234,7 +252,7 @@ export function HostelModule() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {rooms.map(r => {
-          const pct = Math.round((r.occupied / r.capacity) * 100);
+          const pct = r.capacity > 0 ? Math.round((r.occupied / r.capacity) * 100) : 0;
           return (
             <Card key={r.id} className={cn("border-0 shadow-sm glass-card card-hover", r.occupied === r.capacity && "ring-1 ring-red-500/20")}>
               <CardContent className="p-4">
@@ -282,9 +300,27 @@ export function HostelModule() {
 export function InventoryModule() {
   const [addOpen, setAddOpen] = useState(false);
   const [items, setItems] = useState<InventoryItem[]>(INVENTORY_ITEMS);
+  const [form, setForm] = useState({ name: "", category: "Furniture", quantity: 1, unit: "pcs", minStock: 1, location: "" });
 
   const lowStock = items.filter(i => i.quantity <= i.minStock).length;
   const needsRepair = items.filter(i => i.condition === "Needs Repair" || i.condition === "Damaged").length;
+
+  const handleAdd = () => {
+    if (!form.name.trim()) return;
+    const newItem: InventoryItem = {
+      id: `INV-${String(Date.now()).slice(-6)}`,
+      name: form.name,
+      category: form.category,
+      quantity: Number(form.quantity) || 0,
+      unit: form.unit || "pcs",
+      minStock: Number(form.minStock) || 0,
+      location: form.location || "—",
+      condition: "Good",
+    };
+    setItems([newItem, ...items]);
+    setAddOpen(false);
+    setForm({ name: "", category: "Furniture", quantity: 1, unit: "pcs", minStock: 1, location: "" });
+  };
 
   return (
     <div className="space-y-3 fade-in">
@@ -330,15 +366,15 @@ export function InventoryModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Inventory Item</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Item Name *</Label><Input placeholder="e.g., Lab Beakers" /></div>
+            <div><Label>Item Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Lab Beakers" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Category</Label><Select defaultValue="Furniture"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Furniture", "Electronics", "Lab Equipment", "Stationery", "Sports", "Medical", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
-              <div><Label>Quantity</Label><Input type="number" defaultValue={1} /></div>
+              <div><Label>Category</Label><Select value={form.category} onValueChange={v => setForm({...form, category: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Furniture", "Electronics", "Lab Equipment", "Stationery", "Sports", "Medical", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm({...form, quantity: Number(e.target.value)})} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3"><div><Label>Unit</Label><Input defaultValue="pcs" /></div><div><Label>Min Stock</Label><Input type="number" defaultValue={1} /></div></div>
-            <div><Label>Location</Label><Input placeholder="e.g., Science Lab" /></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label>Unit</Label><Input value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} /></div><div><Label>Min Stock</Label><Input type="number" value={form.minStock} onChange={e => setForm({...form, minStock: Number(e.target.value)})} /></div></div>
+            <div><Label>Location</Label><Input value={form.location} onChange={e => setForm({...form, location: e.target.value})} placeholder="e.g., Science Lab" /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(false)}>Add Item</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.name.trim()}>Add Item</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -352,12 +388,34 @@ export function EventsModule() {
   const [addOpen, setAddOpen] = useState(false);
   const [events, setEvents] = useState<SchoolEvent[]>(SCHOOL_EVENTS);
   const [filter, setFilter] = useState<string>("all");
+  const [form, setForm] = useState({ title: "", type: "Meeting", date: "", description: "" });
 
-  const filtered = filter === "all" ? events.sort((a, b) => a.date.localeCompare(b.date)) : events.filter(e => e.type === filter).sort((a, b) => a.date.localeCompare(b.date));
+  const typeColors: Record<string, string> = {
+    Exam: "bg-red-500", Holiday: "bg-emerald-500", PTM: "bg-blue-500", Sports: "bg-orange-500",
+    Cultural: "bg-purple-500", Meeting: "bg-primary", Deadline: "bg-yellow-500",
+  };
+  const filtered = filter === "all"
+    ? [...events].sort((a, b) => a.date.localeCompare(b.date))
+    : events.filter(e => e.type === filter).sort((a, b) => a.date.localeCompare(b.date));
 
   const typeIcons: Record<string, any> = {
     Exam: FileText, Holiday: Home, PTM: Users, Sports: TrendingUp,
     Cultural: Package, Meeting: Users, Deadline: AlertCircle,
+  };
+
+  const handleAdd = () => {
+    if (!form.title.trim() || !form.date) return;
+    const newEvent: SchoolEvent = {
+      id: `EVT-${String(Date.now()).slice(-6)}`,
+      title: form.title,
+      type: form.type as any,
+      date: form.date,
+      description: form.description || "—",
+      color: typeColors[form.type] || "bg-primary",
+    };
+    setEvents([newEvent, ...events]);
+    setAddOpen(false);
+    setForm({ title: "", type: "Meeting", date: "", description: "" });
   };
 
   return (
@@ -368,9 +426,9 @@ export function EventsModule() {
       </div>
 
       {/* Filter buttons */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Filter events">
         {["all", "Exam", "Holiday", "PTM", "Sports", "Cultural", "Meeting", "Deadline"].map(t => (
-          <button key={t} onClick={() => setFilter(t)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", filter === t ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:bg-muted")}>
+          <button key={t} onClick={() => setFilter(t)} aria-pressed={filter === t} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", filter === t ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:bg-muted")}>
             {t === "all" ? "All Events" : t}
           </button>
         ))}
@@ -378,7 +436,12 @@ export function EventsModule() {
 
       {/* Timeline */}
       <div className="space-y-3">
-        {filtered.map((e, i) => {
+        {filtered.length === 0 ? (
+          <div className="text-center py-12 text-sm text-muted-foreground">
+            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            No events found. Click "Add Event" to create one.
+          </div>
+        ) : filtered.map((e, i) => {
           const Icon = typeIcons[e.type] || Calendar;
           const eventDate = new Date(e.date);
           const isPast = eventDate < new Date();
@@ -415,14 +478,14 @@ export function EventsModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Event</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Event Title *</Label><Input placeholder="e.g., Science Exhibition" /></div>
+            <div><Label>Event Title *</Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g., Science Exhibition" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Type</Label><Select defaultValue="Meeting"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Exam", "Holiday", "PTM", "Sports", "Cultural", "Meeting", "Deadline"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
-              <div><Label>Date *</Label><Input type="date" /></div>
+              <div><Label>Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Exam", "Holiday", "PTM", "Sports", "Cultural", "Meeting", "Deadline"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Date *</Label><Input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
             </div>
-            <div><Label>Description</Label><Input placeholder="Brief description..." /></div>
+            <div><Label>Description</Label><Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Brief description..." /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(false)}>Add Event</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.title.trim() || !form.date}>Add Event</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

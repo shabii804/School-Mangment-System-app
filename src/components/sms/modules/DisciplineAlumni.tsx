@@ -19,6 +19,7 @@ import {
 import {
   Plus, AlertTriangle, Shield, CheckCircle, Bell, Phone, Mail,
   Users, TrendingUp, GraduationCap, Award, Briefcase, Search,
+  Calendar, User, Zap,
 } from "lucide-react";
 import { INCIDENTS, ALUMNI, type Incident, type Alumnus } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
@@ -55,7 +56,7 @@ export function DisciplineModule() {
   const handleAdd = () => {
     if (!form.studentName || !form.description) return;
     const newIncident: Incident = {
-      id: `INC-${String(incidents.length + 1).padStart(3, "0")}`,
+      id: `INC-${String(Date.now()).slice(-6)}`,
       studentId: form.studentId || "—",
       studentName: form.studentName,
       class: form.class || "—",
@@ -115,9 +116,9 @@ export function DisciplineModule() {
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">{inc.description}</p>
                   <div className="flex items-center gap-4 mt-2 text-xs">
-                    <span className="text-muted-foreground">📅 {inc.date}</span>
-                    <span className="text-muted-foreground">👤 Reported by {inc.reportedBy}</span>
-                    <span className="text-primary font-medium">⚡ {inc.action}</span>
+                    <span className="text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{inc.date}</span>
+                    <span className="text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" />Reported by {inc.reportedBy}</span>
+                    <span className="text-primary font-medium flex items-center gap-1"><Zap className="w-3 h-3" />{inc.action}</span>
                   </div>
                 </div>
               </div>

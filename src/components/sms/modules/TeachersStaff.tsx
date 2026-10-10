@@ -52,7 +52,7 @@ export function TeachersModule() {
   const [editForm, setEditForm] = useState<Partial<Teacher>>({});
 
   const openAdd = () => {
-    setForm({ ...EMPTY_TEACHER, id: `T-${String(teachers.length + 1).padStart(3, "0")}` });
+    setForm({ ...EMPTY_TEACHER, id: `T-${String(Date.now()).slice(-4)}` });
     setAddOpen(true);
   };
 
@@ -126,18 +126,18 @@ export function TeachersModule() {
                     <p className="font-bold text-sm">Rs. {t.monthlySalary.toLocaleString()}</p>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View" onClick={() => setSelected(t)}><Eye className="w-3.5 h-3.5" /></Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" title="Edit" onClick={() => { setEditTeacher(t); setEditForm(t); }}><Edit className="w-3.5 h-3.5" /></Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" title="Delete" onClick={() => setDeleteConfirm(t)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View" aria-label={`View ${t.name} profile`} onClick={() => setSelected(t)}><Eye className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" title="Edit" aria-label={`Edit ${t.name}`} onClick={() => { setEditTeacher(t); setEditForm(t); }}><Edit className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" title="Delete" aria-label={`Delete ${t.name}`} onClick={() => setDeleteConfirm(t)}><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>
                 </div>
                 {/* Attendance mini-bar */}
                 <div className="mt-2 flex gap-0.5 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500" style={{ width: `${(t.attendance.present / totalDays) * 100}%` }} />
-                  <div className="bg-yellow-500" style={{ width: `${(t.attendance.late / totalDays) * 100}%` }} />
-                  <div className="bg-orange-500" style={{ width: `${(t.attendance.halfDay / totalDays) * 100}%` }} />
-                  <div className="bg-red-500" style={{ width: `${(t.attendance.absent / totalDays) * 100}%` }} />
-                  <div className="bg-muted-foreground/40" style={{ width: `${(t.attendance.leave / totalDays) * 100}%` }} />
+                  <div className="bg-emerald-500" style={{ width: `${totalDays > 0 ? (t.attendance.present / totalDays) * 100 : 0}%` }} />
+                  <div className="bg-yellow-500" style={{ width: `${totalDays > 0 ? (t.attendance.late / totalDays) * 100 : 0}%` }} />
+                  <div className="bg-orange-500" style={{ width: `${totalDays > 0 ? (t.attendance.halfDay / totalDays) * 100 : 0}%` }} />
+                  <div className="bg-red-500" style={{ width: `${totalDays > 0 ? (t.attendance.absent / totalDays) * 100 : 0}%` }} />
+                  <div className="bg-muted-foreground/40" style={{ width: `${totalDays > 0 ? (t.attendance.leave / totalDays) * 100 : 0}%` }} />
                 </div>
               </CardContent>
             </Card>
@@ -348,7 +348,21 @@ export function TeachersModule() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTeacher(null)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editTeacher) { updateTeacher(editTeacher.id, editForm); toast({ title: "Teacher Updated ✓", description: `${editForm.name || editTeacher.name}'s profile updated.` }); setEditTeacher(null); } }}>Save Changes</Button>
+            <Button className="bg-primary hover:bg-primary/90" disabled={!editForm.name?.trim()} onClick={() => {
+              if (editTeacher) {
+                if (!editForm.name?.trim()) {
+                  toast({ title: "Name required", description: "Teacher name cannot be empty.", variant: "destructive" });
+                  return;
+                }
+                if (editForm.phone && !/^[\+]?[\d\s\-]{10,15}$/.test(editForm.phone)) {
+                  toast({ title: "Invalid phone", description: "Phone must be 10-15 digits.", variant: "destructive" });
+                  return;
+                }
+                updateTeacher(editTeacher.id, editForm);
+                toast({ title: "Teacher Updated ✓", description: `${editForm.name || editTeacher.name}'s profile updated.` });
+                setEditTeacher(null);
+              }
+            }}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -375,11 +389,17 @@ export function TeachersModule() {
 
       {/* Profile slide-in panel */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div
+          className="fixed inset-0 z-50 flex justify-end"
+          onClick={() => setSelected(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Teacher profile: ${selected.name}`}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
           <div className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right" onClick={e => e.stopPropagation()}>
             {/* Close button */}
-            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+            <button onClick={() => setSelected(null)} aria-label="Close profile" className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
               <X className="w-4 h-4" />
             </button>
 
@@ -533,7 +553,7 @@ export function StaffModule() {
   const [editForm, setEditForm] = useState<Partial<Staff>>({});
 
   const openAdd = () => {
-    setForm({ ...EMPTY_STAFF, id: `ST-${String(staff.length + 1).padStart(3, "0")}` });
+    setForm({ ...EMPTY_STAFF, id: `ST-${String(Date.now()).slice(-4)}` });
     setAddOpen(true);
   };
 
@@ -584,9 +604,9 @@ export function StaffModule() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-0.5">
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View" onClick={() => setSelected(s)}><Eye className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" title="Edit" onClick={() => { setEditStaff(s); setEditForm(s); }}><Edit className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" title="Delete" onClick={() => setDeleteConfirm(s)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View" aria-label={`View ${s.name} profile`} onClick={() => setSelected(s)}><Eye className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" title="Edit" aria-label={`Edit ${s.name}`} onClick={() => { setEditStaff(s); setEditForm(s); }}><Edit className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" title="Delete" aria-label={`Delete ${s.name}`} onClick={() => setDeleteConfirm(s)}><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -734,7 +754,19 @@ export function StaffModule() {
             </p>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
-              <Button className="bg-accent hover:bg-accent/90 h-9 px-5 shadow-md" onClick={() => { addStaff(form); toast({ title: "Staff Added ✓", description: `${form.name} added to ${form.department}` }); setAddOpen(false); }} disabled={!form.name}>
+              <Button className="bg-accent hover:bg-accent/90 h-9 px-5 shadow-md" onClick={() => {
+                if (!form.name.trim()) {
+                  toast({ title: "Name required", description: "Please enter staff name.", variant: "destructive" });
+                  return;
+                }
+                if (form.phone && !/^[\+]?[\d\s\-]{10,15}$/.test(form.phone)) {
+                  toast({ title: "Invalid phone", description: "Phone must be 10-15 digits.", variant: "destructive" });
+                  return;
+                }
+                addStaff(form);
+                toast({ title: "Staff Added ✓", description: `${form.name} added to ${form.department}` });
+                setAddOpen(false);
+              }} disabled={!form.name}>
                 <Plus className="w-4 h-4 mr-1.5" />Add Staff
               </Button>
             </div>
@@ -755,7 +787,21 @@ export function StaffModule() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditStaff(null)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editStaff) { updateStaff(editStaff.id, editForm); toast({ title: "Staff Updated ✓", description: `${editForm.name || editStaff.name}'s profile updated.` }); setEditStaff(null); } }}>Save Changes</Button>
+            <Button className="bg-primary hover:bg-primary/90" disabled={!editForm.name?.trim()} onClick={() => {
+              if (editStaff) {
+                if (!editForm.name?.trim()) {
+                  toast({ title: "Name required", description: "Staff name cannot be empty.", variant: "destructive" });
+                  return;
+                }
+                if (editForm.phone && !/^[\+]?[\d\s\-]{10,15}$/.test(editForm.phone)) {
+                  toast({ title: "Invalid phone", description: "Phone must be 10-15 digits.", variant: "destructive" });
+                  return;
+                }
+                updateStaff(editStaff.id, editForm);
+                toast({ title: "Staff Updated ✓", description: `${editForm.name || editStaff.name}'s profile updated.` });
+                setEditStaff(null);
+              }
+            }}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -782,10 +828,16 @@ export function StaffModule() {
 
       {/* Staff Profile slide-in panel */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div
+          className="fixed inset-0 z-50 flex justify-end"
+          onClick={() => setSelected(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Staff profile: ${selected.name}`}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
           <div className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+            <button onClick={() => setSelected(null)} aria-label="Close profile" className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
               <X className="w-4 h-4" />
             </button>
 

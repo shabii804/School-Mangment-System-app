@@ -62,7 +62,7 @@ export function LeaveModule() {
   const handleAdd = () => {
     if (!form.employeeName || !form.fromDate) return;
     const newReq: LeaveRequest = {
-      id: `LV-${String(requests.length + 1).padStart(3, "0")}`,
+      id: `LV-${String(Date.now()).slice(-6)}`,
       employeeId: form.employeeId || "—",
       employeeName: form.employeeName,
       type: form.type as any,
@@ -167,21 +167,21 @@ export function LeaveModule() {
                             <span className={cn("font-bold text-sm", b.casual.remaining < 3 && "text-red-600")}>{b.casual.remaining}</span>
                             <span className="text-[10px] text-muted-foreground">({b.casual.used} used)</span>
                           </div>
-                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-blue-500" style={{ width: `${(b.casual.used / b.casual.total) * 100}%` }} /></div>
+                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-blue-500" style={{ width: `${b.casual.total > 0 ? (b.casual.used / b.casual.total) * 100 : 0}%` }} /></div>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <span className={cn("font-bold text-sm", b.sick.remaining < 3 && "text-red-600")}>{b.sick.remaining}</span>
                             <span className="text-[10px] text-muted-foreground">({b.sick.used} used)</span>
                           </div>
-                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-red-500" style={{ width: `${(b.sick.used / b.sick.total) * 100}%` }} /></div>
+                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-red-500" style={{ width: `${b.sick.total > 0 ? (b.sick.used / b.sick.total) * 100 : 0}%` }} /></div>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <span className={cn("font-bold text-sm", b.earned.remaining < 3 && "text-red-600")}>{b.earned.remaining}</span>
                             <span className="text-[10px] text-muted-foreground">({b.earned.used} used)</span>
                           </div>
-                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-primary" style={{ width: `${(b.earned.used / b.earned.total) * 100}%` }} /></div>
+                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-primary" style={{ width: `${b.earned.total > 0 ? (b.earned.used / b.earned.total) * 100 : 0}%` }} /></div>
                         </TableCell>
                         <TableCell className="text-center"><span className="font-bold text-sm">{totalUsed}</span><span className="text-[10px] text-muted-foreground">/45</span></TableCell>
                       </TableRow>
@@ -267,7 +267,7 @@ export function ConcessionModule() {
   const handleAdd = () => {
     if (!form.studentName || !form.reason) return;
     const newConc: Concession = {
-      id: `CON-${String(concessions.length + 1).padStart(3, "0")}`,
+      id: `CON-${String(Date.now()).slice(-6)}`,
       studentId: form.studentId || "—",
       studentName: form.studentName,
       class: form.class || "—",

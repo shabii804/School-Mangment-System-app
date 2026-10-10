@@ -108,13 +108,14 @@ export function Sidebar() {
           {!collapsed && (
             <div className="flex-1 min-w-0 fade-in">
               <h1 className="font-bold text-xs leading-tight text-white truncate">{school.name || "School Management"}</h1>
-              <p className="text-[9px] text-white/40 uppercase tracking-wider font-semibold">SMS v1.0</p>
+              <p className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">SMS v1.0</p>
             </div>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="text-white/50 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
-            aria-label="Collapse sidebar"
+            className="text-white/70 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -129,7 +130,7 @@ export function Sidebar() {
           return (
             <div key={group}>
               {!collapsed && (
-                <p className="px-2.5 mb-1 text-[9px] font-bold text-white/30 uppercase tracking-wider">
+                <p className="px-2.5 mb-1 text-[10px] font-bold text-white/60 uppercase tracking-wider">
                   {GROUP_LABELS[group]}
                 </p>
               )}
@@ -142,15 +143,16 @@ export function Sidebar() {
                       key={item.key}
                       onClick={() => setActiveModule(item.key)}
                       title={collapsed ? item.label : undefined}
+                      aria-current={isActive ? "page" : undefined}
                       className={cn(
                         "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold text-left transition-all",
                         isActive
                           ? "bg-primary text-white shadow-sm shadow-primary/20"
-                          : "text-white/60 hover:bg-white/10 hover:text-white",
+                          : "text-white/70 hover:bg-white/10 hover:text-white",
                         collapsed && "justify-center px-1.5"
                       )}
                     >
-                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-white" : "text-white/50")} strokeWidth={2} />
+                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-white" : "text-white/60")} strokeWidth={2} />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </button>
                   );
@@ -169,7 +171,7 @@ export function Sidebar() {
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
             </div>
-            <span className="text-white/50 font-medium">Online • Offline-ready</span>
+            <span className="text-white/70 font-medium">Online • Offline-ready</span>
           </div>
         ) : (
           <div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto" />

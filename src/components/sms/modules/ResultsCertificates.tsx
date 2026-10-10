@@ -38,15 +38,15 @@ function gradeFor(pct: number) {
 
 export function ResultsModule() {
   const { toast } = useToast();
-  const { school } = useAppStore();
+  const { school, students } = useAppStore();
   const [selectedExam, setSelectedExam] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [marksDialog, setMarksDialog] = useState(false);
 
   // Mock marks data — handle "all" classes
   const classStudents = selectedClass === "all"
-    ? STUDENTS.filter(s => s.status === "Active").slice(0, 15)
-    : STUDENTS.filter(s => s.class === selectedClass && s.status === "Active").slice(0, 8);
+    ? students.filter(s => s.status === "Active").slice(0, 15)
+    : students.filter(s => s.class === selectedClass && s.status === "Active").slice(0, 8);
   const marksData = classStudents.map((s, i) => {
     const subjects = SUBJECTS.slice(0, 5).map(sub => {
       const obtained = 60 + ((i * 7 + sub.length * 3) % 40);
@@ -78,7 +78,7 @@ export function ResultsModule() {
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={() => {
             const examName = EXAMS.find(e => e.id === selectedExam)?.name || "Exam";
-            const classStudents = STUDENTS.filter(s => s.class === selectedClass && s.status === "Active").slice(0, 20).map(s => ({ rollNo: s.rollNo, name: s.name }));
+            const classStudents = students.filter(s => s.class === selectedClass && s.status === "Active").slice(0, 20).map(s => ({ rollNo: s.rollNo, name: s.name }));
             toast({ title: "Generating seating plan...", description: `${examName} • ${selectedClass}` });
             printExamSeatingPlan(examName, selectedClass, "Examination Hall", classStudents, school);
           }}>
@@ -248,15 +248,15 @@ const TEACHER_CERT_TYPES = [
 
 export function CertificatesModule() {
   const { toast } = useToast();
-  const { school } = useAppStore();
+  const { school, students, teachers } = useAppStore();
   const [recipientType, setRecipientType] = useState<"student" | "teacher">("student");
   const [selectedCert, setSelectedCert] = useState<{ type: string; category: string } | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
 
   const certTypes = recipientType === "student" ? STUDENT_CERT_TYPES : TEACHER_CERT_TYPES;
-  const selectedStudent = STUDENTS.find(s => s.id === selectedStudentId);
-  const selectedTeacher = TEACHERS.find(t => t.id === selectedTeacherId);
+  const selectedStudent = students.find(s => s.id === selectedStudentId);
+  const selectedTeacher = teachers.find(t => t.id === selectedTeacherId);
 
   const openCert = (cert: { type: string; category: string }) => {
     setSelectedCert(cert);
@@ -264,17 +264,23 @@ export function CertificatesModule() {
 
   const issueAndPrint = () => {
     if (!selectedCert) return;
-    const certNo = `CERT-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
-    const recipientName = recipientType === "student" ? selectedStudent.name : selectedTeacher.name;
+    // Guard: must have a recipient selected
+    const recipient = recipientType === "student" ? selectedStudent : selectedTeacher;
+    if (!recipient) {
+      toast({ title: "Select a recipient", description: `Please choose a ${recipientType} first.`, variant: "destructive" });
+      return;
+    }
+    const certNo = `CERT-2026-${String(Date.now()).slice(-6)}`;
+    const recipientName = recipient.name;
     toast({ title: "Certificate Issued ✓", description: `${certNo} for ${recipientName}. Opening PDF...` });
 
-    if (recipientType === "student") {
+    if (recipientType === "student" && selectedStudent) {
       if (selectedCert.category === "award") {
         printStudentAward(selectedStudent, selectedCert.type, certNo, school);
       } else {
         printCertificate(selectedStudent, selectedCert.type, certNo, school);
       }
-    } else {
+    } else if (recipientType === "teacher" && selectedTeacher) {
       printTeacherCertificate(selectedTeacher, selectedCert.type, certNo, school);
     }
     setSelectedCert(null);
@@ -395,7 +401,7 @@ export function CertificatesModule() {
                   <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent className="max-h-60">
-                      {STUDENTS.filter(s => s.status === "Active").map(s => (
+                      {students.filter(s => s.status === "Active").map(s => (
                         <SelectItem key={s.id} value={s.id}>
                           {s.name} • {s.class}-{s.section} • {s.id}
                         </SelectItem>
@@ -406,7 +412,7 @@ export function CertificatesModule() {
                   <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {TEACHERS.map(t => (
+                      {teachers.map(t => (
                         <SelectItem key={t.id} value={t.id}>
                           {t.name} • {t.designation} • {t.id}
                         </SelectItem>
@@ -444,12 +450,18 @@ export function CertificatesModule() {
                   )}
                   <p className="text-xs text-muted-foreground mb-2">Proudly presented to</p>
                   <p className="text-lg font-bold text-foreground underline">
-                    {recipientType === "student" ? selectedStudent.name : selectedTeacher.name}
+                    {recipientType === "student"
+                      ? (selectedStudent?.name ?? "— Select a student —")
+                      : (selectedTeacher?.name ?? "— Select a teacher —")}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1">
                     {recipientType === "student"
-                      ? `Class ${selectedStudent.class}-${selectedStudent.section} • Roll #${selectedStudent.rollNo}`
-                      : `${selectedTeacher.designation} • Since ${selectedTeacher.joiningDate.slice(0, 4)}`}
+                      ? (selectedStudent
+                          ? `Class ${selectedStudent.class}-${selectedStudent.section} • Roll #${selectedStudent.rollNo}`
+                          : "Student details will appear here")
+                      : (selectedTeacher
+                          ? `${selectedTeacher.designation} • Since ${selectedTeacher.joiningDate.slice(0, 4)}`
+                          : "Teacher details will appear here")}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-2">
                     Certificate No: <span className="font-mono">CERT-2026-XXX</span> • {new Date().toLocaleDateString("en-GB")}
