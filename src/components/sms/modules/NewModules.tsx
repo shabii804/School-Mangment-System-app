@@ -34,8 +34,9 @@ import { cn } from "@/lib/utils";
 export function LibraryModule() {
   const [addOpen, setAddOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
-  const [books, setBooks] = useState<Book[]>(BOOKS);
-  const [issues, setIssues] = useState<BookIssue[]>(BOOK_ISSUES);
+  const { moduleData, addModuleItem, updateModuleItem, students } = useAppStore();
+  const books = (moduleData.books || []) as Book[];
+  const issues = (moduleData.bookIssues || []) as BookIssue[];
   const [form, setForm] = useState({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" });
   const [issueForm, setIssueForm] = useState({ bookId: "", studentId: "", issueDate: new Date().toISOString().split("T")[0], dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0] });
   const { toast } = useToast();
@@ -49,19 +50,28 @@ export function LibraryModule() {
       toast({ title: "Missing info", description: "Please select a book and enter Student ID.", variant: "destructive" });
       return;
     }
+    // Look up student for name/class
+    const student = students.find(s => s.id === issueForm.studentId || s.id.toLowerCase() === issueForm.studentId.toLowerCase());
+    const book = books.find(b => b.id === issueForm.bookId);
+    if (book && book.availableCopies <= 0) {
+      toast({ title: "No copies available", description: "All copies of this book are issued.", variant: "destructive" });
+      return;
+    }
     const newIssue: BookIssue = {
       id: `ISS-${String(Date.now()).slice(-6)}`,
       bookId: issueForm.bookId,
-      bookTitle: books.find(b => b.id === issueForm.bookId)?.title || "Unknown",
+      bookTitle: book?.title || "Unknown",
       studentId: issueForm.studentId,
+      studentName: student?.name || issueForm.studentId,
+      class: student?.class || "—",
       issueDate: issueForm.issueDate,
       dueDate: issueForm.dueDate,
       status: "Issued",
     };
-    setIssues([newIssue, ...issues]);
+    addModuleItem("bookIssues", newIssue);
     // Decrement available copies
-    setBooks(books.map(b => b.id === issueForm.bookId ? { ...b, availableCopies: Math.max(0, b.availableCopies - 1) } : b));
-    toast({ title: "Book Issued ✓", description: `${newIssue.bookTitle} issued to ${issueForm.studentId}.` });
+    if (book) updateModuleItem("books", book.id, { availableCopies: Math.max(0, book.availableCopies - 1) });
+    toast({ title: "Book Issued ✓", description: `${newIssue.bookTitle} issued to ${newIssue.studentName}.` });
     setIssueOpen(false);
     setIssueForm({ bookId: "", studentId: "", issueDate: new Date().toISOString().split("T")[0], dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0] });
   };
@@ -146,7 +156,7 @@ export function LibraryModule() {
             </div>
             <div className="grid grid-cols-2 gap-3"><div><Label>ISBN</Label><Input value={form.isbn} onChange={e => setForm({...form, isbn: e.target.value})} /></div><div><Label>Shelf Location</Label><Input value={form.shelf} onChange={e => setForm({...form, shelf: e.target.value})} placeholder="A-12" /></div></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => { if (!form.title) return; setBooks([{ id: `BK-${String(Date.now()).slice(-6)}`, title: form.title, author: form.author, category: form.category, isbn: form.isbn, totalCopies: form.copies, availableCopies: form.copies, shelf: form.shelf || "—" }, ...books]); setAddOpen(false); setForm({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" }); }}>Add Book</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => { if (!form.title) return; addModuleItem("books", { id: `BK-${String(Date.now()).slice(-6)}`, title: form.title, author: form.author || "—", category: form.category, isbn: form.isbn || "—", totalCopies: form.copies, availableCopies: form.copies, shelf: form.shelf || "—" }); toast({ title: "Book Added ✓", description: `${form.title} added to catalog.` }); setAddOpen(false); setForm({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" }); }}>Add Book</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -171,8 +181,10 @@ export function LibraryModule() {
 // ═══════════════════════════════════════════════════════════════
 export function TransportModule() {
   const [addOpen, setAddOpen] = useState(false);
-  const [routes, setRoutes] = useState<BusRoute[]>(BUS_ROUTES);
+  const { moduleData, addModuleItem, updateModuleItem } = useAppStore();
+  const routes = (moduleData.busRoutes || []) as BusRoute[];
   const [form, setForm] = useState({ routeName: "", vehicleNo: "", capacity: 25, driverName: "", driverPhone: "", stops: "" });
+  const { toast } = useToast();
 
   const totalCapacity = routes.reduce((s, r) => s + r.capacity, 0);
   const totalOccupied = routes.reduce((s, r) => s + r.occupied, 0);
@@ -187,9 +199,12 @@ export function TransportModule() {
       occupied: 0,
       driverName: form.driverName || "—",
       driverPhone: form.driverPhone || "—",
+      morningTime: "07:00",
+      eveningTime: "02:00",
       stops: form.stops.split(",").map(s => s.trim()).filter(Boolean),
     };
-    setRoutes([newRoute, ...routes]);
+    addModuleItem("busRoutes", newRoute);
+    toast({ title: "Route Added ✓", description: `${form.routeName} created.` });
     setAddOpen(false);
     setForm({ routeName: "", vehicleNo: "", capacity: 25, driverName: "", driverPhone: "", stops: "" });
   };
@@ -256,13 +271,35 @@ export function TransportModule() {
 // HOSTEL MODULE
 // ═══════════════════════════════════════════════════════════════
 export function HostelModule() {
-  const [rooms, setRooms] = useState<HostelRoom[]>(HOSTEL_ROOMS);
+  const { moduleData, addModuleItem, updateModuleItem, updateStudent, students } = useAppStore();
+  const rooms = (moduleData.hostelRooms || []) as HostelRoom[];
+  const allocations = (moduleData.hostelAllocations || []) as any[];
   const [allocOpen, setAllocOpen] = useState(false);
+  const [addRoomOpen, setAddRoomOpen] = useState(false);
   const [allocForm, setAllocForm] = useState({ roomId: "", studentId: "", studentName: "" });
+  const [roomForm, setRoomForm] = useState({ roomNo: "", capacity: 2, type: "Double" as HostelRoom["type"], floor: 1 });
   const { toast } = useToast();
   const totalCapacity = rooms.reduce((s, r) => s + r.capacity, 0);
   const totalOccupied = rooms.reduce((s, r) => s + r.occupied, 0);
   const availableBeds = totalCapacity - totalOccupied;
+
+  const handleAddRoom = () => {
+    if (!roomForm.roomNo.trim()) {
+      toast({ title: "Room number required", description: "Please enter a room number.", variant: "destructive" });
+      return;
+    }
+    addModuleItem("hostelRooms", {
+      id: `RM-${String(Date.now()).slice(-6)}`,
+      roomNo: roomForm.roomNo,
+      capacity: Number(roomForm.capacity) || 1,
+      occupied: 0,
+      type: roomForm.type,
+      floor: Number(roomForm.floor) || 1,
+    });
+    toast({ title: "Room Added ✓", description: `Room ${roomForm.roomNo} created.` });
+    setAddRoomOpen(false);
+    setRoomForm({ roomNo: "", capacity: 2, type: "Double", floor: 1 });
+  };
 
   const handleAllocate = () => {
     if (!allocForm.roomId || !allocForm.studentId.trim()) {
@@ -274,8 +311,23 @@ export function HostelModule() {
       toast({ title: "Room full", description: "This room has no available beds.", variant: "destructive" });
       return;
     }
-    setRooms(rooms.map(r => r.id === allocForm.roomId ? { ...r, occupied: r.occupied + 1 } : r));
-    toast({ title: "Room Allocated ✓", description: `${allocForm.studentName || allocForm.studentId} assigned to ${room.roomNo}.` });
+    // Look up student
+    const student = students.find(s => s.id === allocForm.studentId || s.id.toLowerCase() === allocForm.studentId.toLowerCase());
+    const studentName = student?.name || allocForm.studentName || allocForm.studentId;
+    // Record allocation
+    addModuleItem("hostelAllocations", {
+      id: `ALLOC-${String(Date.now()).slice(-6)}`,
+      roomId: allocForm.roomId,
+      roomNo: room.roomNo,
+      studentId: allocForm.studentId,
+      studentName,
+      date: new Date().toISOString().split("T")[0],
+    });
+    // Increment room occupancy
+    updateModuleItem("hostelRooms", allocForm.roomId, { occupied: room.occupied + 1 });
+    // Flip student's isHosteller flag so hostel fee applies
+    if (student) updateStudent(student.id, { isHosteller: true });
+    toast({ title: "Room Allocated ✓", description: `${studentName} assigned to Room ${room.roomNo}. Hostel fee now applies.` });
     setAllocOpen(false);
     setAllocForm({ roomId: "", studentId: "", studentName: "" });
   };
@@ -284,7 +336,10 @@ export function HostelModule() {
     <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage hostel rooms, bed allocation, and mess.</p>
-        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAllocOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Allocate Room</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setAddRoomOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Room</Button>
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => setAllocOpen(true)}><BedDouble className="w-4 h-4 mr-1.5" />Allocate Room</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -347,6 +402,22 @@ export function HostelModule() {
           <DialogFooter><Button variant="outline" onClick={() => setAllocOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAllocate} disabled={!allocForm.roomId || !allocForm.studentId.trim()}>Allocate</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Room Dialog */}
+      <Dialog open={addRoomOpen} onOpenChange={setAddRoomOpen}>
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Home className="w-4 h-4 text-primary" />Add Hostel Room</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
+            <div><Label>Room Number *</Label><Input value={roomForm.roomNo} onChange={e => setRoomForm({...roomForm, roomNo: e.target.value})} placeholder="e.g., H-101" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Capacity</Label><Input type="number" value={roomForm.capacity} onChange={e => setRoomForm({...roomForm, capacity: Number(e.target.value)})} /></div>
+              <div><Label>Floor</Label><Input type="number" value={roomForm.floor} onChange={e => setRoomForm({...roomForm, floor: Number(e.target.value)})} /></div>
+            </div>
+            <div><Label>Room Type</Label><Select value={roomForm.type} onValueChange={v => setRoomForm({...roomForm, type: v as HostelRoom["type"]})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Single">Single</SelectItem><SelectItem value="Double">Double</SelectItem><SelectItem value="Triple">Triple</SelectItem><SelectItem value="Dorm">Dorm</SelectItem></SelectContent></Select></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setAddRoomOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAddRoom} disabled={!roomForm.roomNo.trim()}>Add Room</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -356,8 +427,10 @@ export function HostelModule() {
 // ═══════════════════════════════════════════════════════════════
 export function InventoryModule() {
   const [addOpen, setAddOpen] = useState(false);
-  const [items, setItems] = useState<InventoryItem[]>(INVENTORY_ITEMS);
+  const { moduleData, addModuleItem, updateModuleItem } = useAppStore();
+  const items = (moduleData.inventoryItems || []) as InventoryItem[];
   const [form, setForm] = useState({ name: "", category: "Furniture", quantity: 1, unit: "pcs", minStock: 1, location: "" });
+  const { toast } = useToast();
 
   const lowStock = items.filter(i => i.quantity <= i.minStock).length;
   const needsRepair = items.filter(i => i.condition === "Needs Repair" || i.condition === "Damaged").length;
@@ -374,7 +447,8 @@ export function InventoryModule() {
       location: form.location || "—",
       condition: "Good",
     };
-    setItems([newItem, ...items]);
+    addModuleItem("inventoryItems", newItem);
+    toast({ title: "Item Added ✓", description: `${form.name} added to inventory.` });
     setAddOpen(false);
     setForm({ name: "", category: "Furniture", quantity: 1, unit: "pcs", minStock: 1, location: "" });
   };
@@ -443,9 +517,11 @@ export function InventoryModule() {
 // ═══════════════════════════════════════════════════════════════
 export function EventsModule() {
   const [addOpen, setAddOpen] = useState(false);
-  const [events, setEvents] = useState<SchoolEvent[]>(SCHOOL_EVENTS);
+  const { moduleData, addModuleItem } = useAppStore();
+  const events = (moduleData.schoolEvents || []) as SchoolEvent[];
   const [filter, setFilter] = useState<string>("all");
   const [form, setForm] = useState({ title: "", type: "Meeting", date: "", description: "" });
+  const { toast } = useToast();
 
   const typeColors: Record<string, string> = {
     Exam: "bg-red-500", Holiday: "bg-emerald-500", PTM: "bg-blue-500", Sports: "bg-orange-500",
@@ -461,7 +537,10 @@ export function EventsModule() {
   };
 
   const handleAdd = () => {
-    if (!form.title.trim() || !form.date) return;
+    if (!form.title.trim() || !form.date) {
+      toast({ title: "Missing info", description: "Please enter title and date.", variant: "destructive" });
+      return;
+    }
     const newEvent: SchoolEvent = {
       id: `EVT-${String(Date.now()).slice(-6)}`,
       title: form.title,
@@ -470,7 +549,8 @@ export function EventsModule() {
       description: form.description || "—",
       color: typeColors[form.type] || "bg-primary",
     };
-    setEvents([newEvent, ...events]);
+    addModuleItem("schoolEvents", newEvent);
+    toast({ title: "Event Added ✓", description: `${form.title} scheduled for ${form.date}.` });
     setAddOpen(false);
     setForm({ title: "", type: "Meeting", date: "", description: "" });
   };

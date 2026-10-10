@@ -49,9 +49,10 @@ const LEAVE_TYPE_STYLES: Record<string, string> = {
 
 export function LeaveModule() {
   const { toast } = useToast();
+  const { moduleData, addModuleItem, updateModuleItem } = useAppStore();
+  const requests = (moduleData.leaveRequests || []) as LeaveRequest[];
   const [tab, setTab] = useState("requests");
   const [addOpen, setAddOpen] = useState(false);
-  const [requests, setRequests] = useState<LeaveRequest[]>(LEAVE_REQUESTS);
   const [form, setForm] = useState({ employeeId: "", employeeName: "", type: "Casual", fromDate: "", toDate: "", days: 1, reason: "" });
 
   const pending = requests.filter(r => r.status === "Pending").length;
@@ -73,14 +74,15 @@ export function LeaveModule() {
       status: "Pending",
       appliedDate: new Date().toISOString().split("T")[0],
     };
-    setRequests([newReq, ...requests]);
+    addModuleItem("leaveRequests", newReq);
     toast({ title: "Leave Request Submitted ✓", description: `${form.employeeName} — ${form.days} day(s) ${form.type} leave` });
     setAddOpen(false);
     setForm({ employeeId: "", employeeName: "", type: "Casual", fromDate: "", toDate: "", days: 1, reason: "" });
   };
 
   const handleAction = (id: string, action: "Approved" | "Rejected") => {
-    setRequests(requests.map(r => r.id === id ? { ...r, status: action, approvedBy: "Admin", comments: action === "Approved" ? "Approved by Admin" : "Rejected by Admin" } : r));
+    if (action === "Rejected" && !window.confirm("Reject this leave request? This cannot be undone.")) return;
+    updateModuleItem("leaveRequests", id, { status: action, approvedBy: "Admin", comments: action === "Approved" ? "Approved by Admin" : "Rejected by Admin" });
     const req = requests.find(r => r.id === id);
     toast({ title: `Leave ${action} ✓`, description: `${req?.employeeName} — ${action}`, variant: action === "Rejected" ? "destructive" : "default" });
   };
@@ -238,9 +240,9 @@ const CONCESSION_STATUS_STYLES: Record<string, string> = {
 
 export function ConcessionModule() {
   const { toast } = useToast();
-  const { students } = useAppStore();
+  const { students, moduleData, addModuleItem, updateModuleItem } = useAppStore();
+  const concessions = (moduleData.concessions || []) as Concession[];
   const [addOpen, setAddOpen] = useState(false);
-  const [concessions, setConcessions] = useState<Concession[]>(CONCESSIONS);
   const [form, setForm] = useState({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" });
   const [selectedClass, setSelectedClass] = useState("all");
   const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -266,6 +268,10 @@ export function ConcessionModule() {
 
   const handleAdd = () => {
     if (!form.studentName || !form.reason) return;
+    // Look up the student's actual monthly fee for accurate saving calculation
+    const student = students.find(s => s.id === form.studentId);
+    const monthlyFee = student?.monthlyFee || 0;
+    const monthlySaving = form.fixedAmount > 0 ? form.fixedAmount : Math.round((form.percentage / 100) * monthlyFee);
     const newConc: Concession = {
       id: `CON-${String(Date.now()).slice(-6)}`,
       studentId: form.studentId || "—",
@@ -279,16 +285,17 @@ export function ConcessionModule() {
       status: "Active",
       validFrom: form.validFrom || new Date().toISOString().split("T")[0],
       validTo: form.validTo || "2027-03-31",
-      monthlySaving: form.fixedAmount || (form.percentage * 20),
+      monthlySaving,
     };
-    setConcessions([newConc, ...concessions]);
-    toast({ title: "Concession Added ✓", description: `${form.studentName} — ${form.type} (${form.percentage > 0 ? form.percentage + "%" : "Rs. " + form.fixedAmount})` });
+    addModuleItem("concessions", newConc);
+    toast({ title: "Concession Added ✓", description: `${form.studentName} — ${form.type} (${form.percentage > 0 ? form.percentage + "%" : "Rs. " + form.fixedAmount}) • Saves Rs. ${monthlySaving}/month` });
     setAddOpen(false);
     setForm({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" });
   };
 
   const handleRevoke = (id: string) => {
-    setConcessions(concessions.map(c => c.id === id ? { ...c, status: "Revoked" } : c));
+    if (!window.confirm("Revoke this concession? The student's fee will revert to full amount.")) return;
+    updateModuleItem("concessions", id, { status: "Revoked" });
     toast({ title: "Concession Revoked", description: "The concession has been revoked.", variant: "destructive" });
   };
 

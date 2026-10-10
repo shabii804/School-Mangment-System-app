@@ -39,12 +39,12 @@ function gradeFor(pct: number) {
 }
 
 export function ExamModule() {
-  const { classes: storeClasses } = useAppStore();
+  const { classes: storeClasses, moduleData, addModuleItem, deleteModuleItem } = useAppStore();
   const { toast } = useToast();
   const CLASSES = storeClasses;
+  const exams = (moduleData.exams || []) as Exam[];
   const [tab, setTab] = useState("schedule");
   const [addOpen, setAddOpen] = useState(false);
-  const [exams, setExams] = useState(EXAMS);
   const [form, setForm] = useState({ name: "", type: "Monthly", startDate: "", endDate: "", classes: "Grade 6, Grade 7, Grade 8, Grade 9, Grade 10" });
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
 
@@ -64,7 +64,7 @@ export function ExamModule() {
       endDate: form.endDate || form.startDate,
       classes: selectedClasses.length > 0 ? selectedClasses : form.classes.split(",").map(c => c.trim()),
     };
-    setExams([...exams, newExam]);
+    addModuleItem("exams", newExam);
     toast({ title: "Exam Created ✓", description: `${newExam.name} scheduled from ${newExam.startDate}.` });
     setAddOpen(false);
     setForm({ name: "", type: "Monthly", startDate: "", endDate: "", classes: "Grade 6, Grade 7, Grade 8, Grade 9, Grade 10" });
@@ -138,7 +138,7 @@ export function ExamModule() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-0.5">
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label={`Print schedule for ${e.name}`} title="Print Schedule" onClick={() => toast({ title: "Opening exam schedule...", description: e.name })}><Printer className="w-3 h-3" /></Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" aria-label={`Delete exam ${e.name}`} title="Delete Exam" onClick={() => { setExams(exams.filter(x => x.id !== e.id)); toast({ title: "Exam Deleted", description: e.name, variant: "destructive" }); }}><Trash2 className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" aria-label={`Delete exam ${e.name}`} title="Delete Exam" onClick={() => { if (window.confirm(`Delete exam "${e.name}"?`)) { deleteModuleItem("exams", e.id); toast({ title: "Exam Deleted", description: e.name, variant: "destructive" }); } }}><Trash2 className="w-3 h-3" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>

@@ -1,0 +1,543 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useState } from "react";
+     4→     4→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     5→     5→import { Button } from "@/components/ui/button";
+     6→     6→import { Input } from "@/components/ui/input";
+     7→     7→import { Label } from "@/components/ui/label";
+     8→     8→import { Badge } from "@/components/ui/badge";
+     9→     9→import {
+    10→    10→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    11→    11→} from "@/components/ui/table";
+    12→    12→import {
+    13→    13→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    14→    14→} from "@/components/ui/dialog";
+    15→    15→import {
+    16→    16→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    17→    17→} from "@/components/ui/select";
+    18→    18→import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+    19→    19→import {
+    20→    20→  Plus, CheckCircle, XCircle, Clock, Calendar, TrendingUp, Users,
+    21→    21→  Wallet, Award, Percent, Gift, Shield, ArrowRight,
+    22→    22→} from "lucide-react";
+    23→    23→import {
+    24→    24→  LEAVE_REQUESTS, LEAVE_BALANCES, CONCESSIONS, ACADEMIC_SESSIONS,
+    25→    25→  type LeaveRequest, type LeaveBalance, type Concession, type AcademicSession,
+    26→    26→} from "@/lib/sms-data";
+    27→    27→import { useAppStore } from "@/lib/sms-store";
+    28→    28→import { useToast } from "@/hooks/use-toast";
+    29→    29→import { cn } from "@/lib/utils";
+    30→    30→
+    31→    31→// ═══════════════════════════════════════════════════════════════
+    32→    32→// STAFF LEAVE MANAGEMENT MODULE
+    33→    33→// ═══════════════════════════════════════════════════════════════
+    34→    34→const LEAVE_STATUS_STYLES: Record<string, string> = {
+    35→    35→  Pending: "bg-yellow-500/10 text-yellow-600",
+    36→    36→  Approved: "bg-emerald-500/10 text-emerald-600",
+    37→    37→  Rejected: "bg-red-500/10 text-red-600",
+    38→    38→  Cancelled: "bg-muted text-muted-foreground",
+    39→    39→};
+    40→    40→
+    41→    41→const LEAVE_TYPE_STYLES: Record<string, string> = {
+    42→    42→  Casual: "bg-blue-500/10 text-blue-600",
+    43→    43→  Sick: "bg-red-500/10 text-red-600",
+    44→    44→  Earned: "bg-primary/10 text-primary",
+    45→    45→  Maternity: "bg-pink-500/10 text-pink-600",
+    46→    46→  "Without Pay": "bg-orange-500/10 text-orange-600",
+    47→    47→  Emergency: "bg-purple-500/10 text-purple-600",
+    48→    48→};
+    49→    49→
+    50→    50→export function LeaveModule() {
+    51→    51→  const { toast } = useToast();
+    52→    52→  const [tab, setTab] = useState("requests");
+    53→    53→  const [addOpen, setAddOpen] = useState(false);
+    54→    54→  const [requests, setRequests] = useState<LeaveRequest[]>(LEAVE_REQUESTS);
+    55→    55→  const [form, setForm] = useState({ employeeId: "", employeeName: "", type: "Casual", fromDate: "", toDate: "", days: 1, reason: "" });
+    56→    56→
+    57→    57→  const pending = requests.filter(r => r.status === "Pending").length;
+    58→    58→  const approved = requests.filter(r => r.status === "Approved").length;
+    59→    59→  const rejected = requests.filter(r => r.status === "Rejected").length;
+    60→    60→  const totalDays = requests.filter(r => r.status === "Approved").reduce((s, r) => s + r.days, 0);
+    61→    61→
+    62→    62→  const handleAdd = () => {
+    63→    63→    if (!form.employeeName || !form.fromDate) return;
+    64→    64→    const newReq: LeaveRequest = {
+    65→    65→      id: `LV-${String(Date.now()).slice(-6)}`,
+    66→    66→      employeeId: form.employeeId || "—",
+    67→    67→      employeeName: form.employeeName,
+    68→    68→      type: form.type as any,
+    69→    69→      fromDate: form.fromDate,
+    70→    70→      toDate: form.toDate || form.fromDate,
+    71→    71→      days: form.days,
+    72→    72→      reason: form.reason,
+    73→    73→      status: "Pending",
+    74→    74→      appliedDate: new Date().toISOString().split("T")[0],
+    75→    75→    };
+    76→    76→    setRequests([newReq, ...requests]);
+    77→    77→    toast({ title: "Leave Request Submitted ✓", description: `${form.employeeName} — ${form.days} day(s) ${form.type} leave` });
+    78→    78→    setAddOpen(false);
+    79→    79→    setForm({ employeeId: "", employeeName: "", type: "Casual", fromDate: "", toDate: "", days: 1, reason: "" });
+    80→    80→  };
+    81→    81→
+    82→    82→  const handleAction = (id: string, action: "Approved" | "Rejected") => {
+    83→    83→    setRequests(requests.map(r => r.id === id ? { ...r, status: action, approvedBy: "Admin", comments: action === "Approved" ? "Approved by Admin" : "Rejected by Admin" } : r));
+    84→    84→    const req = requests.find(r => r.id === id);
+    85→    85→    toast({ title: `Leave ${action} ✓`, description: `${req?.employeeName} — ${action}`, variant: action === "Rejected" ? "destructive" : "default" });
+    86→    86→  };
+    87→    87→
+    88→    88→  return (
+    89→    89→    <div className="space-y-3 fade-in">
+    90→    90→      <div className="flex justify-between items-center flex-wrap gap-3">
+    91→    91→        <p className="text-sm text-muted-foreground">Manage staff leave requests, balances, and approvals.</p>
+    92→    92→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Apply Leave</Button>
+    93→    93→      </div>
+    94→    94→
+    95→    95→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    96→    96→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-yellow-500/10 p-1.5"><Clock className="w-4 h-4 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold">{pending}</p></div></CardContent></Card>
+    97→    97→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Approved</p><p className="text-xl font-bold">{approved}</p></div></CardContent></Card>
+    98→    98→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><XCircle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Rejected</p><p className="text-xl font-bold">{rejected}</p></div></CardContent></Card>
+    99→    99→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Calendar className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Leave Days</p><p className="text-xl font-bold">{totalDays}</p></div></CardContent></Card>
+   100→   100→      </div>
+   101→   101→
+   102→   102→      <Tabs value={tab} onValueChange={setTab}>
+   103→   103→        <TabsList className="grid w-full max-w-md grid-cols-2">
+   104→   104→          <TabsTrigger value="requests">Leave Requests</TabsTrigger>
+   105→   105→          <TabsTrigger value="balances">Leave Balances</TabsTrigger>
+   106→   106→        </TabsList>
+   107→   107→
+   108→   108→        {/* Leave Requests */}
+   109→   109→        <TabsContent value="requests" className="space-y-3">
+   110→   110→          <div className="space-y-2">
+   111→   111→            {requests.map(req => (
+   112→   112→              <Card key={req.id} className="border-0 shadow-sm glass-card card-hover">
+   113→   113→                <CardContent className="p-4">
+   114→   114→                  <div className="flex items-start gap-4">
+   115→   115→                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+   116→   116→                      req.status === "Approved" ? "bg-emerald-500/15" : req.status === "Rejected" ? "bg-red-500/15" : "bg-yellow-500/15")}>
+   117→   117→                      {req.status === "Approved" ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : req.status === "Rejected" ? <XCircle className="w-4 h-4 text-red-600" /> : <Clock className="w-4 h-4 text-yellow-600" />}
+   118→   118→                    </div>
+   119→   119→                    <div className="flex-1 min-w-0">
+   120→   120→                      <div className="flex items-center gap-2 flex-wrap">
+   121→   121→                        <p className="font-semibold text-sm">{req.employeeName}</p>
+   122→   122→                        <Badge variant="outline" className={cn("text-[9px] border-0", LEAVE_TYPE_STYLES[req.type])}>{req.type}</Badge>
+   123→   123→                        <Badge variant="outline" className={cn("text-[9px] border-0", LEAVE_STATUS_STYLES[req.status])}>{req.status}</Badge>
+   124→   124→                      </div>
+   125→   125→                      <p className="text-sm text-muted-foreground mt-1">{req.reason}</p>
+   126→   126→                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+   127→   127→                        <span>📅 {req.fromDate} → {req.toDate}</span>
+   128→   128→                        <span>⏱️ {req.days} day(s)</span>
+   129→   129→                        <span>👤 Applied: {req.appliedDate}</span>
+   130→   130→                        {req.approvedBy && <span>✓ By: {req.approvedBy}</span>}
+   131→   131→                      </div>
+   132→   132→                      {req.comments && <p className="text-xs text-muted-foreground mt-1 italic">💬 {req.comments}</p>}
+   133→   133→                    </div>
+   134→   134→                    {req.status === "Pending" && (
+   135→   135→                      <div className="flex gap-1.5 shrink-0">
+   136→   136→                        <Button size="sm" className="h-7 bg-emerald-600 hover:bg-emerald-700 text-xs" onClick={() => handleAction(req.id, "Approved")}><CheckCircle className="w-3 h-3 mr-1" />Approve</Button>
+   137→   137→                        <Button size="sm" variant="outline" className="h-7 text-red-600 text-xs" onClick={() => handleAction(req.id, "Rejected")}><XCircle className="w-3 h-3 mr-1" />Reject</Button>
+   138→   138→                      </div>
+   139→   139→                    )}
+   140→   140→                  </div>
+   141→   141→                </CardContent>
+   142→   142→              </Card>
+   143→   143→            ))}
+   144→   144→          </div>
+   145→   145→        </TabsContent>
+   146→   146→
+   147→   147→        {/* Leave Balances */}
+   148→   148→        <TabsContent value="balances">
+   149→   149→          <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   150→   150→            <div className="overflow-x-auto">
+   151→   151→              <Table>
+   152→   152→                <TableHeader><TableRow className="border-border/40">
+   153→   153→                  <TableHead>Employee</TableHead>
+   154→   154→                  <TableHead className="text-center">Casual (10)</TableHead>
+   155→   155→                  <TableHead className="text-center">Sick (15)</TableHead>
+   156→   156→                  <TableHead className="text-center">Earned (20)</TableHead>
+   157→   157→                  <TableHead className="text-center">Total Used</TableHead>
+   158→   158→                </TableRow></TableHeader>
+   159→   159→                <TableBody>
+   160→   160→                  {LEAVE_BALANCES.map(b => {
+   161→   161→                    const totalUsed = b.casual.used + b.sick.used + b.earned.used;
+   162→   162→                    return (
+   163→   163→                      <TableRow key={b.employeeId} className="border-border/30 hover:bg-muted/30">
+   164→   164→                        <TableCell className="font-medium text-sm">{b.employeeName}<p className="text-[10px] text-muted-foreground">{b.employeeId}</p></TableCell>
+   165→   165→                        <TableCell className="text-center">
+   166→   166→                          <div className="flex items-center justify-center gap-1.5">
+   167→   167→                            <span className={cn("font-bold text-sm", b.casual.remaining < 3 && "text-red-600")}>{b.casual.remaining}</span>
+   168→   168→                            <span className="text-[10px] text-muted-foreground">({b.casual.used} used)</span>
+   169→   169→                          </div>
+   170→   170→                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-blue-500" style={{ width: `${b.casual.total > 0 ? (b.casual.used / b.casual.total) * 100 : 0}%` }} /></div>
+   171→   171→                        </TableCell>
+   172→   172→                        <TableCell className="text-center">
+   173→   173→                          <div className="flex items-center justify-center gap-1.5">
+   174→   174→                            <span className={cn("font-bold text-sm", b.sick.remaining < 3 && "text-red-600")}>{b.sick.remaining}</span>
+   175→   175→                            <span className="text-[10px] text-muted-foreground">({b.sick.used} used)</span>
+   176→   176→                          </div>
+   177→   177→                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-red-500" style={{ width: `${b.sick.total > 0 ? (b.sick.used / b.sick.total) * 100 : 0}%` }} /></div>
+   178→   178→                        </TableCell>
+   179→   179→                        <TableCell className="text-center">
+   180→   180→                          <div className="flex items-center justify-center gap-1.5">
+   181→   181→                            <span className={cn("font-bold text-sm", b.earned.remaining < 3 && "text-red-600")}>{b.earned.remaining}</span>
+   182→   182→                            <span className="text-[10px] text-muted-foreground">({b.earned.used} used)</span>
+   183→   183→                          </div>
+   184→   184→                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-primary" style={{ width: `${b.earned.total > 0 ? (b.earned.used / b.earned.total) * 100 : 0}%` }} /></div>
+   185→   185→                        </TableCell>
+   186→   186→                        <TableCell className="text-center"><span className="font-bold text-sm">{totalUsed}</span><span className="text-[10px] text-muted-foreground">/45</span></TableCell>
+   187→   187→                      </TableRow>
+   188→   188→                    );
+   189→   189→                  })}
+   190→   190→                </TableBody>
+   191→   191→              </Table>
+   192→   192→            </div>
+   193→   193→          </Card>
+   194→   194→        </TabsContent>
+   195→   195→      </Tabs>
+   196→   196→
+   197→   197→      {/* Apply Leave Dialog */}
+   198→   198→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   199→   199→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   200→   200→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Apply for Leave</DialogTitle></DialogHeader>
+   201→   201→          <div className="space-y-2 py-1">
+   202→   202→            <div className="grid grid-cols-2 gap-3">
+   203→   203→              <div><Label>Employee Name *</Label><Input value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} /></div>
+   204→   204→              <div><Label>Employee ID</Label><Input value={form.employeeId} onChange={e => setForm({...form, employeeId: e.target.value})} placeholder="T-001" /></div>
+   205→   205→            </div>
+   206→   206→            <div className="grid grid-cols-2 gap-3">
+   207→   207→              <div><Label>Leave Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Casual", "Sick", "Earned", "Maternity", "Without Pay", "Emergency"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+   208→   208→              <div><Label>Days</Label><Input type="number" value={form.days} onChange={e => setForm({...form, days: Number(e.target.value)})} min={1} /></div>
+   209→   209→            </div>
+   210→   210→            <div className="grid grid-cols-2 gap-3">
+   211→   211→              <div><Label>From Date *</Label><Input type="date" value={form.fromDate} onChange={e => setForm({...form, fromDate: e.target.value})} /></div>
+   212→   212→              <div><Label>To Date</Label><Input type="date" value={form.toDate} onChange={e => setForm({...form, toDate: e.target.value})} /></div>
+   213→   213→            </div>
+   214→   214→            <div><Label>Reason</Label><Input value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="Brief reason for leave" /></div>
+   215→   215→          </div>
+   216→   216→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.employeeName || !form.fromDate}>Submit Request</Button></DialogFooter>
+   217→   217→        </DialogContent>
+   218→   218→      </Dialog>
+   219→   219→    </div>
+   220→   220→  );
+   221→   221→}
+   222→   222→
+   223→   223→// ═══════════════════════════════════════════════════════════════
+   224→   224→// FEE CONCESSION / SCHOLARSHIP MODULE
+   225→   225→// ═══════════════════════════════════════════════════════════════
+   226→   226→const CONCESSION_TYPE_ICONS: Record<string, any> = {
+   227→   227→  "Sibling Discount": Users, "Staff Child": Shield, "Merit Scholarship": Award,
+   228→   228→  "Financial Aid": Gift, "Early Payment": Percent, "Full Scholarship": Award, "Custom": Wallet,
+   229→   229→};
+   230→   230→const CONCESSION_TYPE_COLORS: Record<string, string> = {
+   231→   231→  "Sibling Discount": "bg-blue-500/10 text-blue-600", "Staff Child": "bg-purple-500/10 text-purple-600",
+   232→   232→  "Merit Scholarship": "bg-emerald-500/10 text-emerald-600", "Financial Aid": "bg-accent/10 text-accent",
+   233→   233→  "Early Payment": "bg-yellow-500/10 text-yellow-600", "Full Scholarship": "bg-primary/10 text-primary", "Custom": "bg-muted text-muted-foreground",
+   234→   234→};
+   235→   235→const CONCESSION_STATUS_STYLES: Record<string, string> = {
+   236→   236→  Active: "bg-emerald-500/10 text-emerald-600", Expired: "bg-muted text-muted-foreground", Revoked: "bg-red-500/10 text-red-600",
+   237→   237→};
+   238→   238→
+   239→   239→export function ConcessionModule() {
+   240→   240→  const { toast } = useToast();
+   241→   241→  const { students } = useAppStore();
+   242→   242→  const [addOpen, setAddOpen] = useState(false);
+   243→   243→  const [concessions, setConcessions] = useState<Concession[]>(CONCESSIONS);
+   244→   244→  const [form, setForm] = useState({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" });
+   245→   245→  const [selectedClass, setSelectedClass] = useState("all");
+   246→   246→  const [selectedStudentId, setSelectedStudentId] = useState("");
+   247→   247→
+   248→   248→  // Filter students by selected class
+   249→   249→  const classOptions = Array.from(new Set(students.filter(s => s.status === "Active").map(s => s.class))).sort();
+   250→   250→  const studentOptions = selectedClass === "all"
+   251→   251→    ? students.filter(s => s.status === "Active")
+   252→   252→    : students.filter(s => s.status === "Active" && s.class === selectedClass);
+   253→   253→
+   254→   254→  const handleStudentSelect = (id: string) => {
+   255→   255→    setSelectedStudentId(id);
+   256→   256→    const student = students.find(s => s.id === id);
+   257→   257→    if (student) {
+   258→   258→      setForm({ ...form, studentId: student.id, studentName: student.name, class: `${student.class}-${student.section}` });
+   259→   259→    }
+   260→   260→  };
+   261→   261→
+   262→   262→  const activeCount = concessions.filter(c => c.status === "Active").length;
+   263→   263→  const expiredCount = concessions.filter(c => c.status === "Expired").length;
+   264→   264→  const totalMonthlySaving = concessions.filter(c => c.status === "Active").reduce((s, c) => s + c.monthlySaving, 0);
+   265→   265→  const totalStudents = new Set(concessions.filter(c => c.status === "Active").map(c => c.studentId)).size;
+   266→   266→
+   267→   267→  const handleAdd = () => {
+   268→   268→    if (!form.studentName || !form.reason) return;
+   269→   269→    const newConc: Concession = {
+   270→   270→      id: `CON-${String(Date.now()).slice(-6)}`,
+   271→   271→      studentId: form.studentId || "—",
+   272→   272→      studentName: form.studentName,
+   273→   273→      class: form.class || "—",
+   274→   274→      type: form.type as any,
+   275→   275→      percentage: form.percentage,
+   276→   276→      fixedAmount: form.fixedAmount,
+   277→   277→      reason: form.reason,
+   278→   278→      approvedBy: "Admin",
+   279→   279→      status: "Active",
+   280→   280→      validFrom: form.validFrom || new Date().toISOString().split("T")[0],
+   281→   281→      validTo: form.validTo || "2027-03-31",
+   282→   282→      monthlySaving: form.fixedAmount || (form.percentage * 20),
+   283→   283→    };
+   284→   284→    setConcessions([newConc, ...concessions]);
+   285→   285→    toast({ title: "Concession Added ✓", description: `${form.studentName} — ${form.type} (${form.percentage > 0 ? form.percentage + "%" : "Rs. " + form.fixedAmount})` });
+   286→   286→    setAddOpen(false);
+   287→   287→    setForm({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" });
+   288→   288→  };
+   289→   289→
+   290→   290→  const handleRevoke = (id: string) => {
+   291→   291→    setConcessions(concessions.map(c => c.id === id ? { ...c, status: "Revoked" } : c));
+   292→   292→    toast({ title: "Concession Revoked", description: "The concession has been revoked.", variant: "destructive" });
+   293→   293→  };
+   294→   294→
+   295→   295→  return (
+   296→   296→    <div className="space-y-3 fade-in">
+   297→   297→      <div className="flex justify-between items-center flex-wrap gap-3">
+   298→   298→        <p className="text-sm text-muted-foreground">Manage fee discounts, scholarships, and financial aid for students.</p>
+   299→   299→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Concession</Button>
+   300→   300→      </div>
+   301→   301→
+   302→   302→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   303→   303→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Active Concessions</p><p className="text-xl font-bold">{activeCount}</p></div></CardContent></Card>
+   304→   304→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Students Benefited</p><p className="text-xl font-bold">{totalStudents}</p></div></CardContent></Card>
+   305→   305→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><Wallet className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Monthly Saving</p><p className="text-lg font-bold">Rs. {totalMonthlySaving.toLocaleString()}</p></div></CardContent></Card>
+   306→   306→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-muted p-2"><Clock className="w-4 h-4 text-muted-foreground" /></div><div><p className="text-xs text-muted-foreground">Expired</p><p className="text-xl font-bold">{expiredCount}</p></div></CardContent></Card>
+   307→   307→      </div>
+   308→   308→
+   309→   309→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   310→   310→        {concessions.map(c => {
+   311→   311→          const Icon = CONCESSION_TYPE_ICONS[c.type] || Gift;
+   312→   312→          return (
+   313→   313→            <Card key={c.id} className={cn("border-0 shadow-sm glass-card card-hover", c.status === "Revoked" && "opacity-60", c.status === "Expired" && "opacity-70")}>
+   314→   314→              <CardContent className="p-4">
+   315→   315→                <div className="flex items-start justify-between">
+   316→   316→                  <div className="flex items-center gap-3">
+   317→   317→                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", CONCESSION_TYPE_COLORS[c.type])}>
+   318→   318→                      <Icon className="w-5 h-5" />
+   319→   319→                    </div>
+   320→   320→                    <div>
+   321→   321→                      <p className="font-semibold text-sm">{c.studentName}</p>
+   322→   322→                      <p className="text-[10px] text-muted-foreground">{c.class} • {c.studentId}</p>
+   323→   323→                    </div>
+   324→   324→                  </div>
+   325→   325→                  <Badge variant="outline" className={cn("text-[9px] border-0", CONCESSION_STATUS_STYLES[c.status])}>{c.status}</Badge>
+   326→   326→                </div>
+   327→   327→                <div className="mt-3 flex items-center gap-2">
+   328→   328→                  <Badge variant="outline" className={cn("text-xs border-0", CONCESSION_TYPE_COLORS[c.type])}>{c.type}</Badge>
+   329→   329→                  {c.percentage > 0 && <Badge className="text-xs bg-primary/10 text-primary border-0">{c.percentage}% off</Badge>}
+   330→   330→                  {c.fixedAmount > 0 && <Badge className="text-xs bg-accent/10 text-accent border-0">Rs. {c.fixedAmount} off</Badge>}
+   331→   331→                </div>
+   332→   332→                <p className="text-xs text-muted-foreground mt-2">{c.reason}</p>
+   333→   333→                <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+   334→   334→                  <span>📅 {c.validFrom} → {c.validTo}</span>
+   335→   335→                  <span>👤 {c.approvedBy}</span>
+   336→   336→                </div>
+   337→   337→                <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+   338→   338→                  <div>
+   339→   339→                    <p className="text-[10px] text-muted-foreground uppercase">Monthly Saving</p>
+   340→   340→                    <p className="font-bold text-sm text-emerald-600">Rs. {c.monthlySaving.toLocaleString()}</p>
+   341→   341→                  </div>
+   342→   342→                  {c.status === "Active" && (
+   343→   343→                    <Button size="sm" variant="outline" className="h-7 text-xs text-red-600" onClick={() => handleRevoke(c.id)}>Revoke</Button>
+   344→   344→                  )}
+   345→   345→                </div>
+   346→   346→              </CardContent>
+   347→   347→            </Card>
+   348→   348→          );
+   349→   349→        })}
+   350→   350→      </div>
+   351→   351→
+   352→   352→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   353→   353→        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+   354→   354→          {/* Gradient hero header */}
+   355→   355→          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-accent via-accent to-primary/70 px-5 py-4 text-accent-foreground">
+   356→   356→            <div className="absolute inset-0 opacity-10 pattern-grid" />
+   357→   357→            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+   358→   358→            <div className="relative flex items-center gap-4">
+   359→   359→              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+   360→   360→                <Percent className="w-6 h-6" />
+   361→   361→              </div>
+   362→   362→              <div className="flex-1">
+   363→   363→                <h2 className="text-xl font-bold tracking-tight">Add Fee Concession</h2>
+   364→   364→                <p className="text-xs text-white/75 mt-0.5">Apply a discount or scholarship to a student's tuition fee.</p>
+   365→   365→              </div>
+   366→   366→              <div className="hidden md:flex flex-col items-end text-right">
+   367→   367→                <span className="text-[10px] uppercase tracking-wider text-white/60">Active Concessions</span>
+   368→   368→                <span className="text-sm font-semibold mt-0.5">{concessions.filter(c => c.status === "Active").length}</span>
+   369→   369→              </div>
+   370→   370→            </div>
+   371→   371→          </div>
+   372→   372→
+   373→   373→          {/* Form body */}
+   374→   374→          <div className="px-5 py-4 space-y-3">
+   375→   375→            {/* ─── Section 1: Student Selection ─── */}
+   376→   376→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   377→   377→              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   378→   378→                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   379→   379→                  <Users className="w-3.5 h-3.5 text-primary" />
+   380→   380→                </div>
+   381→   381→                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Student Selection</p>
+   382→   382→                <span className="ml-auto text-[10px] text-muted-foreground">Pick class then student</span>
+   383→   383→              </div>
+   384→   384→              <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+   385→   385→                <div className="space-y-1">
+   386→   386→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class</Label>
+   387→   387→                  <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); setForm({...form, studentId: "", studentName: "", class: ""}); }}>
+   388→   388→                    <SelectTrigger className="h-9"><SelectValue placeholder="All Classes" /></SelectTrigger>
+   389→   389→                    <SelectContent>
+   390→   390→                      <SelectItem value="all">All Classes</SelectItem>
+   391→   391→                      {classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+   392→   392→                    </SelectContent>
+   393→   393→                  </Select>
+   394→   394→                </div>
+   395→   395→                <div className="space-y-1">
+   396→   396→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Student <span className="text-red-500">*</span></Label>
+   397→   397→                  <Select value={selectedStudentId} onValueChange={handleStudentSelect}>
+   398→   398→                    <SelectTrigger className="h-9"><SelectValue placeholder="Choose student..." /></SelectTrigger>
+   399→   399→                    <SelectContent className="max-h-60">
+   400→   400→                      {studentOptions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} • {s.class}-{s.section} • Roll #{s.rollNo}</SelectItem>)}
+   401→   401→                    </SelectContent>
+   402→   402→                  </Select>
+   403→   403→                </div>
+   404→   404→              </div>
+   405→   405→              {/* Auto-filled student info */}
+   406→   406→              {form.studentName && (
+   407→   407→                <div className="mx-3 mb-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-2.5">
+   408→   408→                  <div className="flex items-center gap-2 mb-1.5">
+   409→   409→                    <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+   410→   410→                      <Users className="w-3.5 h-3.5 text-primary" />
+   411→   411→                    </div>
+   412→   412→                    <p className="text-xs font-semibold text-primary">{form.studentName}</p>
+   413→   413→                  </div>
+   414→   414→                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] pl-9">
+   415→   415→                    <div><span className="text-muted-foreground">ID:</span> <span className="font-mono font-medium text-foreground">{form.studentId}</span></div>
+   416→   416→                    <div><span className="text-muted-foreground">Class:</span> <span className="font-medium text-foreground">{form.class}</span></div>
+   417→   417→                  </div>
+   418→   418→                </div>
+   419→   419→              )}
+   420→   420→            </div>
+   421→   421→
+   422→   422→            {/* ─── Section 2: Concession Type ─── */}
+   423→   423→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   424→   424→              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+   425→   425→                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+   426→   426→                  <Gift className="w-3.5 h-3.5 text-accent" />
+   427→   427→                </div>
+   428→   428→                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Concession Type</p>
+   429→   429→                <span className="ml-auto text-[10px] text-muted-foreground">Choose discount category</span>
+   430→   430→              </div>
+   431→   431→              <div className="p-3 space-y-2">
+   432→   432→                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Type</Label>
+   433→   433→                <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
+   434→   434→                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   435→   435→                  <SelectContent>
+   436→   436→                    {["Sibling Discount", "Staff Child", "Merit Scholarship", "Financial Aid", "Early Payment", "Full Scholarship", "Custom"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+   437→   437→                  </SelectContent>
+   438→   438→                </Select>
+   439→   439→              </div>
+   440→   440→            </div>
+   441→   441→
+   442→   442→            {/* ─── Section 3: Discount Value ─── */}
+   443→   443→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   444→   444→              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+   445→   445→                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+   446→   446→                  <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+   447→   447→                </div>
+   448→   448→                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Discount Value</p>
+   449→   449→                <span className="ml-auto text-[10px] text-muted-foreground">Percentage OR fixed</span>
+   450→   450→              </div>
+   451→   451→              <div className="p-3 grid grid-cols-2 gap-2.5">
+   452→   452→                <div className="space-y-1">
+   453→   453→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Percentage (%)</Label>
+   454→   454→                  <div className="relative">
+   455→   455→                    <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+   456→   456→                    <Input type="number" value={form.percentage} onChange={e => setForm({...form, percentage: Number(e.target.value)})} min={0} max={100} placeholder="0-100" className="h-9 pl-8" />
+   457→   457→                  </div>
+   458→   458→                  {/* Quick percentage buttons */}
+   459→   459→                  <div className="flex flex-wrap gap-1 mt-1">
+   460→   460→                    {[10, 25, 50, 75, 100].map(p => (
+   461→   461→                      <button
+   462→   462→                        key={p}
+   463→   463→                        type="button"
+   464→   464→                        onClick={() => setForm({...form, percentage: p, fixedAmount: 0})}
+   465→   465→                        className={cn(
+   466→   466→                          "px-1.5 py-0.5 text-[9px] rounded border transition-colors font-medium",
+   467→   467→                          form.percentage === p && form.fixedAmount === 0
+   468→   468→                            ? "border-emerald-500 bg-emerald-500/15 text-emerald-700"
+   469→   469→                            : "border-border/40 bg-background hover:bg-emerald-500/5"
+   470→   470→                        )}
+   471→   471→                      >
+   472→   472→                        {p}%
+   473→   473→                      </button>
+   474→   474→                    ))}
+   475→   475→                  </div>
+   476→   476→                </div>
+   477→   477→                <div className="space-y-1">
+   478→   478→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Fixed Amount (Rs.)</Label>
+   479→   479→                  <div className="relative">
+   480→   480→                    <Wallet className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+   481→   481→                    <Input type="number" value={form.fixedAmount} onChange={e => setForm({...form, fixedAmount: Number(e.target.value)})} min={0} placeholder="0" className="h-9 pl-8" />
+   482→   482→                  </div>
+   483→   483→                  <p className="text-[9px] text-muted-foreground">Use either % or fixed</p>
+   484→   484→                </div>
+   485→   485→              </div>
+   486→   486→            </div>
+   487→   487→
+   488→   488→            {/* ─── Section 4: Reason & Validity ─── */}
+   489→   489→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   490→   490→              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/5 border-b border-purple-500/15">
+   491→   491→                <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
+   492→   492→                  <Shield className="w-3.5 h-3.5 text-purple-600" />
+   493→   493→                </div>
+   494→   494→                <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Reason & Validity</p>
+   495→   495→                <span className="ml-auto text-[10px] text-muted-foreground">Justification & dates</span>
+   496→   496→              </div>
+   497→   497→              <div className="p-3 space-y-2.5">
+   498→   498→                <div className="space-y-1">
+   499→   499→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reason <span className="text-red-500">*</span></Label>
+   500→   500→                  <Input value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="e.g., 2 siblings in same school" className="h-9" />
+   501→   501→                </div>
+   502→   502→                <div className="grid grid-cols-2 gap-2.5">
+   503→   503→                  <div className="space-y-1">
+   504→   504→                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Valid From</Label>
+   505→   505→                    <Input type="date" value={form.validFrom} onChange={e => setForm({...form, validFrom: e.target.value})} className="h-9" />
+   506→   506→                  </div>
+   507→   507→                  <div className="space-y-1">
+   508→   508→                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Valid To</Label>
+   509→   509→                    <Input type="date" value={form.validTo} onChange={e => setForm({...form, validTo: e.target.value})} className="h-9" />
+   510→   510→                  </div>
+   511→   511→                </div>
+   512→   512→              </div>
+   513→   513→            </div>
+   514→   514→
+   515→   515→            {/* Auto-generated info */}
+   516→   516→            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+   517→   517→              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+   518→   518→                <Percent className="w-3 h-3 text-primary" />
+   519→   519→              </div>
+   520→   520→              <p className="text-[10px] text-muted-foreground leading-relaxed">
+   521→   521→                <span className="font-semibold text-primary">How it works:</span> Use either percentage (applied to monthly tuition) OR a fixed amount (Rs.). The concession will be auto-applied to the next fee collection for this student.
+   522→   522→              </p>
+   523→   523→            </div>
+   524→   524→          </div>
+   525→   525→
+   526→   526→          {/* Sticky footer */}
+   527→   527→          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+   528→   528→            <p className="text-[10px] text-muted-foreground">
+   529→   529→              <span className="text-red-500">*</span> Required fields
+   530→   530→            </p>
+   531→   531→            <div className="flex gap-2">
+   532→   532→              <Button variant="outline" onClick={() => { setAddOpen(false); setSelectedClass("all"); setSelectedStudentId(""); }} className="h-9">Cancel</Button>
+   533→   533→              <Button className="bg-accent hover:bg-accent/90 h-9 px-5 shadow-md" onClick={handleAdd} disabled={!form.studentName || !form.reason}>
+   534→   534→                <Plus className="w-4 h-4 mr-1.5" />Add Concession
+   535→   535→              </Button>
+   536→   536→            </div>
+   537→   537→          </div>
+   538→   538→        </DialogContent>
+   539→   539→      </Dialog>
+   540→   540→    </div>
+   541→   541→  );
+   542→   542→}
+   543→   543→

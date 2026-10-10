@@ -1,0 +1,398 @@
+     1→"use client";
+     2→
+     3→import { useState } from "react";
+     4→import { useAppStore } from "@/lib/sms-store";
+     5→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { Input } from "@/components/ui/input";
+     8→import { Label } from "@/components/ui/label";
+     9→import { Badge } from "@/components/ui/badge";
+    10→import {
+    11→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    12→} from "@/components/ui/table";
+    13→import {
+    14→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    15→} from "@/components/ui/dialog";
+    16→import {
+    17→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    18→} from "@/components/ui/select";
+    19→import {
+    20→  Plus, AlertTriangle, Shield, CheckCircle, Bell, Phone, Mail,
+    21→  Users, TrendingUp, GraduationCap, Award, Briefcase, Search,
+    22→  Calendar, User, Zap,
+    23→} from "lucide-react";
+    24→import { INCIDENTS, ALUMNI, type Incident, type Alumnus } from "@/lib/sms-data";
+    25→import { useToast } from "@/hooks/use-toast";
+    26→import { cn } from "@/lib/utils";
+    27→
+    28→// ═══════════════════════════════════════════════════════════════
+    29→// DISCIPLINE MODULE
+    30→// ═══════════════════════════════════════════════════════════════
+    31→const SEVERITY_STYLES: Record<string, string> = {
+    32→  Low: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
+    33→  Medium: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+    34→  High: "bg-red-500/10 text-red-600 border-red-500/20",
+    35→};
+    36→
+    37→const STATUS_STYLES: Record<string, string> = {
+    38→  Open: "bg-red-500/10 text-red-600",
+    39→  Resolved: "bg-emerald-500/10 text-emerald-600",
+    40→  Escalated: "bg-purple-500/10 text-purple-600",
+    41→};
+    42→
+    43→const INCIDENT_TYPES = ["Late Arrival", "Absence", "Misbehavior", "Bullying", "Academic", "Uniform Violation", "Other"];
+    44→
+    45→export function DisciplineModule() {
+    46→  const [addOpen, setAddOpen] = useState(false);
+    47→  const [incidents, setIncidents] = useState<Incident[]>(INCIDENTS);
+    48→  const [filter, setFilter] = useState<string>("all");
+    49→  const [form, setForm] = useState({ studentId: "", studentName: "", class: "", type: "Late Arrival", severity: "Low", description: "", action: "", reportedBy: "" });
+    50→
+    51→  const filtered = filter === "all" ? incidents : incidents.filter(i => i.status === filter);
+    52→  const openCount = incidents.filter(i => i.status === "Open").length;
+    53→  const escalatedCount = incidents.filter(i => i.status === "Escalated").length;
+    54→  const resolvedCount = incidents.filter(i => i.status === "Resolved").length;
+    55→  const highSeverity = incidents.filter(i => i.severity === "High").length;
+    56→
+    57→  const handleAdd = () => {
+    58→    if (!form.studentName || !form.description) return;
+    59→    const newIncident: Incident = {
+    60→      id: `INC-${String(Date.now()).slice(-6)}`,
+    61→      studentId: form.studentId || "—",
+    62→      studentName: form.studentName,
+    63→      class: form.class || "—",
+    64→      date: new Date().toISOString().split("T")[0],
+    65→      type: form.type as any,
+    66→      severity: form.severity as any,
+    67→      description: form.description,
+    68→      action: form.action || "Pending review",
+    69→      reportedBy: form.reportedBy || "Admin",
+    70→      status: "Open",
+    71→      parentNotified: false,
+    72→    };
+    73→    setIncidents([newIncident, ...incidents]);
+    74→    setAddOpen(false);
+    75→    setForm({ studentId: "", studentName: "", class: "", type: "Late Arrival", severity: "Low", description: "", action: "", reportedBy: "" });
+    76→  };
+    77→
+    78→  return (
+    79→    <div className="space-y-3 fade-in">
+    80→      <div className="flex justify-between items-center flex-wrap gap-3">
+    81→        <p className="text-sm text-muted-foreground">Track behavioral incidents, warnings, and parent notifications.</p>
+    82→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Log Incident</Button>
+    83→      </div>
+    84→
+    85→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    86→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Open Cases</p><p className="text-xl font-bold">{openCount}</p></div></CardContent></Card>
+    87→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><Shield className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Escalated</p><p className="text-xl font-bold">{escalatedCount}</p></div></CardContent></Card>
+    88→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Resolved</p><p className="text-xl font-bold">{resolvedCount}</p></div></CardContent></Card>
+    89→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-orange-500/10 p-1.5"><AlertTriangle className="w-5 h-5 text-orange-600" /></div><div><p className="text-xs text-muted-foreground">High Severity</p><p className="text-xl font-bold">{highSeverity}</p></div></CardContent></Card>
+    90→      </div>
+    91→
+    92→      <div className="flex items-center gap-2 flex-wrap">
+    93→        {["all", "Open", "Escalated", "Resolved"].map(t => (
+    94→          <button key={t} onClick={() => setFilter(t)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", filter === t ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:bg-muted")}>
+    95→            {t === "all" ? "All Incidents" : t}
+    96→          </button>
+    97→        ))}
+    98→      </div>
+    99→
+   100→      <div className="space-y-3">
+   101→        {filtered.map(inc => (
+   102→          <Card key={inc.id} className="border-0 shadow-sm glass-card card-hover">
+   103→            <CardContent className="p-4">
+   104→              <div className="flex items-start gap-4">
+   105→                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+   106→                  inc.severity === "High" ? "bg-red-500/15" : inc.severity === "Medium" ? "bg-orange-500/15" : "bg-yellow-500/15")}>
+   107→                  <AlertTriangle className={cn("w-5 h-5", inc.severity === "High" ? "text-red-600" : inc.severity === "Medium" ? "text-orange-600" : "text-yellow-600")} />
+   108→                </div>
+   109→                <div className="flex-1 min-w-0">
+   110→                  <div className="flex items-center gap-2 flex-wrap">
+   111→                    <p className="font-semibold text-sm">{inc.studentName}</p>
+   112→                    <span className="text-[10px] text-muted-foreground">{inc.class}</span>
+   113→                    <Badge variant="outline" className={cn("text-[9px] border", SEVERITY_STYLES[inc.severity])}>{inc.severity}</Badge>
+   114→                    <Badge variant="outline" className="text-[9px]">{inc.type}</Badge>
+   115→                    <Badge variant="outline" className={cn("text-[9px] border-0", STATUS_STYLES[inc.status])}>{inc.status}</Badge>
+   116→                    {inc.parentNotified && <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-0"><Bell className="w-2 h-2 mr-0.5 inline" />Parent Notified</Badge>}
+   117→                  </div>
+   118→                  <p className="text-sm text-muted-foreground mt-1">{inc.description}</p>
+   119→                  <div className="flex items-center gap-4 mt-2 text-xs">
+   120→                    <span className="text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{inc.date}</span>
+   121→                    <span className="text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" />Reported by {inc.reportedBy}</span>
+   122→                    <span className="text-primary font-medium flex items-center gap-1"><Zap className="w-3 h-3" />{inc.action}</span>
+   123→                  </div>
+   124→                </div>
+   125→              </div>
+   126→            </CardContent>
+   127→          </Card>
+   128→        ))}
+   129→      </div>
+   130→
+   131→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   132→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   133→          <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-600" />Log Discipline Incident</DialogTitle></DialogHeader>
+   134→          <div className="space-y-2 py-1">
+   135→            <div className="grid grid-cols-2 gap-3">
+   136→              <div><Label>Student Name *</Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} /></div>
+   137→              <div><Label>Class</Label><Input value={form.class} onChange={e => setForm({...form, class: e.target.value})} placeholder="Grade 9-A" /></div>
+   138→            </div>
+   139→            <div className="grid grid-cols-2 gap-3">
+   140→              <div><Label>Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{INCIDENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+   141→              <div><Label>Severity</Label><Select value={form.severity} onValueChange={v => setForm({...form, severity: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem><SelectItem value="High">High</SelectItem></SelectContent></Select></div>
+   142→            </div>
+   143→            <div><Label>Description *</Label><Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="What happened?" /></div>
+   144→            <div><Label>Action Taken</Label><Input value={form.action} onChange={e => setForm({...form, action: e.target.value})} placeholder="e.g., Verbal warning, Detention" /></div>
+   145→            <div><Label>Reported By</Label><Input value={form.reportedBy} onChange={e => setForm({...form, reportedBy: e.target.value})} placeholder="Teacher name" /></div>
+   146→          </div>
+   147→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.studentName || !form.description}>Log Incident</Button></DialogFooter>
+   148→        </DialogContent>
+   149→      </Dialog>
+   150→    </div>
+   151→  );
+   152→}
+   153→
+   154→// ═══════════════════════════════════════════════════════════════
+   155→// ALUMNI MODULE
+   156→// ═══════════════════════════════════════════════════════════════
+   157→const STATUS_ICONS: Record<string, any> = {
+   158→  Studying: GraduationCap, Employed: Briefcase, Business: TrendingUp, Unknown: Users,
+   159→};
+   160→const STATUS_COLORS: Record<string, string> = {
+   161→  Studying: "bg-primary/10 text-primary", Employed: "bg-emerald-500/10 text-emerald-600", Business: "bg-accent/10 text-accent", Unknown: "bg-muted text-muted-foreground",
+   162→};
+   163→
+   164→export function AlumniModule() {
+   165→  const [addOpen, setAddOpen] = useState(false);
+   166→  const [alumni, setAlumni] = useState<Alumnus[]>(ALUMNI);
+   167→  const [search, setSearch] = useState("");
+   168→  const [yearFilter, setYearFilter] = useState("all");
+   169→  const [form, setForm] = useState({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying" as Alumnus["currentStatus"], institution: "", profession: "", email: "", phone: "", donationAmount: 0 });
+   170→  const { toast } = useToast();
+   171→
+   172→  const years = Array.from(new Set(alumni.map(a => a.graduationYear))).sort((a, b) => b.localeCompare(a));
+   173→  const filtered = alumni
+   174→    .filter(a => yearFilter === "all" || a.graduationYear === yearFilter)
+   175→    .filter(a => !search || `${a.name} ${a.profession} ${a.institution}`.toLowerCase().includes(search.toLowerCase()));
+   176→
+   177→  const totalDonations = alumni.reduce((s, a) => s + a.donationAmount, 0);
+   178→  const employedCount = alumni.filter(a => a.currentStatus === "Employed").length;
+   179→  const studyingCount = alumni.filter(a => a.currentStatus === "Studying").length;
+   180→
+   181→  const handleAdd = () => {
+   182→    if (!form.name.trim()) {
+   183→      toast({ title: "Name required", description: "Please enter the alumnus name.", variant: "destructive" });
+   184→      return;
+   185→    }
+   186→    const newAlumnus: Alumnus = {
+   187→      id: `ALU-${String(Date.now()).slice(-6)}`,
+   188→      name: form.name,
+   189→      graduationYear: form.graduationYear,
+   190→      lastClass: form.lastClass,
+   191→      currentStatus: form.currentStatus,
+   192→      institution: form.institution || "—",
+   193→      profession: form.profession || "—",
+   194→      email: form.email || "—",
+   195→      phone: form.phone || "—",
+   196→      donationAmount: Number(form.donationAmount) || 0,
+   197→    };
+   198→    setAlumni([newAlumnus, ...alumni]);
+   199→    toast({ title: "Alumnus Added ✓", description: `${newAlumnus.name} (Class of ${newAlumnus.graduationYear}) added.` });
+   200→    setAddOpen(false);
+   201→    setForm({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying", institution: "", profession: "", email: "", phone: "", donationAmount: 0 });
+   202→  };
+   203→
+   204→  return (
+   205→    <div className="space-y-3 fade-in">
+   206→      <div className="flex justify-between items-center flex-wrap gap-3">
+   207→        <p className="text-sm text-muted-foreground">Track graduated students, their careers, and donations.</p>
+   208→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Alumnus</Button>
+   209→      </div>
+   210→
+   211→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   212→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Alumni</p><p className="text-xl font-bold">{alumni.length}</p></div></CardContent></Card>
+   213→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><Briefcase className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Employed</p><p className="text-xl font-bold">{employedCount}</p></div></CardContent></Card>
+   214→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><GraduationCap className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Studying</p><p className="text-xl font-bold">{studyingCount}</p></div></CardContent></Card>
+   215→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><Award className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Donations</p><p className="text-lg font-bold">Rs. {totalDonations.toLocaleString()}</p></div></CardContent></Card>
+   216→      </div>
+   217→
+   218→      <div className="flex items-center gap-3 flex-wrap">
+   219→        <div className="relative flex-1 min-w-48">
+   220→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+   221→          <Input placeholder="Search alumni by name, profession, institution..." className="pl-9 bg-background/60" value={search} onChange={e => setSearch(e.target.value)} />
+   222→        </div>
+   223→        <Select value={yearFilter} onValueChange={setYearFilter}>
+   224→          <SelectTrigger className="w-32 bg-background/60"><SelectValue /></SelectTrigger>
+   225→          <SelectContent><SelectItem value="all">All Years</SelectItem>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+   226→        </Select>
+   227→      </div>
+   228→
+   229→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   230→        {filtered.map(a => {
+   231→          const Icon = STATUS_ICONS[a.currentStatus] || Users;
+   232→          return (
+   233→            <Card key={a.id} className="border-0 shadow-sm glass-card card-hover">
+   234→              <CardContent className="p-4">
+   235→                <div className="flex items-start gap-3">
+   236→                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0">
+   237→                    <span className="text-sm font-bold text-primary">{a.name.split(" ").map(w => w[0]).join("").slice(0, 2)}</span>
+   238→                  </div>
+   239→                  <div className="flex-1 min-w-0">
+   240→                    <p className="font-semibold text-sm truncate">{a.name}</p>
+   241→                    <p className="text-xs text-muted-foreground">Class of {a.graduationYear} • {a.lastClass}</p>
+   242→                    <div className="flex items-center gap-1.5 mt-1">
+   243→                      <Icon className={cn("w-3 h-3", STATUS_COLORS[a.currentStatus].split(" ")[1])} />
+   244→                      <Badge variant="outline" className={cn("text-[9px] border-0", STATUS_COLORS[a.currentStatus])}>{a.currentStatus}</Badge>
+   245→                    </div>
+   246→                  </div>
+   247→                </div>
+   248→                <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+   249→                  <p className="flex items-center gap-1.5"><Briefcase className="w-3 h-3" /> {a.profession}</p>
+   250→                  <p className="flex items-center gap-1.5"><GraduationCap className="w-3 h-3" /> {a.institution}</p>
+   251→                  <p className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> {a.email}</p>
+   252→                  <p className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {a.phone}</p>
+   253→                </div>
+   254→                {a.donationAmount > 0 && (
+   255→                  <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+   256→                    <div className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5 text-accent" /><span className="text-xs font-medium text-accent">Donated</span></div>
+   257→                    <span className="font-bold text-sm text-accent">Rs. {a.donationAmount.toLocaleString()}</span>
+   258→                  </div>
+   259→                )}
+   260→              </CardContent>
+   261→            </Card>
+   262→          );
+   263→        })}
+   264→      </div>
+   265→
+   266→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   267→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   268→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Alumnus</DialogTitle></DialogHeader>
+   269→          <div className="space-y-2 py-1">
+   270→            <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
+   271→            <div className="grid grid-cols-2 gap-3">
+   272→              <div><Label>Graduation Year</Label><Input type="number" value={form.graduationYear} onChange={e => setForm({...form, graduationYear: e.target.value})} placeholder="2024" /></div>
+   273→              <div><Label>Last Class</Label><Input value={form.lastClass} onChange={e => setForm({...form, lastClass: e.target.value})} placeholder="Grade 10" /></div>
+   274→            </div>
+   275→            <div><Label>Current Status</Label><Select value={form.currentStatus} onValueChange={v => setForm({...form, currentStatus: v as Alumnus["currentStatus"]})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Studying">Studying</SelectItem><SelectItem value="Employed">Employed</SelectItem><SelectItem value="Business">Business</SelectItem><SelectItem value="Unknown">Unknown</SelectItem></SelectContent></Select></div>
+   276→            <div><Label>Institution / Company</Label><Input value={form.institution} onChange={e => setForm({...form, institution: e.target.value})} placeholder="University or company name" /></div>
+   277→            <div><Label>Profession</Label><Input value={form.profession} onChange={e => setForm({...form, profession: e.target.value})} placeholder="e.g., Software Developer" /></div>
+   278→            <div className="grid grid-cols-2 gap-3"><div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div><div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" /></div></div>
+   279→            <div><Label>Donation Amount (Rs.)</Label><Input type="number" value={form.donationAmount} onChange={e => setForm({...form, donationAmount: Number(e.target.value)})} /></div>
+   280→          </div>
+   281→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.name.trim()}>Add Alumnus</Button></DialogFooter>
+   282→        </DialogContent>
+   283→      </Dialog>
+   284→    </div>
+   285→  );
+   286→}
+   287→
+   288→// ═══════════════════════════════════════════════════════════════
+   289→// PARENT PORTAL MODULE (Read-only view)
+   290→// ═══════════════════════════════════════════════════════════════
+   291→export function ParentModule() {
+   292→  const [searchId, setSearchId] = useState("");
+   293→  const [foundStudent, setFoundStudent] = useState<any>(null);
+   294→  const [searched, setSearched] = useState(false);
+   295→
+   296→  const handleSearch = (students: any[]) => {
+   297→    const s = students.find(st => st.id.toLowerCase() === searchId.toLowerCase() || st.name.toLowerCase().includes(searchId.toLowerCase()));
+   298→    setFoundStudent(s || null);
+   299→    setSearched(true);
+   300→  };
+   301→
+   302→  return (
+   303→    <ParentPortal searchId={searchId} setSearchId={setSearchId} foundStudent={foundStudent} searched={searched} onSearch={handleSearch} />
+   304→  );
+   305→}
+   306→
+   307→function ParentPortal({ searchId, setSearchId, foundStudent, searched, onSearch }: any) {
+   308→  const { students, feeCollections, school } = useAppStore();
+   309→
+   310→  return (
+   311→    <div className="space-y-3 fade-in">
+   312→      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 p-6 text-primary-foreground shadow-lg">
+   313→        <div className="absolute inset-0 opacity-10 pattern-grid" />
+   314→        <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+   315→        <div className="relative">
+   316→          <h2 className="text-2xl font-bold">{school.name} — Parent Portal</h2>
+   317→          <p className="text-sm opacity-80 mt-1">Enter your child's Student ID or name to view their information.</p>
+   318→          <div className="flex gap-2 mt-4 max-w-md">
+   319→            <Input placeholder="Enter Student ID (e.g., SCH-2026-0001) or name..." value={searchId} onChange={e => setSearchId(e.target.value)} className="bg-white/15 border-white/20 text-white placeholder:text-white/50" onKeyDown={e => e.key === "Enter" && onSearch(students)} />
+   320→            <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => onSearch(students)}><Search className="w-4 h-4 mr-1" />Search</Button>
+   321→          </div>
+   322→        </div>
+   323→      </div>
+   324→
+   325→      {searched && !foundStudent && (
+   326→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-12 text-center">
+   327→          <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+   328→          <p className="font-medium text-sm">No student found</p>
+   329→          <p className="text-xs text-muted-foreground mt-1">Please check the Student ID and try again.</p>
+   330→        </CardContent></Card>
+   331→      )}
+   332→
+   333→      {foundStudent && (
+   334→        <div className="space-y-3">
+   335→          {/* Student header */}
+   336→          <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   337→            <div className="bg-gradient-to-r from-primary/10 to-accent/5 p-4 flex items-center gap-4">
+   338→              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/20">
+   339→                <span className="text-xl font-bold text-primary">{foundStudent.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}</span>
+   340→              </div>
+   341→              <div className="flex-1">
+   342→                <h3 className="font-bold text-lg">{foundStudent.name}</h3>
+   343→                <p className="text-sm text-muted-foreground">{foundStudent.id} • {foundStudent.class}-{foundStudent.section} • Roll #{foundStudent.rollNo}</p>
+   344→                <div className="flex gap-2 mt-1">
+   345→                  <Badge variant="outline" className="text-xs">🩸 {foundStudent.bloodGroup}</Badge>
+   346→                  <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-0">Attendance: {foundStudent.attendancePct}%</Badge>
+   347→                  {foundStudent.isHosteller && <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-0">🏠 Hosteller</Badge>}
+   348→                </div>
+   349→              </div>
+   350→            </div>
+   351→          </Card>
+   352→
+   353→          {/* Info grid */}
+   354→          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   355→            <Card className="border-0 shadow-sm glass-card">
+   356→              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Users className="w-4 h-4 text-primary" />Parent Information</CardTitle></CardHeader>
+   357→              <CardContent className="space-y-2 text-sm">
+   358→                <div className="flex justify-between"><span className="text-muted-foreground">Father:</span><span className="font-medium">{foundStudent.fatherName}</span></div>
+   359→                <div className="flex justify-between"><span className="text-muted-foreground">Father's Phone:</span><span className="font-medium">{foundStudent.fatherPhone}</span></div>
+   360→                <div className="flex justify-between"><span className="text-muted-foreground">Father's Occupation:</span><span className="font-medium">{foundStudent.fatherOccupation}</span></div>
+   361→                <div className="flex justify-between"><span className="text-muted-foreground">Mother:</span><span className="font-medium">{foundStudent.motherName}</span></div>
+   362→              </CardContent>
+   363→            </Card>
+   364→            <Card className="border-0 shadow-sm glass-card">
+   365→              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" />Fee Status</CardTitle></CardHeader>
+   366→              <CardContent className="space-y-2 text-sm">
+   367→                <div className="flex justify-between"><span className="text-muted-foreground">Monthly Fee:</span><span className="font-medium">Rs. {foundStudent.monthlyFee.toLocaleString()}</span></div>
+   368→                <div className="flex justify-between"><span className="text-muted-foreground">Outstanding:</span><span className={cn("font-bold", foundStudent.outstandingAmount > 0 ? "text-red-600" : "text-emerald-600")}>{foundStudent.outstandingAmount > 0 ? `Rs. ${foundStudent.outstandingAmount.toLocaleString()}` : "✓ Clear"}</span></div>
+   369→                <div className="flex justify-between"><span className="text-muted-foreground">This Month:</span><Badge variant="outline" className={cn("text-xs border-0", foundStudent.feePaidThisMonth ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600")}>{foundStudent.feePaidThisMonth ? "Paid ✓" : "Pending"}</Badge></div>
+   370→              </CardContent>
+   371→            </Card>
+   372→          </div>
+   373→
+   374→          {/* Recent fee receipts */}
+   375→          <Card className="border-0 shadow-sm glass-card">
+   376→            <CardHeader className="pb-2"><CardTitle className="text-sm">Recent Fee Payments</CardTitle></CardHeader>
+   377→            <CardContent>
+   378→              {feeCollections.filter((f: any) => f.studentId === foundStudent.id).length === 0 ? (
+   379→                <p className="text-sm text-muted-foreground text-center py-4">No fee payments recorded.</p>
+   380→              ) : (
+   381→                <div className="space-y-1.5">
+   382→                  {feeCollections.filter((f: any) => f.studentId === foundStudent.id).slice(0, 5).map((f: any) => (
+   383→                    <div key={f.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 text-sm">
+   384→                      <span className="font-mono text-xs text-muted-foreground">{f.receiptNo}</span>
+   385→                      <span className="flex-1 text-muted-foreground">{f.date} • {f.feeType}</span>
+   386→                      <span className="font-bold text-emerald-600">Rs. {f.amount.toLocaleString()}</span>
+   387→                    </div>
+   388→                  ))}
+   389→                </div>
+   390→              )}
+   391→            </CardContent>
+   392→          </Card>
+   393→        </div>
+   394→      )}
+   395→    </div>
+   396→  );
+   397→}
+   398→

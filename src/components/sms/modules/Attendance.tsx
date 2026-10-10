@@ -14,7 +14,6 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { useAppStore } from "@/lib/sms-store";
-import { TEACHERS, STAFF } from "@/lib/sms-data";
 import {
   ClipboardCheck, Save, CheckCircle2, Clock, AlertCircle, Calendar,
 } from "lucide-react";
@@ -197,11 +196,51 @@ function StudentAttendance() {
 }
 
 function StaffAttendance({ group }: { group: "teachers" | "staff" }) {
-  const people = group === "teachers" ? TEACHERS : STAFF;
+  const { teachers, staff, saveAttendance, userName } = useAppStore();
+  const { toast } = useToast();
+  const people = group === "teachers" ? teachers : staff;
   const [statuses, setStatuses] = useState<Record<string, AttStatus>>({});
+  const [attDate, setAttDate] = useState(new Date().toISOString().split("T")[0]);
+
+  const save = () => {
+    const marked = people.filter(p => statuses[p.id]);
+    if (marked.length === 0) {
+      toast({ title: "No staff marked", description: "Mark attendance for at least one person first.", variant: "destructive" });
+      return;
+    }
+    // Build per-employee attendance records (using studentId field for employee IDs)
+    const records = marked.map(p => ({
+      id: `ATT-${p.id}-${attDate}`,
+      studentId: p.id, // reusing the same record shape; Salary module reads by employee ID
+      date: attDate,
+      status: statuses[p.id],
+      markedBy: userName,
+      markedAt: new Date().toISOString(),
+    }));
+    saveAttendance(records);
+    const present = marked.filter(p => statuses[p.id] === "Present").length;
+    const absent = marked.filter(p => statuses[p.id] === "Absent").length;
+    toast({
+      title: "Staff Attendance Saved ✓",
+      description: `${marked.length} ${group} marked for ${attDate}. Present: ${present}, Absent: ${absent}`,
+    });
+    setStatuses({});
+  };
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <Input
+          type="date"
+          value={attDate}
+          onChange={e => setAttDate(e.target.value)}
+          className="w-36 h-9 bg-background/60"
+          aria-label="Attendance date"
+        />
+        <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={save}>
+          <Save className="w-4 h-4 mr-1.5" />Save Staff Attendance
+        </Button>
+      </div>
       <Card className="border-0 shadow-sm glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
@@ -214,7 +253,13 @@ function StaffAttendance({ group }: { group: "teachers" | "staff" }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {people.map(p => {
+              {people.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-sm text-muted-foreground">
+                    No {group} found. Add {group} in the {group === "teachers" ? "Teachers" : "Staff"} module first.
+                  </TableCell>
+                </TableRow>
+              ) : people.map(p => {
                 const status = statuses[p.id] || "Present";
                 return (
                   <TableRow key={p.id} className="border-border/30 hover:bg-muted/30">
@@ -228,12 +273,12 @@ function StaffAttendance({ group }: { group: "teachers" | "staff" }) {
                         </Avatar>
                         <div>
                           <p className="font-medium text-sm">{p.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{group === "teachers" ? (p as typeof TEACHERS[0]).designation : (p as typeof STAFF[0]).designation}</p>
+                          <p className="text-[10px] text-muted-foreground">{p.designation}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">
-                      {group === "teachers" ? (p as typeof TEACHERS[0]).subjects.join(", ") : (p as typeof STAFF[0]).department}
+                      {group === "teachers" ? (p as any).subjects?.join(", ") || "—" : (p as any).department}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -241,6 +286,7 @@ function StaffAttendance({ group }: { group: "teachers" | "staff" }) {
                           <button
                             key={st}
                             onClick={() => setStatuses(prev => ({ ...prev, [p.id]: st }))}
+                            aria-pressed={status === st}
                             className={cn(
                               "px-2 py-1 rounded-md text-[10px] font-medium border transition-all",
                               status === st
@@ -266,7 +312,7 @@ function StaffAttendance({ group }: { group: "teachers" | "staff" }) {
           <ClipboardCheck className="w-3.5 h-3.5" /> Salary Impact
         </p>
         <p className="text-muted-foreground mt-1">
-          Marked statuses feed directly into Salary & Fine calculation. Each Absent deducts a full day's pay,
+          Saved statuses feed into Salary & Fine calculation. Each Absent deducts a full day's pay,
           Late deducts Rs. 500, Half-Day deducts 50% of a day's pay. See Salary module for the breakdown.
         </p>
       </div>

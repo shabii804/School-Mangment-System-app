@@ -44,7 +44,8 @@ const INCIDENT_TYPES = ["Late Arrival", "Absence", "Misbehavior", "Bullying", "A
 
 export function DisciplineModule() {
   const [addOpen, setAddOpen] = useState(false);
-  const [incidents, setIncidents] = useState<Incident[]>(INCIDENTS);
+  const { moduleData, addModuleItem, updateModuleItem, students } = useAppStore();
+  const incidents = (moduleData.incidents || []) as Incident[];
   const [filter, setFilter] = useState<string>("all");
   const [form, setForm] = useState({ studentId: "", studentName: "", class: "", type: "Late Arrival", severity: "Low", description: "", action: "", reportedBy: "" });
 
@@ -70,7 +71,7 @@ export function DisciplineModule() {
       status: "Open",
       parentNotified: false,
     };
-    setIncidents([newIncident, ...incidents]);
+    addModuleItem("incidents", newIncident);
     setAddOpen(false);
     setForm({ studentId: "", studentName: "", class: "", type: "Late Arrival", severity: "Low", description: "", action: "", reportedBy: "" });
   };
@@ -121,6 +122,24 @@ export function DisciplineModule() {
                     <span className="text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" />Reported by {inc.reportedBy}</span>
                     <span className="text-primary font-medium flex items-center gap-1"><Zap className="w-3 h-3" />{inc.action}</span>
                   </div>
+                  {/* Action buttons */}
+                  {inc.status !== "Resolved" && (
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
+                      {inc.status === "Open" && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateModuleItem("incidents", inc.id, { status: "Escalated" })}>
+                          <AlertTriangle className="w-3 h-3 mr-1" />Escalate
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" className="h-7 text-xs text-emerald-600" onClick={() => updateModuleItem("incidents", inc.id, { status: "Resolved" })}>
+                        <CheckCircle className="w-3 h-3 mr-1" />Resolve
+                      </Button>
+                      {!inc.parentNotified && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs text-primary ml-auto" onClick={() => updateModuleItem("incidents", inc.id, { parentNotified: true })}>
+                          <Bell className="w-3 h-3 mr-1" />Notify Parent
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -163,7 +182,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function AlumniModule() {
   const [addOpen, setAddOpen] = useState(false);
-  const [alumni, setAlumni] = useState<Alumnus[]>(ALUMNI);
+  const { moduleData, addModuleItem } = useAppStore();
+  const alumni = (moduleData.alumni || []) as Alumnus[];
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
   const [form, setForm] = useState({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying" as Alumnus["currentStatus"], institution: "", profession: "", email: "", phone: "", donationAmount: 0 });
@@ -195,7 +215,7 @@ export function AlumniModule() {
       phone: form.phone || "—",
       donationAmount: Number(form.donationAmount) || 0,
     };
-    setAlumni([newAlumnus, ...alumni]);
+    addModuleItem("alumni", newAlumnus);
     toast({ title: "Alumnus Added ✓", description: `${newAlumnus.name} (Class of ${newAlumnus.graduationYear}) added.` });
     setAddOpen(false);
     setForm({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying", institution: "", profession: "", email: "", phone: "", donationAmount: 0 });

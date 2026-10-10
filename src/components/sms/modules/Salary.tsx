@@ -38,14 +38,46 @@ interface SalaryRow {
 
 export function SalaryModule() {
   const { toast } = useToast();
-  const { school } = useAppStore();
+  const { school, teachers, staff, attendanceRecords, addTransaction } = useAppStore();
   const [month, setMonth] = useState(new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" }));
   const [selected, setSelected] = useState<SalaryRow | null>(null);
   const [deptFilter, setDeptFilter] = useState("all");
 
+  // Build employee list from store — newly added teachers/staff appear here
+  // Compute attendance counts from attendanceRecords for the selected month
+  const monthKey = (() => {
+    // Convert "July 2026" → "2026-07"
+    const [mName, yr] = month.split(" ");
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const mIdx = months.indexOf(mName) + 1;
+    return `${yr}-${String(mIdx).padStart(2, "0")}`;
+  })();
+
+  const computeAttendance = (empId: string) => {
+    const recs = attendanceRecords.filter(r => r.studentId === empId && r.date.startsWith(monthKey));
+    // Also include teachers/staff via their id pattern (T-xxx / ST-xxx)
+    const empRecs = attendanceRecords.filter(r => r.date.startsWith(monthKey) && (r.studentId === empId || r.markedBy === empId));
+    let present = 0, late = 0, absent = 0, halfDay = 0, leave = 0;
+    recs.forEach(r => {
+      if (r.status === "Present") present++;
+      else if (r.status === "Late") late++;
+      else if (r.status === "Absent") absent++;
+      else if (r.status === "Leave") leave++;
+      else if (r.status === "Half-Day") halfDay++;
+    });
+    // Fallback: if no records, use the legacy attendance object from the entity
+    if (recs.length === 0) {
+      const t = teachers.find(t => t.id === empId);
+      const s = staff.find(s => s.id === empId);
+      const att = t?.attendance || s?.attendance;
+      if (att) return att;
+    }
+    return { present, late, halfDay, absent, leave };
+  };
+
   const allEmployees: SalaryRow[] = [
-    ...TEACHERS.map(t => ({ id: t.id, name: t.name, designation: t.designation, monthlySalary: t.monthlySalary, attendance: t.attendance, dept: "Teaching" })),
-    ...STAFF.map(s => ({ id: s.id, name: s.name, designation: s.designation, monthlySalary: s.monthlySalary, attendance: s.attendance, dept: s.department })),
+    ...teachers.map(t => ({ id: t.id, name: t.name, designation: t.designation, monthlySalary: t.monthlySalary, attendance: computeAttendance(t.id), dept: "Teaching" })),
+    ...staff.map(s => ({ id: s.id, name: s.name, designation: s.designation, monthlySalary: s.monthlySalary, attendance: computeAttendance(s.id), dept: s.department })),
   ];
 
   const filteredEmployees = deptFilter === "all" ? allEmployees : allEmployees.filter(e => e.dept === deptFilter);
@@ -142,9 +174,20 @@ export function SalaryModule() {
                 toast({ title: "No employees", description: "No employees match the current filter.", variant: "destructive" });
                 return;
               }
+              const totalNet = filteredEmployees.reduce((s, e) => s + calculate(e).net, 0);
               try {
                 printPayrollBatch(filteredEmployees, month, school);
-                toast({ title: "Payroll Finalized ✓", description: `${filteredEmployees.length} salary slips for ${month} generated.` });
+                // Record payroll as an expense transaction in the Ledger
+                addTransaction({
+                  id: `TX-${String(Date.now()).slice(-6)}`,
+                  date: new Date().toISOString().split("T")[0],
+                  type: "Expense",
+                  category: "Salary",
+                  description: `Payroll for ${month} — ${filteredEmployees.length} employees`,
+                  amount: totalNet,
+                  mode: "Bank",
+                });
+                toast({ title: "Payroll Finalized ✓", description: `${filteredEmployees.length} slips generated • Rs. ${totalNet.toLocaleString()} recorded in Ledger.` });
               } catch (e) {
                 toast({ title: "Generation failed", description: "Could not generate payroll PDF.", variant: "destructive" });
               }
