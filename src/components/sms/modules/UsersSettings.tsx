@@ -20,8 +20,13 @@ import {
 import {
   UserPlus, Shield, Database, Palette, Calendar, DollarSign,
   KeyRound, Download, Upload, Moon, Sun, Building2, Trash2, Image as ImageIcon,
+  LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
+  ClipboardCheck, Wallet, AlertTriangle, FileText, Award, BarChart3, LineChart,
+  BookOpen, Bus, Home, Package, Shield as DisciplineIcon, Percent,
+  ToggleLeft, ToggleRight, Boxes, Eye, EyeOff, Power, CheckCircle2,
+  type LucideIcon,
 } from "lucide-react";
-import { useAppStore } from "@/lib/sms-store";
+import { useAppStore, type ModuleKey, ALWAYS_ON_MODULES } from "@/lib/sms-store";
 import { useToast } from "@/hooks/use-toast";
 import { exportFeeStructureCSV } from "@/lib/pdf-service";
 import { cn } from "@/lib/utils";
@@ -134,14 +139,71 @@ export function UsersModule() {
   );
 }
 
+// === Module Control catalog ===
+interface ModuleMeta {
+  key: ModuleKey;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  group: "main" | "operations" | "finance" | "academics" | "facilities" | "system";
+  alwaysOn?: boolean;
+}
+
+const MODULE_CATALOG: ModuleMeta[] = [
+  { key: "dashboard", label: "Dashboard", description: "Overview KPIs, charts & recent activity", icon: LayoutDashboard, group: "main", alwaysOn: true },
+  { key: "students", label: "Students", description: "Admit, search, profile & ID cards", icon: Users, group: "main" },
+  { key: "teachers", label: "Teachers", description: "Teaching staff, subjects & classes", icon: GraduationCap, group: "main" },
+  { key: "staff", label: "Staff", description: "Non-teaching staff & departments", icon: UserCog, group: "main" },
+  { key: "classes", label: "Classes", description: "Classes, sections & monthly fees", icon: School, group: "main" },
+  { key: "timetable", label: "Timetable", description: "Period-wise class schedules", icon: CalendarDays, group: "operations" },
+  { key: "attendance", label: "Attendance", description: "Daily student & staff attendance", icon: ClipboardCheck, group: "operations" },
+  { key: "fees", label: "Fee Collection", description: "Collect tuition, hostel & admission fees", icon: DollarSign, group: "finance" },
+  { key: "defaulters", label: "Defaulters", description: "Students with outstanding fees", icon: AlertTriangle, group: "finance" },
+  { key: "salary", label: "Salary & Fine", description: "Payroll, fines & salary slips", icon: Wallet, group: "finance" },
+  { key: "ledger", label: "Income & Expense", description: "General ledger & transactions", icon: BookOpen, group: "finance" },
+  { key: "concession", label: "Concessions", description: "Sibling & need-based fee waivers", icon: Percent, group: "finance" },
+  { key: "results", label: "Results", description: "Grade entry & report cards", icon: FileText, group: "academics" },
+  { key: "exam", label: "Examinations", description: "Exam scheduling & grading", icon: GraduationCap, group: "academics" },
+  { key: "certificates", label: "Certificates", description: "Bonafide, leaving & character certs", icon: Award, group: "academics" },
+  { key: "reports", label: "Reports", description: "Standard & custom PDF reports", icon: BarChart3, group: "academics" },
+  { key: "analytics", label: "Analytics", description: "Trends, comparisons & insights", icon: LineChart, group: "academics" },
+  { key: "library", label: "Library", description: "Books, issues & returns", icon: BookOpen, group: "facilities" },
+  { key: "transport", label: "Transport", description: "Routes, vehicles & pickup points", icon: Bus, group: "facilities" },
+  { key: "hostel", label: "Hostel", description: "Rooms, allocation & mess", icon: Home, group: "facilities" },
+  { key: "inventory", label: "Inventory", description: "Stock items & supplies", icon: Package, group: "facilities" },
+  { key: "events", label: "Event Calendar", description: "Holidays, events & reminders", icon: CalendarDays, group: "facilities" },
+  { key: "discipline", label: "Discipline", description: "Incidents, warnings & actions", icon: DisciplineIcon, group: "facilities" },
+  { key: "leave", label: "Staff Leave", description: "Leave requests & approvals", icon: CalendarDays, group: "facilities" },
+  { key: "alumni", label: "Alumni", description: "Graduated students network", icon: Award, group: "facilities" },
+  { key: "parent", label: "Parent Portal", description: "Parent access & communication", icon: Users, group: "facilities" },
+  { key: "users", label: "User Management", description: "Staff accounts & permissions", icon: UserPlus, group: "system" },
+  { key: "settings", label: "Settings", description: "School, fees, theme & modules", icon: Shield, group: "system", alwaysOn: true },
+];
+
+const GROUP_LABELS_MODULE: Record<ModuleMeta["group"], string> = {
+  main: "Core Modules",
+  operations: "Daily Operations",
+  finance: "Finance & Fees",
+  academics: "Academics",
+  facilities: "Facilities & Extras",
+  system: "System",
+};
+
+const GROUP_ORDER: ModuleMeta["group"][] = ["main", "operations", "finance", "academics", "facilities", "system"];
+
 export function SettingsModule() {
   const { toast } = useToast();
-  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee } = useAppStore();
+  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee, enabledModules, toggleModule, setAllModulesEnabled } = useAppStore();
   const [autoBackup, setAutoBackup] = useState(true);
   const [lateFine, setLateFine] = useState("500");
   const [dueDate, setDueDate] = useState("10");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [classFeeDraft, setClassFeeDraft] = useState<Record<string, string>>(feeStructure.classFees);
+
+  // Module control counts
+  const totalModules = MODULE_CATALOG.filter(m => !m.alwaysOn).length;
+  const enabledCount = MODULE_CATALOG.filter(m => !m.alwaysOn && enabledModules[m.key]).length;
+  const disabledCount = totalModules - enabledCount;
 
   // Local form state synced with store
   const [form, setForm] = useState({
@@ -185,8 +247,9 @@ export function SettingsModule() {
   return (
     <div className="space-y-3 fade-in">
       <Tabs defaultValue="school">
-        <TabsList className="grid w-full max-w-2xl grid-cols-7">
+        <TabsList className="grid w-full max-w-2xl grid-cols-8">
           <TabsTrigger value="school">School</TabsTrigger>
+          <TabsTrigger value="modules" className="text-primary font-semibold">Modules</TabsTrigger>
           <TabsTrigger value="feestructure">Fee Structure</TabsTrigger>
           <TabsTrigger value="fines">Fines</TabsTrigger>
           <TabsTrigger value="fees">Fees</TabsTrigger>
@@ -251,6 +314,203 @@ export function SettingsModule() {
                 </p>
               </div>
               <Button className="bg-primary hover:bg-primary/90" onClick={saveSchoolInfo}>Save Changes</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === Module Control === */}
+        <TabsContent value="modules">
+          <Card className="border-0 shadow-sm glass-card">
+            <CardHeader>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Boxes className="w-4 h-4 text-primary" />Module Control Center
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => {
+                      setAllModulesEnabled(true);
+                      toast({ title: "All Modules Enabled ✓", description: "Every module is now visible in the sidebar." });
+                    }}
+                  >
+                    <Eye className="w-3.5 h-3.5 mr-1.5" />Enable All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => {
+                      setAllModulesEnabled(false);
+                      toast({ title: "All Optional Modules Disabled", description: "Only Dashboard & Settings remain visible." });
+                    }}
+                  >
+                    <EyeOff className="w-3.5 h-3.5 mr-1.5" />Disable All
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Summary stats banner */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Enabled</p>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-600">{enabledCount}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">optional modules</p>
+                </div>
+                <div className="rounded-lg border border-border/40 bg-muted/30 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Disabled</p>
+                  </div>
+                  <p className="text-2xl font-bold text-muted-foreground">{disabledCount}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">hidden from sidebar</p>
+                </div>
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <Power className="w-3.5 h-3.5 text-primary" />
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Always On</p>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">{ALWAYS_ON_MODULES.length}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">system essentials</p>
+                </div>
+              </div>
+
+              {/* Info banner */}
+              <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-3 text-xs flex items-start gap-2">
+                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <Boxes className="w-3 h-3 text-primary" />
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  <span className="font-semibold text-primary">How module control works:</span> Toggle any module on or off below.
+                  Disabled modules disappear from the sidebar and command palette (Ctrl+K). Their data is preserved —
+                  re-enabling a module restores everything instantly. <span className="font-medium text-foreground">Dashboard</span> and <span className="font-medium text-foreground">Settings</span> are always on.
+                </p>
+              </div>
+
+              {/* Grouped module toggles */}
+              {GROUP_ORDER.map(group => {
+                const groupModules = MODULE_CATALOG.filter(m => m.group === group);
+                if (groupModules.length === 0) return null;
+                const groupEnabledCount = groupModules.filter(m => m.alwaysOn || enabledModules[m.key]).length;
+                return (
+                  <div key={group}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        {GROUP_LABELS_MODULE[group]}
+                      </p>
+                      <div className="flex-1 h-px bg-border/40" />
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        {groupEnabledCount}/{groupModules.length} on
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                      {groupModules.map(m => {
+                        const Icon = m.icon;
+                        const isEnabled = m.alwaysOn || enabledModules[m.key];
+                        return (
+                          <button
+                            key={m.key}
+                            type="button"
+                            onClick={() => {
+                              if (m.alwaysOn) return;
+                              toggleModule(m.key);
+                              toast({
+                                title: isEnabled ? "Module Disabled" : "Module Enabled ✓",
+                                description: `${m.label} ${isEnabled ? "hidden from" : "now visible in"} the sidebar.`,
+                              });
+                            }}
+                            className={cn(
+                              "relative text-left rounded-xl border-2 p-3 transition-all overflow-hidden group",
+                              isEnabled
+                                ? "border-primary/30 bg-primary/[0.03] hover:border-primary/50"
+                                : "border-border/40 bg-muted/10 opacity-60 hover:opacity-100 hover:border-border/60",
+                              m.alwaysOn && "cursor-not-allowed"
+                            )}
+                          >
+                            {/* Status indicator dot */}
+                            <div className={cn(
+                              "absolute top-2.5 right-2.5 w-2 h-2 rounded-full transition-colors",
+                              isEnabled ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]" : "bg-muted-foreground/30"
+                            )} />
+
+                            <div className="flex items-start gap-2.5">
+                              <div className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                                isEnabled ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                              )}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className={cn(
+                                    "text-xs font-semibold truncate",
+                                    isEnabled ? "text-foreground" : "text-muted-foreground"
+                                  )}>
+                                    {m.label}
+                                  </p>
+                                  {m.alwaysOn && (
+                                    <span className="text-[8px] px-1 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase shrink-0">
+                                      Always
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight">
+                                  {m.description}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Toggle switch */}
+                            <div className={cn(
+                              "mt-2.5 flex items-center justify-between text-[10px]",
+                              isEnabled ? "text-emerald-600" : "text-muted-foreground"
+                            )}>
+                              <span className="font-medium uppercase tracking-wide">
+                                {isEnabled ? "Active" : "Hidden"}
+                              </span>
+                              <div className={cn(
+                                "relative w-9 h-5 rounded-full transition-colors shrink-0",
+                                isEnabled ? "bg-primary" : "bg-muted-foreground/30",
+                                m.alwaysOn && "opacity-50"
+                              )}>
+                                <div
+                                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all"
+                                  style={{ left: isEnabled ? "calc(100% - 1.125rem)" : "0.125rem" }}
+                                />
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Bottom action bar */}
+              <div className="rounded-lg border border-border/40 bg-muted/20 p-3 flex items-center justify-between flex-wrap gap-3">
+                <div className="text-xs">
+                  <p className="font-medium">Changes are saved automatically</p>
+                  <p className="text-muted-foreground mt-0.5">Module visibility persists across sessions & reloads.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    setAllModulesEnabled(true);
+                    toast({ title: "All Modules Reset ✓", description: "Every module is enabled (default state)." });
+                  }}
+                >
+                  <ToggleRight className="w-3.5 h-3.5 mr-1.5" />Reset to Default
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

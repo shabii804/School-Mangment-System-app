@@ -20,9 +20,10 @@ import { ExamModule } from "@/components/sms/modules/ExamModule";
 import { LibraryModule, TransportModule, HostelModule, InventoryModule, EventsModule } from "@/components/sms/modules/NewModules";
 import { DisciplineModule, AlumniModule, ParentModule } from "@/components/sms/modules/DisciplineAlumni";
 import { LeaveModule, ConcessionModule } from "@/components/sms/modules/LeaveConcession";
+import { Settings, Power } from "lucide-react";
 
 export default function Home() {
-  const { activeModule, isDark, setCommandOpen } = useAppStore();
+  const { activeModule, isDark, setCommandOpen, enabledModules, setActiveModule } = useAppStore();
 
   // Apply dark class to <html>
   useEffect(() => {
@@ -43,7 +44,33 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handler);
   }, [setCommandOpen]);
 
+  // If module is disabled (and not always-on), show fallback
+  const isAlwaysOn = activeModule === "dashboard" || activeModule === "settings";
+  const isDisabled = !isAlwaysOn && enabledModules[activeModule] === false;
+
   const renderModule = () => {
+    if (isDisabled) {
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center max-w-md fade-in">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mx-auto mb-4 ring-1 ring-border/40 shadow-lg">
+              <Power className="w-9 h-9 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Module Disabled</h2>
+            <p className="text-sm text-muted-foreground mb-5">
+              This module has been turned off in settings. Re-enable it from the Module Control Center to access it again.
+            </p>
+            <button
+              onClick={() => setActiveModule("settings")}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-md"
+            >
+              <Settings className="w-4 h-4" />
+              Go to Module Settings
+            </button>
+          </div>
+        </div>
+      );
+    }
     switch (activeModule) {
       case "dashboard": return <DashboardModule />;
       case "students": return <StudentsModule />;

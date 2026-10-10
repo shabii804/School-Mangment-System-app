@@ -59,7 +59,7 @@ const GROUP_LABELS: Record<NavItem["group"], string> = {
 };
 
 export function Sidebar() {
-  const { activeModule, setActiveModule, role, school } = useAppStore();
+  const { activeModule, setActiveModule, role, school, enabledModules } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -75,8 +75,10 @@ export function Sidebar() {
     return () => window.removeEventListener("resize", checkWidth);
   }, []);
 
-  // Filter nav items by role
+  // Filter nav items by role AND enabled state
   const visibleItems = NAV_ITEMS.filter(item => {
+    // Always-on modules (dashboard, settings) bypass enabledModules check
+    if (!enabledModules[item.key] && item.key !== "dashboard" && item.key !== "settings") return false;
     if (role === "admin") return true;
     if (role === "accountant") return ["dashboard", "students", "teachers", "staff", "classes", "attendance", "fees", "defaulters", "salary", "ledger", "reports", "settings"].includes(item.key);
     if (role === "teacher") return ["dashboard", "students", "classes", "timetable", "attendance", "results", "reports"].includes(item.key);

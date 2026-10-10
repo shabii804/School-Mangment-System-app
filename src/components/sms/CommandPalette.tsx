@@ -89,7 +89,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
 export function CommandPalette() {
   const {
     commandOpen, setCommandOpen, setActiveModule, students, feeCollections,
-    setSelectedStudent, role,
+    setSelectedStudent, role, enabledModules,
   } = useAppStore();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -108,6 +108,8 @@ export function CommandPalette() {
   const items = useMemo<CommandItem[]>(() => {
     const navItems: CommandItem[] = (Object.keys(MODULE_LABELS) as ModuleKey[])
       .filter(m => {
+        // Hide disabled modules (except always-on dashboard/settings)
+        if (!enabledModules[m] && m !== "dashboard" && m !== "settings") return false;
         if (role === "admin") return true;
         if (role === "accountant") return ["dashboard", "students", "teachers", "staff", "classes", "attendance", "fees", "defaulters", "salary", "reports", "settings"].includes(m);
         if (role === "teacher") return ["dashboard", "students", "classes", "timetable", "attendance", "results", "reports"].includes(m);

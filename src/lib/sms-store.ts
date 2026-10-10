@@ -86,6 +86,12 @@ interface AppState {
   activeModule: ModuleKey;
   setActiveModule: (m: ModuleKey) => void;
 
+  // Module visibility (on/off)
+  enabledModules: Record<ModuleKey, boolean>;
+  toggleModule: (m: ModuleKey) => void;
+  setModuleEnabled: (m: ModuleKey, enabled: boolean) => void;
+  setAllModulesEnabled: (enabled: boolean) => void;
+
   // School branding
   school: SchoolInfo;
   updateSchool: (patch: Partial<SchoolInfo>) => void;
@@ -187,6 +193,39 @@ const DEFAULT_FEE_STRUCTURE: FeeStructureConfig = {
   dueDate: 0,
 };
 
+// === Module Control ===
+// Modules that are always ON and cannot be disabled (system essentials)
+export const ALWAYS_ON_MODULES: ModuleKey[] = ["dashboard", "settings"];
+
+// Default module config — all modules enabled by default
+const DEFAULT_ENABLED_MODULES: Record<ModuleKey, boolean> = {
+  dashboard: true, students: true, teachers: true, staff: true,
+  classes: true, timetable: true, attendance: true, salary: true,
+  fees: true, defaulters: true, results: true, certificates: true,
+  reports: true, analytics: true, users: true, settings: true,
+  ledger: true, exam: true, library: true, transport: true,
+  hostel: true, inventory: true, events: true, discipline: true,
+  alumni: true, parent: true, sms: true, leave: true, concession: true,
+};
+
+function loadEnabledModules(): Record<ModuleKey, boolean> {
+  if (typeof window === "undefined") return DEFAULT_ENABLED_MODULES;
+  try {
+    const raw = window.localStorage.getItem("edudesk_modules");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Merge with defaults to handle new modules added in updates
+      return { ...DEFAULT_ENABLED_MODULES, ...parsed };
+    }
+  } catch {}
+  return DEFAULT_ENABLED_MODULES;
+}
+
+function saveEnabledModules(modules: Record<ModuleKey, boolean>) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem("edudesk_modules", JSON.stringify(modules)); } catch {}
+}
+
 function loadFeeStructure(): FeeStructureConfig {
   if (typeof window === "undefined") return DEFAULT_FEE_STRUCTURE;
   try {
@@ -258,6 +297,29 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   activeModule: "dashboard",
   setActiveModule: (m) => set({ activeModule: m }),
+
+  // Module visibility (on/off)
+  enabledModules: loadEnabledModules(),
+  toggleModule: (m) => set((state) => {
+    if (ALWAYS_ON_MODULES.includes(m)) return state; // skip always-on
+    const next = { ...state.enabledModules, [m]: !state.enabledModules[m] };
+    saveEnabledModules(next);
+    return { enabledModules: next };
+  }),
+  setModuleEnabled: (m, enabled) => set((state) => {
+    if (ALWAYS_ON_MODULES.includes(m)) return state;
+    const next = { ...state.enabledModules, [m]: enabled };
+    saveEnabledModules(next);
+    return { enabledModules: next };
+  }),
+  setAllModulesEnabled: (enabled) => set((state) => {
+    const next = { ...state.enabledModules };
+    (Object.keys(next) as ModuleKey[]).forEach(k => {
+      if (!ALWAYS_ON_MODULES.includes(k)) next[k] = enabled;
+    });
+    saveEnabledModules(next);
+    return { enabledModules: next };
+  }),
 
   school: loadSchool(),
   updateSchool: (patch) => {
