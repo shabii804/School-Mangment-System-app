@@ -1,0 +1,431 @@
+     1→"use client";
+     2→
+     3→import { useState } from "react";
+     4→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     5→import { Button } from "@/components/ui/button";
+     6→import { Input } from "@/components/ui/input";
+     7→import { Label } from "@/components/ui/label";
+     8→import { Badge } from "@/components/ui/badge";
+     9→import {
+    10→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    11→} from "@/components/ui/table";
+    12→import {
+    13→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    14→} from "@/components/ui/dialog";
+    15→import {
+    16→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    17→} from "@/components/ui/select";
+    18→import {
+    19→  Plus, BookOpen, BookMarked, Users, AlertCircle, Bus, MapPin,
+    20→  Clock, BedDouble, Home, Package, Wrench, Calendar, ArrowRight,
+    21→  TrendingUp, FileText,
+    22→} from "lucide-react";
+    23→import {
+    24→  BOOKS, BOOK_ISSUES, BUS_ROUTES, HOSTEL_ROOMS, INVENTORY_ITEMS,
+    25→  SCHOOL_EVENTS, type Book, type BookIssue, type BusRoute, type HostelRoom,
+    26→  type InventoryItem, type SchoolEvent,
+    27→} from "@/lib/sms-data";
+    28→import { cn } from "@/lib/utils";
+    29→
+    30→// ═══════════════════════════════════════════════════════════════
+    31→// LIBRARY MODULE
+    32→// ═══════════════════════════════════════════════════════════════
+    33→export function LibraryModule() {
+    34→  const [addOpen, setAddOpen] = useState(false);
+    35→  const [issueOpen, setIssueOpen] = useState(false);
+    36→  const [books, setBooks] = useState<Book[]>(BOOKS);
+    37→  const [issues, setIssues] = useState<BookIssue[]>(BOOK_ISSUES);
+    38→  const [form, setForm] = useState({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" });
+    39→
+    40→  const totalBooks = books.reduce((s, b) => s + b.totalCopies, 0);
+    41→  const availableBooks = books.reduce((s, b) => s + b.availableCopies, 0);
+    42→  const overdueCount = issues.filter(i => i.status === "Overdue").length;
+    43→
+    44→  return (
+    45→    <div className="space-y-3 fade-in">
+    46→      <div className="flex justify-between items-center flex-wrap gap-3">
+    47→        <p className="text-sm text-muted-foreground">Manage library books, issue/return, and fines.</p>
+    48→        <div className="flex gap-2">
+    49→          <Button variant="outline" size="sm" onClick={() => setIssueOpen(true)}><BookMarked className="w-4 h-4 mr-1.5" />Issue Book</Button>
+    50→          <Button className="bg-primary hover:bg-primary/90" size="sm" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Book</Button>
+    51→        </div>
+    52→      </div>
+    53→
+    54→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    55→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><BookOpen className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Books</p><p className="text-xl font-bold">{totalBooks}</p></div></CardContent></Card>
+    56→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><BookMarked className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Available</p><p className="text-xl font-bold">{availableBooks}</p></div></CardContent></Card>
+    57→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><Users className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Issued</p><p className="text-xl font-bold">{issues.filter(i => i.status === "Issued").length}</p></div></CardContent></Card>
+    58→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><AlertCircle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Overdue</p><p className="text-xl font-bold">{overdueCount}</p></div></CardContent></Card>
+    59→      </div>
+    60→
+    61→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+    62→        <CardHeader className="pb-2"><CardTitle className="text-base">Book Catalog</CardTitle></CardHeader>
+    63→        <div className="overflow-x-auto">
+    64→          <Table>
+    65→            <TableHeader><TableRow className="border-border/40">
+    66→              <TableHead>Book ID</TableHead><TableHead>Title</TableHead><TableHead>Author</TableHead><TableHead>Category</TableHead><TableHead className="text-center">Available</TableHead><TableHead>Shelf</TableHead>
+    67→            </TableRow></TableHeader>
+    68→            <TableBody>
+    69→              {books.map(b => (
+    70→                <TableRow key={b.id} className="border-border/30 hover:bg-muted/30">
+    71→                  <TableCell className="font-mono text-xs text-muted-foreground">{b.id}</TableCell>
+    72→                  <TableCell className="font-medium text-sm">{b.title}</TableCell>
+    73→                  <TableCell className="text-sm text-muted-foreground">{b.author}</TableCell>
+    74→                  <TableCell><Badge variant="outline" className="text-xs">{b.category}</Badge></TableCell>
+    75→                  <TableCell className="text-center">
+    76→                    <span className={cn("font-bold text-sm", b.availableCopies > 0 ? "text-emerald-600" : "text-red-600")}>{b.availableCopies}</span>
+    77→                    <span className="text-xs text-muted-foreground">/{b.totalCopies}</span>
+    78→                  </TableCell>
+    79→                  <TableCell className="text-xs font-mono">{b.shelf}</TableCell>
+    80→                </TableRow>
+    81→              ))}
+    82→            </TableBody>
+    83→          </Table>
+    84→        </div>
+    85→      </Card>
+    86→
+    87→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+    88→        <CardHeader className="pb-2"><CardTitle className="text-base">Issue / Return History</CardTitle></CardHeader>
+    89→        <div className="overflow-x-auto">
+    90→          <Table>
+    91→            <TableHeader><TableRow className="border-border/40">
+    92→              <TableHead>Issue ID</TableHead><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issue Date</TableHead><TableHead>Due Date</TableHead><TableHead>Fine</TableHead><TableHead>Status</TableHead>
+    93→            </TableRow></TableHeader>
+    94→            <TableBody>
+    95→              {issues.map(i => (
+    96→                <TableRow key={i.id} className="border-border/30 hover:bg-muted/30">
+    97→                  <TableCell className="font-mono text-xs">{i.id}</TableCell>
+    98→                  <TableCell className="text-sm font-medium">{i.bookTitle}</TableCell>
+    99→                  <TableCell className="text-sm">{i.studentName}<p className="text-[10px] text-muted-foreground">{i.class}</p></TableCell>
+   100→                  <TableCell className="text-xs text-muted-foreground">{i.issueDate}</TableCell>
+   101→                  <TableCell className="text-xs text-muted-foreground">{i.dueDate}</TableCell>
+   102→                  <TableCell className="text-sm">{i.fine > 0 ? <span className="text-red-600 font-bold">Rs. {i.fine}</span> : "—"}</TableCell>
+   103→                  <TableCell><Badge variant="outline" className={cn("text-xs border-0", i.status === "Returned" ? "bg-emerald-500/10 text-emerald-600" : i.status === "Overdue" ? "bg-red-500/10 text-red-600" : "bg-primary/10 text-primary")}>{i.status}</Badge></TableCell>
+   104→                </TableRow>
+   105→              ))}
+   106→            </TableBody>
+   107→          </Table>
+   108→        </div>
+   109→      </Card>
+   110→
+   111→      {/* Add Book Dialog */}
+   112→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   113→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   114→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Book</DialogTitle></DialogHeader>
+   115→          <div className="space-y-2 py-1">
+   116→            <div><Label>Book Title *</Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
+   117→            <div><Label>Author</Label><Input value={form.author} onChange={e => setForm({...form, author: e.target.value})} /></div>
+   118→            <div className="grid grid-cols-2 gap-3">
+   119→              <div><Label>Category</Label><Select value={form.category} onValueChange={v => setForm({...form, category: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Mathematics", "English", "Science", "Urdu", "Social Studies", "Islamiat", "Computer", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+   120→              <div><Label>Copies</Label><Input type="number" value={form.copies} onChange={e => setForm({...form, copies: Number(e.target.value)})} /></div>
+   121→            </div>
+   122→            <div className="grid grid-cols-2 gap-3"><div><Label>ISBN</Label><Input value={form.isbn} onChange={e => setForm({...form, isbn: e.target.value})} /></div><div><Label>Shelf Location</Label><Input value={form.shelf} onChange={e => setForm({...form, shelf: e.target.value})} placeholder="A-12" /></div></div>
+   123→          </div>
+   124→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => { if (!form.title) return; setBooks([{ id: `BK-${String(books.length + 1).padStart(3, "0")}`, title: form.title, author: form.author, category: form.category, isbn: form.isbn, totalCopies: form.copies, availableCopies: form.copies, shelf: form.shelf || "—" }, ...books]); setAddOpen(false); setForm({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" }); }}>Add Book</Button></DialogFooter>
+   125→        </DialogContent>
+   126→      </Dialog>
+   127→
+   128→      {/* Issue Book Dialog */}
+   129→      <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
+   130→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   131→          <DialogHeader><DialogTitle className="flex items-center gap-2"><BookMarked className="w-4 h-4 text-primary" />Issue Book</DialogTitle></DialogHeader>
+   132→          <div className="space-y-2 py-1">
+   133→            <div><Label>Select Book</Label><Select defaultValue=""><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
+   134→            <div><Label>Student ID</Label><Input placeholder="SCH-2026-XXXX" /></div>
+   135→            <div className="grid grid-cols-2 gap-3"><div><Label>Issue Date</Label><Input type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div><div><Label>Due Date (14 days)</Label><Input type="date" defaultValue={new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0]} /></div></div>
+   136→          </div>
+   137→          <DialogFooter><Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setIssueOpen(false)}>Issue Book</Button></DialogFooter>
+   138→        </DialogContent>
+   139→      </Dialog>
+   140→    </div>
+   141→  );
+   142→}
+   143→
+   144→// ═══════════════════════════════════════════════════════════════
+   145→// TRANSPORT MODULE
+   146→// ═══════════════════════════════════════════════════════════════
+   147→export function TransportModule() {
+   148→  const [addOpen, setAddOpen] = useState(false);
+   149→  const [routes, setRoutes] = useState<BusRoute[]>(BUS_ROUTES);
+   150→
+   151→  const totalCapacity = routes.reduce((s, r) => s + r.capacity, 0);
+   152→  const totalOccupied = routes.reduce((s, r) => s + r.occupied, 0);
+   153→
+   154→  return (
+   155→    <div className="space-y-3 fade-in">
+   156→      <div className="flex justify-between items-center flex-wrap gap-3">
+   157→        <p className="text-sm text-muted-foreground">Manage bus routes, vehicles, drivers, and student assignments.</p>
+   158→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Route</Button>
+   159→      </div>
+   160→
+   161→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   162→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Bus className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Routes</p><p className="text-xl font-bold">{routes.length}</p></div></CardContent></Card>
+   163→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><Users className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Students</p><p className="text-xl font-bold">{totalOccupied}</p></div></CardContent></Card>
+   164→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><TrendingUp className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Capacity</p><p className="text-xl font-bold">{totalCapacity}</p></div></CardContent></Card>
+   165→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><MapPin className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Total Stops</p><p className="text-xl font-bold">{routes.reduce((s, r) => s + r.stops.length, 0)}</p></div></CardContent></Card>
+   166→      </div>
+   167→
+   168→      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   169→        {routes.map(r => {
+   170→          const pct = Math.round((r.occupied / r.capacity) * 100);
+   171→          return (
+   172→            <Card key={r.id} className="border-0 shadow-sm glass-card card-hover">
+   173→              <CardContent className="p-4">
+   174→                <div className="flex items-start justify-between">
+   175→                  <div className="flex items-center gap-3">
+   176→                    <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center"><Bus className="w-4 h-4 text-primary" /></div>
+   177→                    <div><p className="font-bold text-sm">{r.routeName}</p><p className="text-xs text-muted-foreground">{r.vehicleNo}</p></div>
+   178→                  </div>
+   179→                  <Badge variant="outline" className={cn("text-xs", pct >= 90 ? "bg-red-500/10 text-red-600" : "bg-emerald-500/10 text-emerald-600")}>{r.occupied}/{r.capacity}</Badge>
+   180→                </div>
+   181→                <div className="mt-3 space-y-1.5 text-xs">
+   182→                  <div className="flex items-center gap-2 text-muted-foreground"><Users className="w-3.5 h-3.5" /> Driver: {r.driverName} ({r.driverPhone})</div>
+   183→                  <div className="flex items-center gap-2 text-muted-foreground"><Clock className="w-3.5 h-3.5" /> Morning: {r.morningTime} • Evening: {r.eveningTime}</div>
+   184→                  <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="w-3.5 h-3.5" /> Stops: {r.stops.join(" → ")}</div>
+   185→                </div>
+   186→                <div className="mt-3 pt-3 border-t border-border/30">
+   187→                  <div className="flex items-center justify-between mb-1"><p className="text-[10px] text-muted-foreground uppercase">Occupancy</p><p className="text-xs font-bold">{pct}%</p></div>
+   188→                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden"><div className={cn("h-full", pct >= 90 ? "bg-red-500" : "bg-emerald-500")} style={{ width: `${pct}%` }} /></div>
+   189→                </div>
+   190→              </CardContent>
+   191→            </Card>
+   192→          );
+   193→        })}
+   194→      </div>
+   195→
+   196→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   197→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   198→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Bus Route</DialogTitle></DialogHeader>
+   199→          <div className="space-y-2 py-1">
+   200→            <div><Label>Route Name *</Label><Input placeholder="Route F — Clifton" /></div>
+   201→            <div className="grid grid-cols-2 gap-3"><div><Label>Vehicle No.</Label><Input placeholder="KHI-XXXX" /></div><div><Label>Capacity</Label><Input type="number" defaultValue={25} /></div></div>
+   202→            <div className="grid grid-cols-2 gap-3"><div><Label>Driver Name</Label><Input /></div><div><Label>Driver Phone</Label><Input placeholder="+92 3xx" /></div></div>
+   203→            <div><Label>Stops (comma-separated)</Label><Input placeholder="Stop 1, Stop 2, Stop 3" /></div>
+   204→          </div>
+   205→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(false)}>Add Route</Button></DialogFooter>
+   206→        </DialogContent>
+   207→      </Dialog>
+   208→    </div>
+   209→  );
+   210→}
+   211→
+   212→// ═══════════════════════════════════════════════════════════════
+   213→// HOSTEL MODULE
+   214→// ═══════════════════════════════════════════════════════════════
+   215→export function HostelModule() {
+   216→  const [rooms, setRooms] = useState<HostelRoom[]>(HOSTEL_ROOMS);
+   217→  const totalCapacity = rooms.reduce((s, r) => s + r.capacity, 0);
+   218→  const totalOccupied = rooms.reduce((s, r) => s + r.occupied, 0);
+   219→  const availableBeds = totalCapacity - totalOccupied;
+   220→
+   221→  return (
+   222→    <div className="space-y-3 fade-in">
+   223→      <div className="flex justify-between items-center flex-wrap gap-3">
+   224→        <p className="text-sm text-muted-foreground">Manage hostel rooms, bed allocation, and mess.</p>
+   225→        <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1.5" />Allocate Room</Button>
+   226→      </div>
+   227→
+   228→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   229→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Home className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Rooms</p><p className="text-xl font-bold">{rooms.length}</p></div></CardContent></Card>
+   230→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><BedDouble className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Total Beds</p><p className="text-xl font-bold">{totalCapacity}</p></div></CardContent></Card>
+   231→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><Users className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Occupied</p><p className="text-xl font-bold">{totalOccupied}</p></div></CardContent></Card>
+   232→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><BedDouble className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Available</p><p className="text-xl font-bold">{availableBeds}</p></div></CardContent></Card>
+   233→      </div>
+   234→
+   235→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   236→        {rooms.map(r => {
+   237→          const pct = Math.round((r.occupied / r.capacity) * 100);
+   238→          return (
+   239→            <Card key={r.id} className={cn("border-0 shadow-sm glass-card card-hover", r.occupied === r.capacity && "ring-1 ring-red-500/20")}>
+   240→              <CardContent className="p-4">
+   241→                <div className="flex items-start justify-between">
+   242→                  <div className="flex items-center gap-3">
+   243→                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", r.occupied === r.capacity ? "bg-red-500/15" : "bg-primary/15")}><BedDouble className={cn("w-5 h-5", r.occupied === r.capacity ? "text-red-600" : "text-primary")} /></div>
+   244→                    <div><p className="font-bold text-sm">{r.roomNo}</p><p className="text-xs text-muted-foreground">{r.block} • {r.floor}</p></div>
+   245→                  </div>
+   246→                  <Badge variant="outline" className="text-xs">{r.type}</Badge>
+   247→                </div>
+   248→                <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+   249→                  <div className="rounded bg-muted/30 p-2"><p className="font-bold">{r.capacity}</p><p className="text-[9px] text-muted-foreground uppercase">Capacity</p></div>
+   250→                  <div className="rounded bg-emerald-500/10 p-2"><p className="font-bold text-emerald-600">{r.occupied}</p><p className="text-[9px] text-muted-foreground uppercase">Filled</p></div>
+   251→                  <div className="rounded bg-accent/10 p-2"><p className="font-bold text-accent">{r.capacity - r.occupied}</p><p className="text-[9px] text-muted-foreground uppercase">Free</p></div>
+   252→                </div>
+   253→                <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+   254→                  <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Rent</p><p className="font-bold text-sm">Rs. {r.monthlyRent.toLocaleString()}</p></div>
+   255→                  <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden"><div className={cn("h-full", pct === 100 ? "bg-red-500" : "bg-primary")} style={{ width: `${pct}%` }} /></div>
+   256→                </div>
+   257→              </CardContent>
+   258→            </Card>
+   259→          );
+   260→        })}
+   261→      </div>
+   262→
+   263→      {/* Mess info */}
+   264→      <Card className="border-0 shadow-sm glass-card">
+   265→        <CardHeader><CardTitle className="text-base">Mess & Dining</CardTitle></CardHeader>
+   266→        <CardContent>
+   267→          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+   268→            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Mess Contractor</p><p className="font-medium mt-1">Not configured</p></div>
+   269→            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Monthly Mess Fee</p><p className="font-medium mt-1">Rs. 0/student</p></div>
+   270→            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Meal Times</p><p className="font-medium mt-1">Not set</p></div>
+   271→            <div className="rounded-lg bg-muted/30 p-3"><p className="text-xs text-muted-foreground uppercase">Total Mess Students</p><p className="font-medium mt-1">{totalOccupied}</p></div>
+   272→          </div>
+   273→        </CardContent>
+   274→      </Card>
+   275→    </div>
+   276→  );
+   277→}
+   278→
+   279→// ═══════════════════════════════════════════════════════════════
+   280→// INVENTORY MODULE
+   281→// ═══════════════════════════════════════════════════════════════
+   282→export function InventoryModule() {
+   283→  const [addOpen, setAddOpen] = useState(false);
+   284→  const [items, setItems] = useState<InventoryItem[]>(INVENTORY_ITEMS);
+   285→
+   286→  const lowStock = items.filter(i => i.quantity <= i.minStock).length;
+   287→  const needsRepair = items.filter(i => i.condition === "Needs Repair" || i.condition === "Damaged").length;
+   288→
+   289→  return (
+   290→    <div className="space-y-3 fade-in">
+   291→      <div className="flex justify-between items-center flex-wrap gap-3">
+   292→        <p className="text-sm text-muted-foreground">Manage furniture, electronics, lab equipment, and supplies.</p>
+   293→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Item</Button>
+   294→      </div>
+   295→
+   296→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   297→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Package className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Items</p><p className="text-xl font-bold">{items.length}</p></div></CardContent></Card>
+   298→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><AlertCircle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Low Stock</p><p className="text-xl font-bold">{lowStock}</p></div></CardContent></Card>
+   299→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-yellow-500/10 p-1.5"><Wrench className="w-4 h-4 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Needs Repair</p><p className="text-xl font-bold">{needsRepair}</p></div></CardContent></Card>
+   300→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><TrendingUp className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Categories</p><p className="text-xl font-bold">{new Set(items.map(i => i.category)).size}</p></div></CardContent></Card>
+   301→      </div>
+   302→
+   303→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   304→        <div className="overflow-x-auto">
+   305→          <Table>
+   306→            <TableHeader><TableRow className="border-border/40">
+   307→              <TableHead>Item ID</TableHead><TableHead>Name</TableHead><TableHead>Category</TableHead><TableHead className="text-center">Quantity</TableHead><TableHead className="text-center">Min Stock</TableHead><TableHead>Location</TableHead><TableHead>Condition</TableHead>
+   308→            </TableRow></TableHeader>
+   309→            <TableBody>
+   310→              {items.map(i => {
+   311→                const isLow = i.quantity <= i.minStock;
+   312→                return (
+   313→                  <TableRow key={i.id} className="border-border/30 hover:bg-muted/30">
+   314→                    <TableCell className="font-mono text-xs text-muted-foreground">{i.id}</TableCell>
+   315→                    <TableCell className="font-medium text-sm">{i.name}</TableCell>
+   316→                    <TableCell><Badge variant="outline" className="text-xs">{i.category}</Badge></TableCell>
+   317→                    <TableCell className="text-center"><span className={cn("font-bold text-sm", isLow && "text-red-600")}>{i.quantity}</span> <span className="text-xs text-muted-foreground">{i.unit}</span></TableCell>
+   318→                    <TableCell className="text-center text-xs text-muted-foreground">{i.minStock}</TableCell>
+   319→                    <TableCell className="text-xs text-muted-foreground">{i.location}</TableCell>
+   320→                    <TableCell><Badge variant="outline" className={cn("text-xs border-0", i.condition === "Good" ? "bg-emerald-500/10 text-emerald-600" : i.condition === "Needs Repair" ? "bg-yellow-500/10 text-yellow-600" : "bg-red-500/10 text-red-600")}>{i.condition}</Badge></TableCell>
+   321→                  </TableRow>
+   322→                );
+   323→              })}
+   324→            </TableBody>
+   325→          </Table>
+   326→        </div>
+   327→      </Card>
+   328→
+   329→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   330→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   331→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Inventory Item</DialogTitle></DialogHeader>
+   332→          <div className="space-y-2 py-1">
+   333→            <div><Label>Item Name *</Label><Input placeholder="e.g., Lab Beakers" /></div>
+   334→            <div className="grid grid-cols-2 gap-3">
+   335→              <div><Label>Category</Label><Select defaultValue="Furniture"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Furniture", "Electronics", "Lab Equipment", "Stationery", "Sports", "Medical", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+   336→              <div><Label>Quantity</Label><Input type="number" defaultValue={1} /></div>
+   337→            </div>
+   338→            <div className="grid grid-cols-2 gap-3"><div><Label>Unit</Label><Input defaultValue="pcs" /></div><div><Label>Min Stock</Label><Input type="number" defaultValue={1} /></div></div>
+   339→            <div><Label>Location</Label><Input placeholder="e.g., Science Lab" /></div>
+   340→          </div>
+   341→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(false)}>Add Item</Button></DialogFooter>
+   342→        </DialogContent>
+   343→      </Dialog>
+   344→    </div>
+   345→  );
+   346→}
+   347→
+   348→// ═══════════════════════════════════════════════════════════════
+   349→// EVENT CALENDAR MODULE
+   350→// ═══════════════════════════════════════════════════════════════
+   351→export function EventsModule() {
+   352→  const [addOpen, setAddOpen] = useState(false);
+   353→  const [events, setEvents] = useState<SchoolEvent[]>(SCHOOL_EVENTS);
+   354→  const [filter, setFilter] = useState<string>("all");
+   355→
+   356→  const filtered = filter === "all" ? events.sort((a, b) => a.date.localeCompare(b.date)) : events.filter(e => e.type === filter).sort((a, b) => a.date.localeCompare(b.date));
+   357→
+   358→  const typeIcons: Record<string, any> = {
+   359→    Exam: FileText, Holiday: Home, PTM: Users, Sports: TrendingUp,
+   360→    Cultural: Package, Meeting: Users, Deadline: AlertCircle,
+   361→  };
+   362→
+   363→  return (
+   364→    <div className="space-y-3 fade-in">
+   365→      <div className="flex justify-between items-center flex-wrap gap-3">
+   366→        <p className="text-sm text-muted-foreground">School events, holidays, exams, PTMs, and important dates.</p>
+   367→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Event</Button>
+   368→      </div>
+   369→
+   370→      {/* Filter buttons */}
+   371→      <div className="flex items-center gap-2 flex-wrap">
+   372→        {["all", "Exam", "Holiday", "PTM", "Sports", "Cultural", "Meeting", "Deadline"].map(t => (
+   373→          <button key={t} onClick={() => setFilter(t)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", filter === t ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:bg-muted")}>
+   374→            {t === "all" ? "All Events" : t}
+   375→          </button>
+   376→        ))}
+   377→      </div>
+   378→
+   379→      {/* Timeline */}
+   380→      <div className="space-y-3">
+   381→        {filtered.map((e, i) => {
+   382→          const Icon = typeIcons[e.type] || Calendar;
+   383→          const eventDate = new Date(e.date);
+   384→          const isPast = eventDate < new Date();
+   385→          const isToday = e.date === new Date().toISOString().split("T")[0];
+   386→          return (
+   387→            <Card key={e.id} className={cn("border-0 shadow-sm glass-card card-hover relative overflow-hidden", isToday && "ring-2 ring-accent/40")}>
+   388→              <CardContent className="p-4">
+   389→                <div className="flex items-start gap-4">
+   390→                  {/* Date block */}
+   391→                  <div className={cn("rounded-xl p-3 text-center min-w-[60px] shrink-0", e.color)}>
+   392→                    <p className="text-[10px] text-white/80 uppercase">{eventDate.toLocaleDateString("en-GB", { month: "short" })}</p>
+   393→                    <p className="text-2xl font-bold text-white">{eventDate.getDate()}</p>
+   394→                    <p className="text-[10px] text-white/80">{eventDate.toLocaleDateString("en-GB", { weekday: "short" })}</p>
+   395→                  </div>
+   396→                  {/* Content */}
+   397→                  <div className="flex-1 min-w-0">
+   398→                    <div className="flex items-center gap-2 flex-wrap">
+   399→                      <Icon className="w-4 h-4 text-muted-foreground" />
+   400→                      <p className="font-semibold text-sm">{e.title}</p>
+   401→                      <Badge variant="outline" className={cn("text-[10px] border-0", e.color.replace("bg-", "bg-").replace("500", "500/10"))}>{e.type}</Badge>
+   402→                      {isToday && <Badge className="text-[9px] bg-accent text-accent-foreground border-0 animate-pulse">TODAY</Badge>}
+   403→                      {isPast && !isToday && <Badge variant="outline" className="text-[9px] bg-muted text-muted-foreground border-0">Past</Badge>}
+   404→                    </div>
+   405→                    <p className="text-xs text-muted-foreground mt-1">{e.description}</p>
+   406→                  </div>
+   407→                </div>
+   408→              </CardContent>
+   409→            </Card>
+   410→          );
+   411→        })}
+   412→      </div>
+   413→
+   414→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   415→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   416→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Event</DialogTitle></DialogHeader>
+   417→          <div className="space-y-2 py-1">
+   418→            <div><Label>Event Title *</Label><Input placeholder="e.g., Science Exhibition" /></div>
+   419→            <div className="grid grid-cols-2 gap-3">
+   420→              <div><Label>Type</Label><Select defaultValue="Meeting"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Exam", "Holiday", "PTM", "Sports", "Cultural", "Meeting", "Deadline"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+   421→              <div><Label>Date *</Label><Input type="date" /></div>
+   422→            </div>
+   423→            <div><Label>Description</Label><Input placeholder="Brief description..." /></div>
+   424→          </div>
+   425→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(false)}>Add Event</Button></DialogFooter>
+   426→        </DialogContent>
+   427→      </Dialog>
+   428→    </div>
+   429→  );
+   430→}
+   431→

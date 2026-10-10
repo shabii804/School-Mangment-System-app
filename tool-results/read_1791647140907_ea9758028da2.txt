@@ -1,0 +1,1404 @@
+     1→"use client";
+     2→
+     3→import { useState, useMemo, useRef } from "react";
+     4→import { useAppStore } from "@/lib/sms-store";
+     5→import { Card, CardContent } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { Input } from "@/components/ui/input";
+     8→import { Label } from "@/components/ui/label";
+     9→import { Badge } from "@/components/ui/badge";
+    10→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    11→import {
+    12→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    13→} from "@/components/ui/table";
+    14→import {
+    15→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    16→} from "@/components/ui/select";
+    17→import {
+    18→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+    19→} from "@/components/ui/dialog";
+    20→import {
+    21→  Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
+    22→} from "@/components/ui/drawer";
+    23→import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+    24→import {
+    25→  Search, Plus, Phone, Eye, Filter, UserCheck, Users, UserPlus,
+    26→  QrCode, Printer, GraduationCap, Mail, Upload, Trash2, MapPin, Heart,
+    27→  AlertCircle, Bus, Siblings, Home, Calendar, Droplet, Globe, Briefcase,
+    28→  User, UserCircle, Stethoscope, FileText, X, DollarSign, Edit, ArrowUpCircle,
+    29→} from "lucide-react";
+    30→import { type Student } from "@/lib/sms-data";
+    31→import { cn } from "@/lib/utils";
+    32→import { printStudentIDCard, printFeeReceipt } from "@/lib/pdf-service";
+    33→import { Receipt as ReceiptIcon } from "lucide-react";
+    34→import { useToast } from "@/hooks/use-toast";
+    35→
+    36→const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+    37→const RELIGIONS = ["Islam", "Christianity", "Hinduism", "Sikhism", "Other"];
+    38→const EMPTY_FORM = {
+    39→  name: "", fatherName: "", fatherPhone: "", fatherCnic: "", fatherOccupation: "",
+    40→  motherName: "", motherPhone: "", motherOccupation: "",
+    41→  guardianName: "", guardianPhone: "", guardianRelation: "",
+    42→  dob: "", cnic: "", bloodGroup: "A+", religion: "Islam", nationality: "Pakistani",
+    43→  address: "", previousSchool: "",
+    44→  emergencyName: "", emergencyContact: "",
+    45→  medicalConditions: "", allergies: "",
+    46→  class: "Grade 1", section: "A", gender: "Male" as "Male" | "Female",
+    47→  isHosteller: false, transport: false, transportRoute: "", siblings: "",
+    48→  photo: "" as string,
+    49→};
+    50→
+    51→export function StudentsModule() {
+    52→  const { students, searchQuery, addStudent, updateStudent, deleteStudent, school, feeCollections, documents, addDocument, deleteDocument, commLogs, addCommLog, deleteCommLog, collectFee, classes: storeClasses } = useAppStore();
+    53→  const CLASSES = storeClasses.length > 0 ? storeClasses : [];
+    54→  const { toast } = useToast();
+    55→  const [classFilter, setClassFilter] = useState("all");
+    56→  const [statusFilter, setStatusFilter] = useState("all");
+    57→  const [selected, setSelected] = useState<Student | null>(null);
+    58→  const [addOpen, setAddOpen] = useState(false);
+    59→  const [form, setForm] = useState(EMPTY_FORM);
+    60→  const [formSection, setFormSection] = useState(0);
+    61→  const fileInputRef = useRef<HTMLInputElement>(null);
+    62→
+    63→  // Edit / Delete / Promote state
+    64→  const [editStudent, setEditStudent] = useState<Student | null>(null);
+    65→  const [editForm, setEditForm] = useState<Partial<Student>>({});
+    66→  const [deleteConfirm, setDeleteConfirm] = useState<Student | null>(null);
+    67→  const [promoteTarget, setPromoteTarget] = useState<Student | null>(null);
+    68→  const [promoteClass, setPromoteClass] = useState("");
+    69→  const [promoteSection, setPromoteSection] = useState("A");
+    70→
+    71→  // Bulk selection
+    72→  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    73→  const [bulkPromoteOpen, setBulkPromoteOpen] = useState(false);
+    74→  const [bulkClass, setBulkClass] = useState("");
+    75→  const [bulkSection, setBulkSection] = useState("A");
+    76→  const [bulkFeeOpen, setBulkFeeOpen] = useState(false);
+    77→  const [bulkFeeAmount, setBulkFeeAmount] = useState(0);
+    78→  const [bulkFeeMode, setBulkFeeMode] = useState<"Cash" | "Cheque" | "Bank Transfer">("Cash");
+    79→
+    80→  // Document upload
+    81→  const [docType, setDocType] = useState<string>("Birth Certificate");
+    82→  const docFileRef = useRef<HTMLInputElement>(null);
+    83→
+    84→  // Communication log
+    85→  const [commForm, setCommForm] = useState({ type: "Phone Call", direction: "Outgoing", subject: "", notes: "" });
+    86→
+    87→  const filtered = useMemo(() => {
+    88→    const q = searchQuery.toLowerCase();
+    89→    return students.filter(s => {
+    90→      if (classFilter !== "all" && s.class !== classFilter) return false;
+    91→      if (statusFilter !== "all" && s.status !== statusFilter) return false;
+    92→      if (q && !(`${s.name} ${s.fatherName} ${s.id} ${s.fatherPhone} ${s.cnic}`.toLowerCase().includes(q))) return false;
+    93→      return true;
+    94→    });
+    95→  }, [students, searchQuery, classFilter, statusFilter]);
+    96→
+    97→  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    98→    const file = e.target.files?.[0];
+    99→    if (!file) return;
+   100→    if (!file.type.startsWith("image/")) return;
+   101→    if (file.size > 500 * 1024) return;
+   102→    const reader = new FileReader();
+   103→    reader.onload = () => setForm({ ...form, photo: reader.result as string });
+   104→    reader.readAsDataURL(file);
+   105→  };
+   106→
+   107→  const handleAdd = () => {
+   108→    // Validation
+   109→    if (!form.name.trim()) { toast({ title: "Name required", description: "Please enter student's full name.", variant: "destructive" }); return; }
+   110→    if (!form.fatherName.trim()) { toast({ title: "Father's name required", description: "Please enter father's name.", variant: "destructive" }); return; }
+   111→    if (!form.fatherPhone.trim()) { toast({ title: "Phone required", description: "Please enter father's phone number.", variant: "destructive" }); return; }
+   112→    if (form.fatherPhone && !/^[\+]?[\d\s\-]{10,15}$/.test(form.fatherPhone)) { toast({ title: "Invalid phone", description: "Phone must be 10-15 digits.", variant: "destructive" }); return; }
+   113→    if (form.cnic && !/^[\d]{5}-?[\d]{7}-?[\d]$/.test(form.cnic)) { toast({ title: "Invalid CNIC", description: "CNIC format: 42101-1234567-1", variant: "destructive" }); return; }
+   114→
+   115→    const cls = CLASSES.find(c => c.name === form.class);
+   116→    const monthlyFee = cls?.monthlyFee ?? 0;
+   117→    const hostelFee = form.isHosteller ? (useAppStore.getState().feeStructure.hostelFee || 0) : 0;
+   118→    const newStudent: Student = {
+   119→      id: `SCH-${new Date().getFullYear()}-${String(students.length + 1).padStart(4, "0")}`,
+   120→      rollNo: String(filtered.length + 1).padStart(2, "0"),
+   121→      name: form.name,
+   122→      class: form.class,
+   123→      section: form.section,
+   124→      gender: form.gender,
+   125→      dob: form.dob || "2015-01-01",
+   126→      cnic: form.cnic || "—",
+   127→      bloodGroup: form.bloodGroup,
+   128→      religion: form.religion,
+   129→      nationality: form.nationality,
+   130→      address: form.address || "—",
+   131→      fatherName: form.fatherName,
+   132→      fatherCnic: form.fatherCnic || "—",
+   133→      fatherPhone: form.fatherPhone,
+   134→      fatherOccupation: form.fatherOccupation || "—",
+   135→      motherName: form.motherName || "—",
+   136→      motherPhone: form.motherPhone || "—",
+   137→      motherOccupation: form.motherOccupation || "Housewife",
+   138→      guardianName: form.guardianName,
+   139→      guardianPhone: form.guardianPhone,
+   140→      guardianRelation: form.guardianRelation,
+   141→      primaryContact: "father",
+   142→      emergencyContact: form.emergencyContact || form.fatherPhone,
+   143→      emergencyName: form.emergencyName || form.fatherName,
+   144→      medicalConditions: form.medicalConditions || "None",
+   145→      allergies: form.allergies || "None",
+   146→      previousSchool: form.previousSchool || "—",
+   147→      admissionDate: new Date().toISOString().split("T")[0],
+   148→      monthlyFee,
+   149→      status: "Active",
+   150→      attendancePct: 100,
+   151→      feePaidThisMonth: false,
+   152→      isHosteller: form.isHosteller,
+   153→      transport: form.transport,
+   154→      transportRoute: form.transport ? form.transportRoute : undefined,
+   155→      siblings: form.siblings,
+   156→      photo: form.photo || undefined,
+   157→      outstandingAmount: monthlyFee + hostelFee,
+   158→    };
+   159→    addStudent(newStudent);
+   160→    toast({ title: "Student Admitted ✓", description: `${newStudent.name} admitted to ${newStudent.class}-${newStudent.section} • ID: ${newStudent.id}` });
+   161→    setAddOpen(false);
+   162→    setForm(EMPTY_FORM);
+   163→    setFormSection(0);
+   164→  };
+   165→
+   166→  const printIDCard = async (s: Student) => {
+   167→    try { await printStudentIDCard(s, school); } catch {}
+   168→  };
+   169→
+   170→  // Document upload handler
+   171→  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+   172→    const file = e.target.files?.[0];
+   173→    if (!file || !selected) return;
+   174→    if (file.size > 2 * 1024 * 1024) return; // 2MB limit
+   175→    const reader = new FileReader();
+   176→    reader.onload = () => {
+   177→      addDocument({
+   178→        id: `DOC-${Date.now()}`,
+   179→        studentId: selected.id,
+   180→        name: file.name,
+   181→        type: docType as any,
+   182→        uploadDate: new Date().toISOString().split("T")[0],
+   183→        dataUrl: reader.result as string,
+   184→        size: file.size,
+   185→      });
+   186→    };
+   187→    reader.readAsDataURL(file);
+   188→  };
+   189→
+   190→  // Communication log handler
+   191→  const handleAddComm = () => {
+   192→    if (!selected || !commForm.subject) return;
+   193→    addCommLog({
+   194→      id: `COMM-${Date.now()}`,
+   195→      studentId: selected.id,
+   196→      type: commForm.type as any,
+   197→      date: new Date().toISOString().replace("T", " ").slice(0, 16),
+   198→      direction: commForm.direction as any,
+   199→      subject: commForm.subject,
+   200→      notes: commForm.notes,
+   201→      user: "Admin",
+   202→    });
+   203→    setCommForm({ type: "Phone Call", direction: "Outgoing", subject: "", notes: "" });
+   204→  };
+   205→
+   206→  // Bulk selection helpers
+   207→  const toggleSelect = (id: string) => {
+   208→    const next = new Set(selectedIds);
+   209→    if (next.has(id)) next.delete(id); else next.add(id);
+   210→    setSelectedIds(next);
+   211→  };
+   212→  const toggleSelectAll = () => {
+   213→    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+   214→    else setSelectedIds(new Set(filtered.map(s => s.id)));
+   215→  };
+   216→  const handleBulkPromote = () => {
+   217→    selectedIds.forEach(id => {
+   218→      const newFee = CLASSES.find(c => c.name === bulkClass)?.monthlyFee;
+   219→      updateStudent(id, { class: bulkClass, section: bulkSection, ...(newFee ? { monthlyFee: newFee } : {}) });
+   220→    });
+   221→    toast({ title: "Bulk Promote Complete ✓", description: `${selectedIds.size} students promoted to ${bulkClass}-${bulkSection}` });
+   222→    setSelectedIds(new Set());
+   223→    setBulkPromoteOpen(false);
+   224→  };
+   225→
+   226→  const handleBulkFee = () => {
+   227→    if (bulkFeeAmount <= 0) return;
+   228→    let count = 0;
+   229→    selectedIds.forEach(id => {
+   230→      const student = students.find(s => s.id === id);
+   231→      if (student) {
+   232→        collectFee(id, bulkFeeAmount, bulkFeeMode, "Bulk Tuition", { tuition: bulkFeeAmount });
+   233→        count++;
+   234→      }
+   235→    });
+   236→    toast({ title: "Bulk Fee Collected ✓", description: `${count} receipts generated • Rs. ${(bulkFeeAmount * count).toLocaleString()} total` });
+   237→    setSelectedIds(new Set());
+   238→    setBulkFeeOpen(false);
+   239→  };
+   240→
+   241→  const formSections = [
+   242→    { title: "Personal Info", icon: User },
+   243→    { title: "Parents", icon: Users },
+   244→    { title: "Academic", icon: GraduationCap },
+   245→    { title: "Medical & Address", icon: Heart },
+   246→  ];
+   247→
+   248→  return (
+   249→    <div className="space-y-3">
+   250→      {/* Toolbar */}
+   251→      <div className="flex flex-wrap items-center gap-3">
+   252→        <div className="relative flex-1 min-w-60">
+   253→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+   254→          <Input placeholder="Search by name, ID, CNIC, father, phone..." className="pl-9 bg-background/60" />
+   255→        </div>
+   256→        <Select value={classFilter} onValueChange={setClassFilter}>
+   257→          <SelectTrigger className="w-40 bg-background/60"><Filter className="w-3.5 h-3.5 mr-1.5" /><SelectValue /></SelectTrigger>
+   258→          <SelectContent>
+   259→            <SelectItem value="all">All Classes</SelectItem>
+   260→            {CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+   261→          </SelectContent>
+   262→        </Select>
+   263→        <Select value={statusFilter} onValueChange={setStatusFilter}>
+   264→          <SelectTrigger className="w-32 bg-background/60"><SelectValue /></SelectTrigger>
+   265→          <SelectContent>
+   266→            <SelectItem value="all">All Status</SelectItem>
+   267→            <SelectItem value="Active">Active</SelectItem>
+   268→            <SelectItem value="Left">Left</SelectItem>
+   269→          </SelectContent>
+   270→        </Select>
+   271→        <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setForm(EMPTY_FORM); setFormSection(0); } }}>
+   272→          <DialogTrigger asChild>
+   273→            <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1.5" />Admit Student</Button>
+   274→          </DialogTrigger>
+   275→          <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+   276→            {/* Gradient hero header */}
+   277→            <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-primary to-accent/80 px-5 py-4 text-primary-foreground">
+   278→              <div className="absolute inset-0 opacity-10 pattern-grid" />
+   279→              <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+   280→              <div className="relative flex items-center gap-4">
+   281→                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+   282→                  <UserPlus className="w-6 h-6" />
+   283→                </div>
+   284→                <div className="flex-1">
+   285→                  <h2 className="text-xl font-bold tracking-tight">New Student Admission</h2>
+   286→                  <p className="text-xs text-white/75 mt-0.5">Complete the form below to register a new student record.</p>
+   287→                </div>
+   288→                <div className="hidden md:flex flex-col items-end text-right">
+   289→                  <span className="text-[10px] uppercase tracking-wider text-white/60">Admission Date</span>
+   290→                  <span className="text-sm font-semibold mt-0.5">{new Date().toISOString().split("T")[0]}</span>
+   291→                </div>
+   292→              </div>
+   293→            </div>
+   294→
+   295→            {/* Form body */}
+   296→            <div className="px-5 py-4 space-y-3">
+   297→              {/* ─── Section 1: Personal Information ─── */}
+   298→              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   299→                <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   300→                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   301→                    <User className="w-3.5 h-3.5 text-primary" />
+   302→                  </div>
+   303→                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">Personal Information</p>
+   304→                  <span className="ml-auto text-[10px] text-muted-foreground">Basic bio & identity</span>
+   305→                </div>
+   306→                <div className="p-3 grid grid-cols-12 gap-3">
+   307→                  {/* Photo upload — circular */}
+   308→                  <div className="col-span-12 md:col-span-3 flex flex-col items-center">
+   309→                    <div
+   310→                      onClick={() => fileInputRef.current?.click()}
+   311→                      className="relative w-28 h-28 rounded-full border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 cursor-pointer transition-all group overflow-hidden flex items-center justify-center"
+   312→                    >
+   313→                      {form.photo ? (
+   314→                        <>
+   315→                          <img src={form.photo} alt="Student" className="w-full h-full object-cover" />
+   316→                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+   317→                            <Upload className="w-5 h-5 text-white" />
+   318→                          </div>
+   319→                          <button
+   320→                            type="button"
+   321→                            onClick={(e) => { e.stopPropagation(); setForm({ ...form, photo: "" }); }}
+   322→                            className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+   323→                          >
+   324→                            <X className="w-3 h-3" />
+   325→                          </button>
+   326→                        </>
+   327→                      ) : (
+   328→                        <div className="text-center">
+   329→                          <User className="w-8 h-8 text-primary/40 mx-auto" />
+   330→                          <p className="text-[9px] text-muted-foreground mt-1 px-2">Click to upload</p>
+   331→                        </div>
+   332→                      )}
+   333→                    </div>
+   334→                    <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handlePhotoUpload} className="hidden" />
+   335→                    <p className="text-[10px] text-muted-foreground mt-2 text-center">Max 500KB • PNG/JPG</p>
+   336→                  </div>
+   337→
+   338→                  {/* Personal fields */}
+   339→                  <div className="col-span-12 md:col-span-9 grid grid-cols-2 md:grid-cols-3 gap-2.5">
+   340→                    <div className="col-span-2 md:col-span-2 space-y-1">
+   341→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
+   342→                      <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Ahmed Ali Khan" className="h-9" />
+   343→                    </div>
+   344→                    <div className="space-y-1">
+   345→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Gender</Label>
+   346→                      <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
+   347→                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   348→                        <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
+   349→                      </Select>
+   350→                    </div>
+   351→                    <div className="space-y-1">
+   352→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date of Birth</Label>
+   353→                      <Input type="date" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} className="h-9" />
+   354→                    </div>
+   355→                    <div className="space-y-1">
+   356→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNIC / B-Form</Label>
+   357→                      <Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" className="h-9" />
+   358→                    </div>
+   359→                    <div className="space-y-1">
+   360→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Blood Group</Label>
+   361→                      <Select value={form.bloodGroup} onValueChange={v => setForm({...form, bloodGroup: v})}>
+   362→                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   363→                        <SelectContent>{BLOOD_GROUPS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+   364→                      </Select>
+   365→                    </div>
+   366→                    <div className="space-y-1">
+   367→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Religion</Label>
+   368→                      <Select value={form.religion} onValueChange={v => setForm({...form, religion: v})}>
+   369→                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   370→                        <SelectContent>{RELIGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+   371→                      </Select>
+   372→                    </div>
+   373→                    <div className="space-y-1">
+   374→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Nationality</Label>
+   375→                      <Input value={form.nationality} onChange={e => setForm({...form, nationality: e.target.value})} className="h-9" />
+   376→                    </div>
+   377→                  </div>
+   378→                </div>
+   379→              </div>
+   380→
+   381→              {/* ─── Section 2: Academic & Logistics ─── */}
+   382→              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   383→                <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+   384→                  <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+   385→                    <GraduationCap className="w-3.5 h-3.5 text-accent" />
+   386→                  </div>
+   387→                  <p className="text-xs font-semibold text-accent uppercase tracking-wide">Academic & Logistics</p>
+   388→                  <span className="ml-auto text-[10px] text-muted-foreground">Class placement & facilities</span>
+   389→                </div>
+   390→                <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+   391→                  <div className="space-y-1">
+   392→                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class</Label>
+   393→                    <Select value={form.class} onValueChange={v => setForm({...form, class: v})}>
+   394→                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   395→                      <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+   396→                    </Select>
+   397→                  </div>
+   398→                  <div className="space-y-1">
+   399→                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Section</Label>
+   400→                    <Select value={form.section} onValueChange={v => setForm({...form, section: v})}>
+   401→                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   402→                      <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+   403→                    </Select>
+   404→                  </div>
+   405→                  <div className="col-span-2 space-y-1">
+   406→                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Previous School</Label>
+   407→                    <Input value={form.previousSchool} onChange={e => setForm({...form, previousSchool: e.target.value})} placeholder="If transfer student" className="h-9" />
+   408→                  </div>
+   409→                  <button
+   410→                    type="button"
+   411→                    onClick={() => setForm({...form, isHosteller: !form.isHosteller})}
+   412→                    className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left", form.isHosteller ? "border-accent bg-accent/10" : "border-border/50 hover:border-accent/40")}
+   413→                  >
+   414→                    <Home className={cn("w-4 h-4", form.isHosteller ? "text-accent" : "text-muted-foreground")} />
+   415→                    <div>
+   416→                      <p className="text-xs font-semibold">Hosteller</p>
+   417→                      <p className="text-[9px] text-muted-foreground">{form.isHosteller ? "Enabled" : "Click to enable"}</p>
+   418→                    </div>
+   419→                  </button>
+   420→                  <button
+   421→                    type="button"
+   422→                    onClick={() => setForm({...form, transport: !form.transport})}
+   423→                    className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left", form.transport ? "border-primary bg-primary/10" : "border-border/50 hover:border-primary/40")}
+   424→                  >
+   425→                    <Bus className={cn("w-4 h-4", form.transport ? "text-primary" : "text-muted-foreground")} />
+   426→                    <div>
+   427→                      <p className="text-xs font-semibold">Transport</p>
+   428→                      <p className="text-[9px] text-muted-foreground">{form.transport ? "Enabled" : "Click to enable"}</p>
+   429→                    </div>
+   430→                  </button>
+   431→                  {form.transport ? (
+   432→                    <div className="col-span-2 space-y-1">
+   433→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Transport Route</Label>
+   434→                      <Input value={form.transportRoute} onChange={e => setForm({...form, transportRoute: e.target.value})} placeholder="e.g., Route A — Area Name" className="h-9" />
+   435→                    </div>
+   436→                  ) : (
+   437→                    <div className="col-span-2 space-y-1">
+   438→                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Siblings in School</Label>
+   439→                      <Input value={form.siblings} onChange={e => setForm({...form, siblings: e.target.value})} placeholder="e.g., Sara Khan (Grade 3)" className="h-9" />
+   440→                    </div>
+   441→                  )}
+   442→                </div>
+   443→              </div>
+   444→
+   445→              {/* ─── Section 3: Parents Information ─── */}
+   446→              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   447→                <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/5 border-b border-purple-500/15">
+   448→                  <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
+   449→                    <Users className="w-3.5 h-3.5 text-purple-600" />
+   450→                  </div>
+   451→                  <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Parents Information</p>
+   452→                  <span className="ml-auto text-[10px] text-muted-foreground">Father (primary) & mother details</span>
+   453→                </div>
+   454→                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+   455→                  {/* Father */}
+   456→                  <div className="rounded-lg border border-primary/25 bg-primary/[0.03] p-3">
+   457→                    <div className="flex items-center gap-2 mb-2.5">
+   458→                      <div className="w-6 h-6 rounded-md bg-primary/15 flex items-center justify-center"><User className="w-3 h-3 text-primary" /></div>
+   459→                      <p className="text-xs font-semibold text-primary">Father</p>
+   460→                      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Primary</span>
+   461→                    </div>
+   462→                    <div className="grid grid-cols-2 gap-2">
+   463→                      <div className="col-span-2 space-y-1">
+   464→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name <span className="text-red-500">*</span></Label>
+   465→                        <Input value={form.fatherName} onChange={e => setForm({...form, fatherName: e.target.value})} placeholder="Father's full name" className="h-8 text-xs" />
+   466→                      </div>
+   467→                      <div className="space-y-1">
+   468→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">CNIC</Label>
+   469→                        <Input value={form.fatherCnic} onChange={e => setForm({...form, fatherCnic: e.target.value})} placeholder="42101-XXX" className="h-8 text-xs" />
+   470→                      </div>
+   471→                      <div className="space-y-1">
+   472→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone <span className="text-red-500">*</span></Label>
+   473→                        <Input value={form.fatherPhone} onChange={e => setForm({...form, fatherPhone: e.target.value})} placeholder="+92 3xx" className="h-8 text-xs" />
+   474→                      </div>
+   475→                      <div className="col-span-2 space-y-1">
+   476→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Occupation</Label>
+   477→                        <Input value={form.fatherOccupation} onChange={e => setForm({...form, fatherOccupation: e.target.value})} placeholder="e.g., Engineer" className="h-8 text-xs" />
+   478→                      </div>
+   479→                    </div>
+   480→                  </div>
+   481→                  {/* Mother */}
+   482→                  <div className="rounded-lg border border-pink-500/25 bg-pink-500/[0.03] p-3">
+   483→                    <div className="flex items-center gap-2 mb-2.5">
+   484→                      <div className="w-6 h-6 rounded-md bg-pink-500/15 flex items-center justify-center"><Heart className="w-3 h-3 text-pink-600" /></div>
+   485→                      <p className="text-xs font-semibold text-pink-600">Mother</p>
+   486→                    </div>
+   487→                    <div className="grid grid-cols-2 gap-2">
+   488→                      <div className="space-y-1">
+   489→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name</Label>
+   490→                        <Input value={form.motherName} onChange={e => setForm({...form, motherName: e.target.value})} placeholder="Mother's name" className="h-8 text-xs" />
+   491→                      </div>
+   492→                      <div className="space-y-1">
+   493→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone</Label>
+   494→                        <Input value={form.motherPhone} onChange={e => setForm({...form, motherPhone: e.target.value})} placeholder="+92 3xx" className="h-8 text-xs" />
+   495→                      </div>
+   496→                      <div className="col-span-2 space-y-1">
+   497→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Occupation</Label>
+   498→                        <Input value={form.motherOccupation} onChange={e => setForm({...form, motherOccupation: e.target.value})} placeholder="e.g., Housewife" className="h-8 text-xs" />
+   499→                      </div>
+   500→                    </div>
+   501→                  </div>
+   502→                </div>
+   503→              </div>
+   504→
+   505→              {/* ─── Section 4: Guardian & Emergency ─── */}
+   506→              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   507→                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+   508→                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+   509→                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
+   510→                  </div>
+   511→                  <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Guardian & Emergency Contact</p>
+   512→                  <span className="ml-auto text-[10px] text-muted-foreground">Backup contact points</span>
+   513→                </div>
+   514→                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+   515→                  <div className="rounded-lg border border-border/40 bg-muted/20 p-3">
+   516→                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2.5 flex items-center gap-1.5">
+   517→                      <UserCircle className="w-3 h-3" />Guardian <span className="text-muted-foreground/60 normal-case">(if parents unavailable)</span>
+   518→                    </p>
+   519→                    <div className="grid grid-cols-3 gap-2">
+   520→                      <div className="space-y-1">
+   521→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name</Label>
+   522→                        <Input value={form.guardianName} onChange={e => setForm({...form, guardianName: e.target.value})} className="h-8 text-xs" />
+   523→                      </div>
+   524→                      <div className="space-y-1">
+   525→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone</Label>
+   526→                        <Input value={form.guardianPhone} onChange={e => setForm({...form, guardianPhone: e.target.value})} className="h-8 text-xs" />
+   527→                      </div>
+   528→                      <div className="space-y-1">
+   529→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Relation</Label>
+   530→                        <Input value={form.guardianRelation} onChange={e => setForm({...form, guardianRelation: e.target.value})} placeholder="Uncle" className="h-8 text-xs" />
+   531→                      </div>
+   532→                    </div>
+   533→                  </div>
+   534→                  <div className="rounded-lg border border-accent/25 bg-accent/[0.05] p-3">
+   535→                    <p className="text-[10px] font-semibold text-accent uppercase mb-2.5 flex items-center gap-1.5">
+   536→                      <AlertCircle className="w-3 h-3" />Emergency Contact
+   537→                    </p>
+   538→                    <div className="grid grid-cols-2 gap-2">
+   539→                      <div className="space-y-1">
+   540→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Name</Label>
+   541→                        <Input value={form.emergencyName} onChange={e => setForm({...form, emergencyName: e.target.value})} className="h-8 text-xs" />
+   542→                      </div>
+   543→                      <div className="space-y-1">
+   544→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Phone</Label>
+   545→                        <Input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} className="h-8 text-xs" />
+   546→                      </div>
+   547→                    </div>
+   548→                  </div>
+   549→                </div>
+   550→              </div>
+   551→
+   552→              {/* ─── Section 5: Medical & Address ─── */}
+   553→              <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   554→                <div className="flex items-center gap-2 px-3 py-2 bg-red-500/5 border-b border-red-500/15">
+   555→                  <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
+   556→                    <Stethoscope className="w-3.5 h-3.5 text-red-600" />
+   557→                  </div>
+   558→                  <p className="text-xs font-semibold text-red-600 uppercase tracking-wide">Medical & Address</p>
+   559→                  <span className="ml-auto text-[10px] text-muted-foreground">Health info & residence</span>
+   560→                </div>
+   561→                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+   562→                  <div className="rounded-lg border border-red-500/25 bg-red-500/[0.03] p-3">
+   563→                    <p className="text-[10px] font-semibold text-red-600 uppercase mb-2.5 flex items-center gap-1.5">
+   564→                      <Droplet className="w-3 h-3" />Medical History
+   565→                    </p>
+   566→                    <div className="grid grid-cols-2 gap-2">
+   567→                      <div className="space-y-1">
+   568→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Conditions</Label>
+   569→                        <Input value={form.medicalConditions} onChange={e => setForm({...form, medicalConditions: e.target.value})} placeholder="e.g., Asthma" className="h-8 text-xs" />
+   570→                      </div>
+   571→                      <div className="space-y-1">
+   572→                        <Label className="text-[10px] font-medium text-muted-foreground uppercase">Allergies</Label>
+   573→                        <Input value={form.allergies} onChange={e => setForm({...form, allergies: e.target.value})} placeholder="e.g., Peanuts" className="h-8 text-xs" />
+   574→                      </div>
+   575→                    </div>
+   576→                  </div>
+   577→                  <div className="rounded-lg border border-border/40 bg-muted/20 p-3">
+   578→                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2.5 flex items-center gap-1.5">
+   579→                      <MapPin className="w-3 h-3" />Home Address
+   580→                    </p>
+   581→                    <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="House #, Street, Block, City" className="h-8 text-xs" />
+   582→                  </div>
+   583→                </div>
+   584→              </div>
+   585→
+   586→              {/* Auto-generated info banner */}
+   587→              <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+   588→                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+   589→                  <FileText className="w-3 h-3 text-primary" />
+   590→                </div>
+   591→                <p className="text-[10px] text-muted-foreground leading-relaxed">
+   592→                  <span className="font-semibold text-primary">Auto-generated on save:</span> Student ID (SCH-YYYY-XXXX) • Roll Number • QR Code • Monthly Fee: <span className="font-semibold text-foreground">Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}</span>{form.isHosteller ? " + Hostel fee applied" : ""}
+   593→                </p>
+   594→              </div>
+   595→            </div>
+   596→
+   597→            {/* Sticky footer */}
+   598→            <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+   599→              <p className="text-[10px] text-muted-foreground">
+   600→                <span className="text-red-500">*</span> Required fields
+   601→              </p>
+   602→              <div className="flex gap-2">
+   603→                <Button variant="outline" onClick={() => { setAddOpen(false); setForm(EMPTY_FORM); }} className="h-9">Cancel</Button>
+   604→                <Button onClick={handleAdd} disabled={!form.name || !form.fatherName} className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md">
+   605→                  <Plus className="w-4 h-4 mr-1.5" />Save & Admit Student
+   606→                </Button>
+   607→              </div>
+   608→            </div>
+   609→          </DialogContent>
+   610→        </Dialog>
+   611→      </div>
+   612→
+   613→      {/* Stats */}
+   614→      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+   615→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+   616→          <div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div>
+   617→          <div><p className="text-xs text-muted-foreground">Total</p><p className="text-xl font-bold">{filtered.length}</p></div>
+   618→        </CardContent></Card>
+   619→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+   620→          <div className="rounded-lg bg-emerald-500/10 p-1.5"><UserCheck className="w-4 h-4 text-emerald-600" /></div>
+   621→          <div><p className="text-xs text-muted-foreground">Active</p><p className="text-xl font-bold">{filtered.filter(s => s.status === "Active").length}</p></div>
+   622→        </CardContent></Card>
+   623→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+   624→          <div className="rounded-lg bg-accent/10 p-1.5"><Home className="w-4 h-4 text-accent" /></div>
+   625→          <div><p className="text-xs text-muted-foreground">Hostellers</p><p className="text-xl font-bold">{filtered.filter(s => s.isHosteller).length}</p></div>
+   626→        </CardContent></Card>
+   627→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+   628→          <div className="rounded-lg bg-primary/10 p-1.5"><Bus className="w-4 h-4 text-primary" /></div>
+   629→          <div><p className="text-xs text-muted-foreground">Transport</p><p className="text-xl font-bold">{filtered.filter(s => s.transport).length}</p></div>
+   630→        </CardContent></Card>
+   631→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+   632→          <div className="rounded-lg bg-red-500/10 p-1.5"><Filter className="w-4 h-4 text-red-600" /></div>
+   633→          <div><p className="text-xs text-muted-foreground">Defaulters</p><p className="text-xl font-bold">{filtered.filter(s => s.outstandingAmount > 0).length}</p></div>
+   634→        </CardContent></Card>
+   635→      </div>
+   636→
+   637→      {/* Bulk action bar */}
+   638→      {selectedIds.size > 0 && (
+   639→        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 fade-in flex-wrap">
+   640→          <Badge className="bg-primary text-primary-foreground">{selectedIds.size} selected</Badge>
+   641→          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setBulkClass(filtered[0]?.class || "Grade 1"); setBulkPromoteOpen(true); }}>
+   642→            <ArrowUpCircle className="w-3.5 h-3.5 mr-1" />Bulk Promote
+   643→          </Button>
+   644→          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setBulkFeeOpen(true); setBulkFeeAmount(0); }}>
+   645→            <DollarSign className="w-3.5 h-3.5 mr-1" />Bulk Collect Fee
+   646→          </Button>
+   647→          <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>Clear Selection</Button>
+   648→        </div>
+   649→      )}
+   650→
+   651→      {/* Table */}
+   652→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   653→        <div className="overflow-x-auto">
+   654→          <Table>
+   655→            <TableHeader>
+   656→              <TableRow className="hover:bg-transparent border-border/40">
+   657→                <TableHead className="w-10">
+   658→                  <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} className="w-4 h-4 accent-primary cursor-pointer" />
+   659→                </TableHead>
+   660→                <TableHead className="w-12">Roll</TableHead>
+   661→                <TableHead>Student ID</TableHead>
+   662→                <TableHead>Name</TableHead>
+   663→                <TableHead>Class</TableHead>
+   664→                <TableHead>Father</TableHead>
+   665→                <TableHead>Phone</TableHead>
+   666→                <TableHead>Fee</TableHead>
+   667→                <TableHead>Status</TableHead>
+   668→                <TableHead className="text-right">Actions</TableHead>
+   669→              </TableRow>
+   670→            </TableHeader>
+   671→            <TableBody>
+   672→              {filtered.slice(0, 30).map(s => (
+   673→                <TableRow key={s.id} className={cn("border-border/30 hover:bg-muted/30 cursor-pointer", selectedIds.has(s.id) && "bg-primary/5")} onClick={() => setSelected(s)}>
+   674→                  <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+   675→                    <input type="checkbox" checked={selectedIds.has(s.id)} onChange={() => toggleSelect(s.id)} className="w-4 h-4 accent-primary cursor-pointer" />
+   676→                  </TableCell>
+   677→                  <TableCell className="font-mono text-xs">{s.rollNo}</TableCell>
+   678→                  <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
+   679→                  <TableCell>
+   680→                    <div className="flex items-center gap-2">
+   681→                      <Avatar className="w-8 h-8">
+   682→                        {s.photo ? (
+   683→                          <img src={s.photo} alt={s.name} className="w-full h-full object-cover rounded-full" />
+   684→                        ) : (
+   685→                          <AvatarFallback className={cn("text-xs font-semibold", s.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>
+   686→                            {s.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   687→                          </AvatarFallback>
+   688→                        )}
+   689→                      </Avatar>
+   690→                      <div>
+   691→                        <p className="font-medium text-sm flex items-center gap-1.5">
+   692→                          {s.name}
+   693→                          {s.isHosteller && <Home className="w-3 h-3 text-accent" />}
+   694→                          {s.transport && <Bus className="w-3 h-3 text-primary" />}
+   695→                        </p>
+   696→                        <p className="text-[10px] text-muted-foreground">{s.gender} • {s.bloodGroup} • {s.attendancePct}% att.</p>
+   697→                      </div>
+   698→                    </div>
+   699→                  </TableCell>
+   700→                  <TableCell><Badge variant="outline" className="text-xs">{s.class}-{s.section}</Badge></TableCell>
+   701→                  <TableCell className="text-sm">{s.fatherName}</TableCell>
+   702→                  <TableCell className="text-xs text-muted-foreground">{s.fatherPhone}</TableCell>
+   703→                  <TableCell>
+   704→                    {s.outstandingAmount > 0 ? (
+   705→                      <Badge variant="destructive" className="text-[10px]">Rs. {s.outstandingAmount.toLocaleString()}</Badge>
+   706→                    ) : (
+   707→                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-0">Paid</Badge>
+   708→                    )}
+   709→                  </TableCell>
+   710→                  <TableCell>
+   711→                    <Badge variant={s.status === "Active" ? "default" : "secondary"} className="text-[10px]">{s.status}</Badge>
+   712→                  </TableCell>
+   713→                  <TableCell className="text-right">
+   714→                    <div className="flex items-center justify-end gap-0.5">
+   715→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View"
+   716→                        onClick={(e) => { e.stopPropagation(); setSelected(s); }}
+   717→                      ><Eye className="w-3.5 h-3.5" /></Button>
+   718→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-primary" title="Edit"
+   719→                        onClick={(e) => { e.stopPropagation(); setEditStudent(s); setEditForm(s); }}
+   720→                      ><Edit className="w-3.5 h-3.5" /></Button>
+   721→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" title="Promote"
+   722→                        onClick={(e) => { e.stopPropagation(); setPromoteTarget(s); setPromoteClass(s.class); setPromoteSection(s.section); }}
+   723→                      ><ArrowUpCircle className="w-3.5 h-3.5" /></Button>
+   724→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" title="Delete"
+   725→                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(s); }}
+   726→                      ><Trash2 className="w-3.5 h-3.5" /></Button>
+   727→                    </div>
+   728→                  </TableCell>
+   729→                </TableRow>
+   730→              ))}
+   731→            </TableBody>
+   732→          </Table>
+   733→        </div>
+   734→        {filtered.length > 30 && (
+   735→          <div className="px-4 py-3 border-t border-border/30 text-xs text-muted-foreground text-center">
+   736→            Showing 30 of {filtered.length} students. Use search/filters to narrow down.
+   737→          </div>
+   738→        )}
+   739→      </Card>
+   740→
+   741→      {/* Profile slide-in panel */}
+   742→      {selected && (
+   743→        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+   744→          {/* Backdrop */}
+   745→          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+   746→          {/* Panel */}
+   747→          <div
+   748→            className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right"
+   749→            onClick={e => e.stopPropagation()}
+   750→          >
+   751→            {/* Close button */}
+   752→            <button
+   753→              onClick={() => setSelected(null)}
+   754→              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+   755→            >
+   756→              <X className="w-4 h-4" />
+   757→            </button>
+   758→
+   759→            {/* Gradient banner header */}
+   760→            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-4 text-primary-foreground overflow-hidden">
+   761→              <div className="absolute inset-0 opacity-10 pattern-grid" />
+   762→              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+   763→              <div className="relative flex items-start gap-5">
+   764→                <Avatar className="w-24 h-24 ring-4 ring-white/30 shadow-xl shrink-0">
+   765→                  {selected.photo ? (
+   766→                    <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover rounded-full" />
+   767→                  ) : (
+   768→                    <AvatarFallback className="text-2xl font-bold bg-white/20 text-white">
+   769→                      {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   770→                    </AvatarFallback>
+   771→                  )}
+   772→                </Avatar>
+   773→                <div className="flex-1 min-w-0 pt-1">
+   774→                  <h2 className="text-2xl font-bold flex items-center gap-2 flex-wrap">
+   775→                    {selected.name}
+   776→                  </h2>
+   777→                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+   778→                    {selected.isHosteller && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">🏠 Hosteller</span>}
+   779→                    {selected.transport && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">🚌 Transport</span>}
+   780→                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-50 font-medium flex items-center gap-1">
+   781→                      <span className={cn("w-1.5 h-1.5 rounded-full", selected.status === "Active" ? "bg-emerald-300" : "bg-red-300")} />
+   782→                      {selected.status}
+   783→                    </span>
+   784→                  </div>
+   785→                  <p className="text-white/70 text-xs mt-2">
+   786→                    {selected.id} • Roll #{selected.rollNo} • {selected.class}-{selected.section} • 🩸 {selected.bloodGroup}
+   787→                  </p>
+   788→                </div>
+   789→              </div>
+   790→              {/* Quick stats */}
+   791→              <div className="relative grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/20">
+   792→                <div>
+   793→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
+   794→                  <p className="text-xl font-bold mt-0.5">{selected.attendancePct}%</p>
+   795→                </div>
+   796→                <div className="border-l border-white/20 pl-3">
+   797→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Monthly Fee</p>
+   798→                  <p className="text-xl font-bold mt-0.5">Rs. {selected.monthlyFee.toLocaleString()}</p>
+   799→                </div>
+   800→                <div className="border-l border-white/20 pl-3">
+   801→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Outstanding</p>
+   802→                  <p className="text-xl font-bold mt-0.5">{selected.outstandingAmount > 0 ? `Rs. ${selected.outstandingAmount.toLocaleString()}` : "✓ Clear"}</p>
+   803→                </div>
+   804→                <div className="border-l border-white/20 pl-3">
+   805→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Admitted</p>
+   806→                  <p className="text-xl font-bold mt-0.5">{selected.admissionDate.slice(0, 4)}</p>
+   807→                </div>
+   808→              </div>
+   809→            </div>
+   810→
+   811→            {/* Action bar */}
+   812→            <div className="flex items-center gap-2 px-6 py-3 border-b border-border/30 bg-muted/20">
+   813→              <Button size="sm" variant="outline" onClick={() => printIDCard(selected)}>
+   814→                <QrCode className="w-3.5 h-3.5 mr-1.5" />Print ID Card
+   815→              </Button>
+   816→              <Button size="sm" variant="outline" onClick={() => { setEditStudent(selected); setEditForm(selected); }}>
+   817→                <Edit className="w-3.5 h-3.5 mr-1.5" />Edit Profile
+   818→              </Button>
+   819→              <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => { setPromoteTarget(selected); setPromoteClass(selected.class); setPromoteSection(selected.section); }}>
+   820→                <ArrowUpCircle className="w-3.5 h-3.5 mr-1.5" />Promote
+   821→              </Button>
+   822→              <div className="flex-1" />
+   823→              <Button size="sm" variant="outline" className="text-red-600" onClick={() => { setDeleteConfirm(selected); }}>
+   824→                <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+   825→              </Button>
+   826→            </div>
+   827→
+   828→            {/* Tabbed content */}
+   829→            <div className="p-6">
+   830→              <Tabs defaultValue="overview">
+   831→                <TabsList className="grid w-full grid-cols-5 md:grid-cols-9 h-10 mb-4">
+   832→                  <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+   833→                  <TabsTrigger value="parents" className="text-xs">Parents</TabsTrigger>
+   834→                  <TabsTrigger value="academic" className="text-xs">Academic</TabsTrigger>
+   835→                  <TabsTrigger value="medical" className="text-xs">Medical</TabsTrigger>
+   836→                  <TabsTrigger value="fees" className="text-xs">Fees</TabsTrigger>
+   837→                  <TabsTrigger value="attendance" className="text-xs">Attend.</TabsTrigger>
+   838→                  <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
+   839→                  <TabsTrigger value="documents" className="text-xs">Docs</TabsTrigger>
+   840→                  <TabsTrigger value="communication" className="text-xs">Comm.</TabsTrigger>
+   841→                </TabsList>
+   842→
+   843→                {/* Overview */}
+   844→                <TabsContent value="overview" className="space-y-3">
+   845→                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+   846→                    <ProfileCard icon={Calendar} label="Date of Birth" value={selected.dob} color="text-primary" bg="bg-primary/5" />
+   847→                    <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
+   848→                    <ProfileCard icon={Globe} label="Nationality" value={selected.nationality} color="text-primary" bg="bg-primary/5" />
+   849→                    <ProfileCard icon={User} label="Religion" value={selected.religion} color="text-purple-600" bg="bg-purple-500/5" />
+   850→                    <ProfileCard icon={FileText} label="CNIC / B-Form" value={selected.cnic} color="text-foreground" bg="bg-muted/30" />
+   851→                    <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
+   852→                    <ProfileCard icon={DollarSign} label="Monthly Fee" value={`Rs. ${selected.monthlyFee.toLocaleString()}`} color="text-emerald-600" bg="bg-emerald-500/5" />
+   853→                    <ProfileCard icon={Home} label="Hosteller" value={selected.isHosteller ? "Yes" : "No"} color="text-accent" bg="bg-accent/5" />
+   854→                    <ProfileCard icon={Bus} label="Transport" value={selected.transport ? "Yes" : "No"} color="text-primary" bg="bg-primary/5" />
+   855→                  </div>
+   856→                  {selected.address && selected.address !== "—" && (
+   857→                    <div className="rounded-xl border border-border/40 p-3 bg-muted/20">
+   858→                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-1"><MapPin className="w-3 h-3" />Home Address</p>
+   859→                      <p className="text-sm font-medium">{selected.address}</p>
+   860→                    </div>
+   861→                  )}
+   862→                  {selected.siblings && (
+   863→                    <div className="rounded-xl border border-border/40 p-3 bg-muted/20">
+   864→                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Siblings in School</p>
+   865→                      <p className="text-sm font-medium">{selected.siblings}</p>
+   866→                    </div>
+   867→                  )}
+   868→                  {selected.transport && selected.transportRoute && (
+   869→                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+   870→                      <p className="text-[10px] text-primary uppercase tracking-wide flex items-center gap-1.5 mb-1"><Bus className="w-3 h-3" />Transport Route</p>
+   871→                      <p className="text-sm font-medium">{selected.transportRoute}</p>
+   872→                    </div>
+   873→                  )}
+   874→                </TabsContent>
+   875→
+   876→                {/* Parents */}
+   877→                <TabsContent value="parents" className="space-y-3">
+   878→                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+   879→                    <div className="flex items-center gap-2 mb-3">
+   880→                      <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center"><User className="w-4 h-4 text-primary" /></div>
+   881→                      <p className="text-sm font-semibold text-primary">Father</p>
+   882→                    </div>
+   883→                    <div className="grid grid-cols-2 gap-3">
+   884→                      <ProfileField label="Name" value={selected.fatherName} />
+   885→                      <ProfileField label="CNIC" value={selected.fatherCnic} />
+   886→                      <ProfileField label="Phone" value={selected.fatherPhone} icon={Phone} />
+   887→                      <ProfileField label="Occupation" value={selected.fatherOccupation} icon={Briefcase} />
+   888→                    </div>
+   889→                  </div>
+   890→                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+   891→                    <div className="flex items-center gap-2 mb-3">
+   892→                      <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center"><UserCircle className="w-4 h-4 text-purple-600" /></div>
+   893→                      <p className="text-sm font-semibold text-purple-600">Mother</p>
+   894→                    </div>
+   895→                    <div className="grid grid-cols-2 gap-3">
+   896→                      <ProfileField label="Name" value={selected.motherName} />
+   897→                      <ProfileField label="Phone" value={selected.motherPhone} icon={Phone} />
+   898→                      <ProfileField label="Occupation" value={selected.motherOccupation} icon={Briefcase} />
+   899→                    </div>
+   900→                  </div>
+   901→                  {selected.guardianName && (
+   902→                    <div className="rounded-xl border border-border/40 bg-muted/20 p-4">
+   903→                      <div className="flex items-center gap-2 mb-3">
+   904→                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><Users className="w-4 h-4 text-muted-foreground" /></div>
+   905→                        <p className="text-sm font-semibold">Guardian</p>
+   906→                      </div>
+   907→                      <div className="grid grid-cols-3 gap-3">
+   908→                        <ProfileField label="Name" value={selected.guardianName} />
+   909→                        <ProfileField label="Phone" value={selected.guardianPhone} icon={Phone} />
+   910→                        <ProfileField label="Relation" value={selected.guardianRelation} />
+   911→                      </div>
+   912→                    </div>
+   913→                  )}
+   914→                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+   915→                    <div className="flex items-center gap-2 mb-3">
+   916→                      <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center"><AlertCircle className="w-4 h-4 text-accent" /></div>
+   917→                      <p className="text-sm font-semibold text-accent">Emergency Contact</p>
+   918→                    </div>
+   919→                    <div className="grid grid-cols-2 gap-3">
+   920→                      <ProfileField label="Name" value={selected.emergencyName} />
+   921→                      <ProfileField label="Phone" value={selected.emergencyContact} icon={Phone} />
+   922→                    </div>
+   923→                  </div>
+   924→                </TabsContent>
+   925→
+   926→                {/* Academic */}
+   927→                <TabsContent value="academic" className="space-y-3">
+   928→                  <div className="grid grid-cols-2 gap-2">
+   929→                    <ProfileCard icon={GraduationCap} label="Current Class" value={`${selected.class}-${selected.section}`} color="text-primary" bg="bg-primary/5" />
+   930→                    <ProfileCard icon={User} label="Roll Number" value={selected.rollNo} color="text-foreground" bg="bg-muted/30" />
+   931→                    <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
+   932→                    <ProfileCard icon={FileText} label="Previous School" value={selected.previousSchool} color="text-foreground" bg="bg-muted/30" />
+   933→                  </div>
+   934→                </TabsContent>
+   935→
+   936→                {/* Medical */}
+   937→                <TabsContent value="medical" className="space-y-3">
+   938→                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+   939→                    <div className="flex items-center gap-2 mb-3">
+   940→                      <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center"><Stethoscope className="w-4 h-4 text-red-600" /></div>
+   941→                      <p className="text-sm font-semibold text-red-600">Medical Information</p>
+   942→                    </div>
+   943→                    <div className="grid grid-cols-2 gap-2">
+   944→                      <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
+   945→                      <ProfileCard icon={AlertCircle} label="Conditions" value={selected.medicalConditions} color="text-foreground" bg="bg-muted/30" />
+   946→                      <ProfileCard icon={AlertCircle} label="Allergies" value={selected.allergies} color="text-foreground" bg="bg-muted/30" />
+   947→                      <ProfileCard icon={Phone} label="Emergency Phone" value={selected.emergencyContact} color="text-foreground" bg="bg-muted/30" />
+   948→                    </div>
+   949→                  </div>
+   950→                  <div className="rounded-xl border border-border/40 p-3 text-xs text-muted-foreground">
+   951→                    <p className="font-medium text-foreground">⚠️ Important:</p>
+   952→                    <p className="mt-1">This information is used during medical emergencies and field trips. Please keep the school office updated on any changes.</p>
+   953→                  </div>
+   954→                </TabsContent>
+   955→
+   956→                {/* Fees */}
+   957→                <TabsContent value="fees" className="space-y-3">
+   958→                  <div className="grid grid-cols-3 gap-2">
+   959→                    <div className="rounded-xl bg-muted/30 p-3 border border-border/30">
+   960→                      <p className="text-[10px] text-muted-foreground uppercase">Monthly Fee</p>
+   961→                      <p className="text-xl font-bold mt-1">Rs. {selected.monthlyFee.toLocaleString()}</p>
+   962→                      {selected.isHosteller && <p className="text-[10px] text-accent mt-0.5">Hostel fee applies</p>}
+   963→                    </div>
+   964→                    <div className="rounded-xl bg-red-500/5 p-3 border border-red-500/20">
+   965→                      <p className="text-[10px] text-muted-foreground uppercase">Outstanding</p>
+   966→                      <p className="text-xl font-bold text-red-600 mt-1">Rs. {selected.outstandingAmount.toLocaleString()}</p>
+   967→                    </div>
+   968→                    <div className="rounded-xl bg-emerald-500/5 p-3 border border-emerald-500/20">
+   969→                      <p className="text-[10px] text-muted-foreground uppercase">This Month</p>
+   970→                      <p className="text-xl font-bold text-emerald-600 mt-1">{selected.feePaidThisMonth ? "Paid ✓" : "Pending"}</p>
+   971→                    </div>
+   972→                  </div>
+   973→                  <div className="rounded-xl border border-border/40 overflow-hidden">
+   974→                    <div className="px-3 py-2 bg-muted/40 border-b border-border/30 flex items-center justify-between">
+   975→                      <p className="text-xs font-semibold flex items-center gap-1.5"><ReceiptIcon className="w-3.5 h-3.5 text-primary" /> Fee Payment History</p>
+   976→                      <p className="text-[10px] text-muted-foreground">{feeCollections.filter(f => f.studentId === selected.id).length} receipts</p>
+   977→                    </div>
+   978→                    <div className="max-h-48 overflow-y-auto">
+   979→                      {feeCollections.filter(f => f.studentId === selected.id).length === 0 ? (
+   980→                        <div className="p-6 text-center text-xs text-muted-foreground">No fee payments recorded yet.</div>
+   981→                      ) : (
+   982→                        feeCollections.filter(f => f.studentId === selected.id).map(f => (
+   983→                          <div key={f.id} className="flex items-center gap-3 p-2 border-b border-border/20 hover:bg-muted/30 last:border-0">
+   984→                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0"><ReceiptIcon className="w-3.5 h-3.5 text-emerald-600" /></div>
+   985→                            <div className="flex-1 min-w-0">
+   986→                              <p className="text-xs font-mono text-muted-foreground">{f.receiptNo}</p>
+   987→                              <p className="text-[10px] text-muted-foreground">{f.date} • {f.feeType} • {f.mode}</p>
+   988→                            </div>
+   989→                            <p className="font-bold text-sm text-emerald-600">Rs. {f.amount.toLocaleString()}</p>
+   990→                            <button onClick={() => printFeeReceipt(f, selected, school)} className="text-muted-foreground hover:text-primary transition-colors p-1" title="Reprint Receipt"><Printer className="w-3.5 h-3.5" /></button>
+   991→                          </div>
+   992→                        ))
+   993→                      )}
+   994→                    </div>
+   995→                  </div>
+   996→                </TabsContent>
+   997→
+   998→                {/* Attendance */}
+   999→                <TabsContent value="attendance">
+  1000→                  <div className="rounded-xl border border-border/40 p-6 text-center">
+  1001→                    <div className="relative w-36 h-36 mx-auto">
+  1002→                      <svg className="w-full h-full transform -rotate-90">
+  1003→                        <circle cx="72" cy="72" r="64" fill="none" stroke="oklch(0.92 0.012 95)" strokeWidth="14" />
+  1004→                        <circle cx="72" cy="72" r="64" fill="none" stroke="#15857A" strokeWidth="14"
+  1005→                          strokeDasharray={`${2 * Math.PI * 64 * selected.attendancePct / 100} ${2 * Math.PI * 64}`}
+  1006→                          strokeLinecap="round" />
+  1007→                      </svg>
+  1008→                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+  1009→                        <p className="text-xl font-bold text-primary">{selected.attendancePct}%</p>
+  1010→                        <p className="text-[10px] text-muted-foreground">Attendance</p>
+  1011→                      </div>
+  1012→                    </div>
+  1013→                    <p className="text-xs text-muted-foreground mt-4">Current month attendance rate</p>
+  1014→                  </div>
+  1015→                  {/* Quick mark today */}
+  1016→                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mt-3">
+  1017→                    <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">Mark Today's Attendance</p>
+  1018→                    <div className="grid grid-cols-4 gap-2">
+  1019→                      {(["Present", "Late", "Absent", "Leave"] as const).map(status => {
+  1020→                        const colors: Record<string, string> = {
+  1021→                          Present: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20",
+  1022→                          Late: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30 hover:bg-yellow-500/20",
+  1023→                          Absent: "bg-red-500/10 text-red-600 border-red-500/30 hover:bg-red-500/20",
+  1024→                          Leave: "bg-muted text-muted-foreground border-border/40 hover:bg-muted/70",
+  1025→                        };
+  1026→                        return (
+  1027→                          <button
+  1028→                            key={status}
+  1029→                            onClick={() => {
+  1030→                              updateStudent(selected.id, {
+  1031→                                attendancePct: status === "Present" ? Math.min(100, selected.attendancePct + 1) : Math.max(0, selected.attendancePct - 1),
+  1032→                              });
+  1033→                            }}
+  1034→                            className={cn("px-3 py-2 rounded-lg text-xs font-medium border-2 transition-all", colors[status])}
+  1035→                          >
+  1036→                            {status}
+  1037→                          </button>
+  1038→                        );
+  1039→                      })}
+  1040→                    </div>
+  1041→                  </div>
+  1042→                </TabsContent>
+  1043→
+  1044→                {/* Results */}
+  1045→                <TabsContent value="results">
+  1046→                  <div className="text-center py-12 text-sm text-muted-foreground">
+  1047→                    <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-30" />
+  1048→                    <p className="font-medium">No exam results published yet</p>
+  1049→                    <p className="text-xs mt-1">Results will appear here after the next exam is graded.</p>
+  1050→                  </div>
+  1051→                </TabsContent>
+  1052→
+  1053→                {/* Documents */}
+  1054→                <TabsContent value="documents" className="space-y-3">
+  1055→                  <div className="flex items-center gap-2">
+  1056→                    <Select value={docType} onValueChange={setDocType}>
+  1057→                      <SelectTrigger className="w-48 h-8 text-xs"><SelectValue /></SelectTrigger>
+  1058→                      <SelectContent>
+  1059→                        {["Birth Certificate", "Photo", "Transfer Certificate", "Report Card", "Medical Record", "Other"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+  1060→                      </SelectContent>
+  1061→                    </Select>
+  1062→                    <input ref={docFileRef} type="file" accept="image/*,application/pdf" onChange={handleDocUpload} className="hidden" />
+  1063→                    <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => docFileRef.current?.click()}>
+  1064→                      <Upload className="w-3.5 h-3.5 mr-1" />Upload Document
+  1065→                    </Button>
+  1066→                  </div>
+  1067→                  <div className="space-y-2">
+  1068→                    {documents.filter(d => d.studentId === selected.id).length === 0 ? (
+  1069→                      <div className="text-center py-10 text-sm text-muted-foreground">
+  1070→                        <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
+  1071→                        <p>No documents uploaded yet.</p>
+  1072→                        <p className="text-xs mt-1">Upload birth certificates, photos, transfer certificates, etc.</p>
+  1073→                      </div>
+  1074→                    ) : (
+  1075→                      documents.filter(d => d.studentId === selected.id).map(doc => (
+  1076→                        <div key={doc.id} className="flex items-center gap-3 p-2 rounded-xl border border-border/30 hover:bg-muted/30">
+  1077→                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><FileText className="w-4 h-4 text-primary" /></div>
+  1078→                          <div className="flex-1 min-w-0">
+  1079→                            <p className="text-sm font-medium truncate">{doc.name}</p>
+  1080→                            <p className="text-[10px] text-muted-foreground">{doc.type} • {doc.uploadDate} • {(doc.size / 1024).toFixed(0)} KB</p>
+  1081→                          </div>
+  1082→                          <a href={doc.dataUrl} download={doc.name} className="text-primary hover:text-primary/70 text-xs">Download</a>
+  1083→                          <button onClick={() => deleteDocument(doc.id)} className="text-red-600 hover:text-red-700 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+  1084→                        </div>
+  1085→                      ))
+  1086→                    )}
+  1087→                  </div>
+  1088→                </TabsContent>
+  1089→
+  1090→                {/* Communication Log */}
+  1091→                <TabsContent value="communication" className="space-y-3">
+  1092→                  {/* Add new entry */}
+  1093→                  <div className="rounded-xl border border-border/40 p-3 space-y-2 bg-muted/20">
+  1094→                    <div className="grid grid-cols-3 gap-2">
+  1095→                      <Select value={commForm.type} onValueChange={v => setCommForm({...commForm, type: v})}>
+  1096→                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+  1097→                        <SelectContent>{["Phone Call", "Meeting", "SMS", "Email", "Note"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+  1098→                      </Select>
+  1099→                      <Select value={commForm.direction} onValueChange={v => setCommForm({...commForm, direction: v})}>
+  1100→                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+  1101→                        <SelectContent><SelectItem value="Outgoing">Outgoing</SelectItem><SelectItem value="Incoming">Incoming</SelectItem></SelectContent>
+  1102→                      </Select>
+  1103→                      <Input value={commForm.subject} onChange={e => setCommForm({...commForm, subject: e.target.value})} placeholder="Subject" className="h-8 text-xs" />
+  1104→                    </div>
+  1105→                    <Input value={commForm.notes} onChange={e => setCommForm({...commForm, notes: e.target.value})} placeholder="Notes / details..." className="h-8 text-xs" />
+  1106→                    <Button size="sm" className="bg-primary hover:bg-primary/90 h-7 text-xs" onClick={handleAddComm} disabled={!commForm.subject}>
+  1107→                      <Plus className="w-3 h-3 mr-1" />Add Entry
+  1108→                    </Button>
+  1109→                  </div>
+  1110→                  {/* Log entries */}
+  1111→                  <div className="space-y-2">
+  1112→                    {commLogs.filter(l => l.studentId === selected.id).length === 0 ? (
+  1113→                      <div className="text-center py-8 text-sm text-muted-foreground">
+  1114→                        <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
+  1115→                        <p>No communication logged yet.</p>
+  1116→                      </div>
+  1117→                    ) : (
+  1118→                      commLogs.filter(l => l.studentId === selected.id).map(log => (
+  1119→                        <div key={log.id} className="flex items-start gap-3 p-2 rounded-xl border border-border/30 hover:bg-muted/30">
+  1120→                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+  1121→                            log.type === "Phone Call" ? "bg-primary/10" : log.type === "Meeting" ? "bg-purple-500/10" : log.type === "SMS" ? "bg-emerald-500/10" : "bg-accent/10")}>
+  1122→                            {log.type === "Phone Call" ? <Phone className="w-4 h-4 text-primary" /> : log.type === "Meeting" ? <Users className="w-4 h-4 text-purple-600" /> : log.type === "SMS" ? <Mail className="w-4 h-4 text-emerald-600" /> : <FileText className="w-4 h-4 text-accent" />}
+  1123→                          </div>
+  1124→                          <div className="flex-1 min-w-0">
+  1125→                            <div className="flex items-center gap-2">
+  1126→                              <p className="text-sm font-medium">{log.subject}</p>
+  1127→                              <Badge variant="outline" className="text-[9px]">{log.type}</Badge>
+  1128→                              <Badge variant="outline" className={cn("text-[9px]", log.direction === "Incoming" ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary")}>{log.direction}</Badge>
+  1129→                            </div>
+  1130→                            {log.notes && <p className="text-xs text-muted-foreground mt-0.5">{log.notes}</p>}
+  1131→                            <p className="text-[10px] text-muted-foreground mt-0.5">{log.date} • by {log.user}</p>
+  1132→                          </div>
+  1133→                          <button onClick={() => deleteCommLog(log.id)} className="text-red-600 hover:text-red-700 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+  1134→                        </div>
+  1135→                      ))
+  1136→                    )}
+  1137→                  </div>
+  1138→                </TabsContent>
+  1139→              </Tabs>
+  1140→            </div>
+  1141→          </div>
+  1142→        </div>
+  1143→      )}
+  1144→
+  1145→      {/* Edit Dialog */}
+  1146→      <Dialog open={!!editStudent} onOpenChange={(o) => !o && setEditStudent(null)}>
+  1147→        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+  1148→          <DialogHeader>
+  1149→            <DialogTitle className="flex items-center gap-2"><Edit className="w-4 h-4 text-primary" />Edit Student</DialogTitle>
+  1150→          </DialogHeader>
+  1151→          {editStudent && (
+  1152→            <div className="space-y-2 py-1">
+  1153→              <div className="grid grid-cols-2 gap-3">
+  1154→                <div className="col-span-2"><Label>Name</Label><Input value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} /></div>
+  1155→                <div><Label>Class</Label>
+  1156→                  <Select value={editForm.class || ""} onValueChange={v => setEditForm({...editForm, class: v})}>
+  1157→                    <SelectTrigger><SelectValue /></SelectTrigger>
+  1158→                    <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+  1159→                  </Select>
+  1160→                </div>
+  1161→                <div><Label>Section</Label>
+  1162→                  <Select value={editForm.section || "A"} onValueChange={v => setEditForm({...editForm, section: v})}>
+  1163→                    <SelectTrigger><SelectValue /></SelectTrigger>
+  1164→                    <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+  1165→                  </Select>
+  1166→                </div>
+  1167→                <div><Label>Father's Name</Label><Input value={editForm.fatherName || ""} onChange={e => setEditForm({...editForm, fatherName: e.target.value})} /></div>
+  1168→                <div><Label>Father's Phone</Label><Input value={editForm.fatherPhone || ""} onChange={e => setEditForm({...editForm, fatherPhone: e.target.value})} /></div>
+  1169→                <div><Label>Monthly Fee</Label><Input type="number" value={editForm.monthlyFee || 0} onChange={e => setEditForm({...editForm, monthlyFee: Number(e.target.value)})} /></div>
+  1170→                <div><Label>Blood Group</Label>
+  1171→                  <Select value={editForm.bloodGroup || "A+"} onValueChange={v => setEditForm({...editForm, bloodGroup: v})}>
+  1172→                    <SelectTrigger><SelectValue /></SelectTrigger>
+  1173→                    <SelectContent>{BLOOD_GROUPS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+  1174→                  </Select>
+  1175→                </div>
+  1176→                <div><Label>Address</Label><Input value={editForm.address || ""} onChange={e => setEditForm({...editForm, address: e.target.value})} /></div>
+  1177→                <div className="flex items-center gap-3 pt-2">
+  1178→                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editForm.isHosteller || false} onChange={e => setEditForm({...editForm, isHosteller: e.target.checked})} className="w-4 h-4 accent-accent" /> Hosteller</label>
+  1179→                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editForm.transport || false} onChange={e => setEditForm({...editForm, transport: e.target.checked})} className="w-4 h-4 accent-primary" /> Transport</label>
+  1180→                </div>
+  1181→                <div><Label>Status</Label>
+  1182→                  <Select value={editForm.status || "Active"} onValueChange={(v: any) => setEditForm({...editForm, status: v})}>
+  1183→                    <SelectTrigger><SelectValue /></SelectTrigger>
+  1184→                    <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Left">Left</SelectItem></SelectContent>
+  1185→                  </Select>
+  1186→                </div>
+  1187→              </div>
+  1188→            </div>
+  1189→          )}
+  1190→          <DialogFooter>
+  1191→            <Button variant="outline" onClick={() => setEditStudent(null)}>Cancel</Button>
+  1192→            <Button className="bg-primary hover:bg-primary/90" onClick={() => {
+  1193→              if (editStudent) {
+  1194→                updateStudent(editStudent.id, editForm);
+  1195→                toast({ title: "Student Updated ✓", description: `${editForm.name || editStudent.name}'s profile has been updated.` });
+  1196→                setEditStudent(null);
+  1197→              }
+  1198→            }}>Save Changes</Button>
+  1199→          </DialogFooter>
+  1200→        </DialogContent>
+  1201→      </Dialog>
+  1202→
+  1203→      {/* Delete confirmation */}
+  1204→      <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+  1205→        <DialogContent className="max-w-sm max-h-[92vh] overflow-y-auto">
+  1206→          <DialogHeader>
+  1207→            <DialogTitle className="flex items-center gap-2 text-red-600"><Trash2 className="w-5 h-5" />Delete Student?</DialogTitle>
+  1208→          </DialogHeader>
+  1209→          {deleteConfirm && (
+  1210→            <div className="py-2">
+  1211→              <p className="text-sm text-muted-foreground">Are you sure you want to permanently delete:</p>
+  1212→              <div className="mt-3 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+  1213→                <p className="font-semibold text-sm">{deleteConfirm.name}</p>
+  1214→                <p className="text-xs text-muted-foreground">{deleteConfirm.id} • {deleteConfirm.class}-{deleteConfirm.section}</p>
+  1215→              </div>
+  1216→              <p className="text-xs text-muted-foreground mt-3">⚠️ This action cannot be undone. All fee receipts and attendance records for this student will remain in the system for audit purposes.</p>
+  1217→            </div>
+  1218→          )}
+  1219→          <DialogFooter>
+  1220→            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+  1221→            <Button variant="destructive" onClick={() => {
+  1222→              if (deleteConfirm) {
+  1223→                deleteStudent(deleteConfirm.id);
+  1224→                toast({ title: "Student Deleted", description: `${deleteConfirm.name} has been removed from the system.`, variant: "destructive" });
+  1225→                setDeleteConfirm(null);
+  1226→              }
+  1227→            }}><Trash2 className="w-4 h-4 mr-1.5" />Delete Permanently</Button>
+  1228→          </DialogFooter>
+  1229→        </DialogContent>
+  1230→      </Dialog>
+  1231→
+  1232→      {/* Promote dialog */}
+  1233→      <Dialog open={!!promoteTarget} onOpenChange={(o) => !o && setPromoteTarget(null)}>
+  1234→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+  1235→          <DialogHeader>
+  1236→            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-4 h-4 text-emerald-600" />Promote Student</DialogTitle>
+  1237→          </DialogHeader>
+  1238→          {promoteTarget && (
+  1239→            <div className="space-y-2 py-1">
+  1240→              <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+  1241→                <p className="font-semibold text-sm">{promoteTarget.name}</p>
+  1242→                <p className="text-xs text-muted-foreground">Current: {promoteTarget.class}-{promoteTarget.section} • Roll #{promoteTarget.rollNo}</p>
+  1243→              </div>
+  1244→              <div className="grid grid-cols-2 gap-3">
+  1245→                <div><Label>Promote to Class</Label>
+  1246→                  <Select value={promoteClass} onValueChange={setPromoteClass}>
+  1247→                    <SelectTrigger><SelectValue /></SelectTrigger>
+  1248→                    <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+  1249→                  </Select>
+  1250→                </div>
+  1251→                <div><Label>Section</Label>
+  1252→                  <Select value={promoteSection} onValueChange={setPromoteSection}>
+  1253→                    <SelectTrigger><SelectValue /></SelectTrigger>
+  1254→                    <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+  1255→                  </Select>
+  1256→                </div>
+  1257→              </div>
+  1258→              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+  1259→                <p className="font-medium text-primary">What happens on promote:</p>
+  1260→                <p className="text-muted-foreground mt-1">• Student moves to new class & section<br/>• New roll number auto-assigned<br/>• Monthly fee updated to new class rate<br/>• All historical records preserved</p>
+  1261→              </div>
+  1262→            </div>
+  1263→          )}
+  1264→          <DialogFooter>
+  1265→            <Button variant="outline" onClick={() => setPromoteTarget(null)}>Cancel</Button>
+  1266→            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => {
+  1267→              if (promoteTarget) {
+  1268→                const newFee = CLASSES.find(c => c.name === promoteClass)?.monthlyFee ?? promoteTarget.monthlyFee;
+  1269→                updateStudent(promoteTarget.id, { class: promoteClass, section: promoteSection, monthlyFee: newFee });
+  1270→                toast({ title: "Student Promoted ✓", description: `${promoteTarget.name} → ${promoteClass}-${promoteSection} • Fee: Rs. ${newFee.toLocaleString()}/month` });
+  1271→                setPromoteTarget(null);
+  1272→              }
+  1273→            }}><ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote Student</Button>
+  1274→          </DialogFooter>
+  1275→        </DialogContent>
+  1276→      </Dialog>
+  1277→
+  1278→      {/* Bulk Promote dialog */}
+  1279→      <Dialog open={bulkPromoteOpen} onOpenChange={setBulkPromoteOpen}>
+  1280→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+  1281→          <DialogHeader>
+  1282→            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-4 h-4 text-emerald-600" />Bulk Promote Students</DialogTitle>
+  1283→          </DialogHeader>
+  1284→          <div className="space-y-2 py-1">
+  1285→            <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+  1286→              <p className="text-sm font-semibold">{selectedIds.size} students selected for promotion</p>
+  1287→              <p className="text-xs text-muted-foreground mt-1">All selected students will be moved to the new class & section. Monthly fee will be auto-updated.</p>
+  1288→            </div>
+  1289→            <div className="grid grid-cols-2 gap-3">
+  1290→              <div>
+  1291→                <Label>Promote to Class</Label>
+  1292→                <Select value={bulkClass} onValueChange={setBulkClass}>
+  1293→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1294→                  <SelectContent>{CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+  1295→                </Select>
+  1296→              </div>
+  1297→              <div>
+  1298→                <Label>Section</Label>
+  1299→                <Select value={bulkSection} onValueChange={setBulkSection}>
+  1300→                  <SelectTrigger><SelectValue /></SelectTrigger>
+  1301→                  <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="C">C</SelectItem></SelectContent>
+  1302→                </Select>
+  1303→              </div>
+  1304→            </div>
+  1305→          </div>
+  1306→          <DialogFooter>
+  1307→            <Button variant="outline" onClick={() => setBulkPromoteOpen(false)}>Cancel</Button>
+  1308→            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleBulkPromote}>
+  1309→              <ArrowUpCircle className="w-4 h-4 mr-1.5" />Promote {selectedIds.size} Students
+  1310→            </Button>
+  1311→          </DialogFooter>
+  1312→        </DialogContent>
+  1313→      </Dialog>
+  1314→
+  1315→      {/* Bulk Fee Collection dialog */}
+  1316→      <Dialog open={bulkFeeOpen} onOpenChange={setBulkFeeOpen}>
+  1317→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+  1318→          <DialogHeader>
+  1319→            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-emerald-600" />Bulk Fee Collection</DialogTitle>
+  1320→          </DialogHeader>
+  1321→          <div className="space-y-2 py-1">
+  1322→            <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+  1323→              <p className="text-sm font-semibold">{selectedIds.size} students selected</p>
+  1324→              <p className="text-xs text-muted-foreground mt-1">The same amount will be collected from each student. Individual receipts will be generated.</p>
+  1325→            </div>
+  1326→            <div>
+  1327→              <Label>Amount per Student (Rs.)</Label>
+  1328→              <Input type="number" value={bulkFeeAmount} onChange={e => setBulkFeeAmount(Number(e.target.value))} placeholder="0" className="text-lg font-bold h-10" />
+  1329→            </div>
+  1330→            <div className="flex flex-wrap gap-1.5">
+  1331→              {[500, 1000, 1500, 2000, 3000, 5000].map(amt => (
+  1332→                <button key={amt} onClick={() => setBulkFeeAmount(amt)} className="px-2 py-1 text-[10px] rounded-md border border-border/40 bg-background hover:bg-primary/10 hover:border-primary/30 transition-colors">
+  1333→                  {amt.toLocaleString()}
+  1334→                </button>
+  1335→              ))}
+  1336→            </div>
+  1337→            <div>
+  1338→              <Label>Payment Mode</Label>
+  1339→              <Select value={bulkFeeMode} onValueChange={(v: any) => setBulkFeeMode(v)}>
+  1340→                <SelectTrigger><SelectValue /></SelectTrigger>
+  1341→                <SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Cheque">Cheque</SelectItem><SelectItem value="Bank Transfer">Bank Transfer</SelectItem></SelectContent>
+  1342→              </Select>
+  1343→            </div>
+  1344→            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
+  1345→              <p className="font-medium text-primary">Summary:</p>
+  1346→              <p className="text-muted-foreground mt-1">{selectedIds.size} students × Rs. {bulkFeeAmount.toLocaleString()} = <strong className="text-foreground">Rs. {(bulkFeeAmount * selectedIds.size).toLocaleString()} total</strong></p>
+  1347→            </div>
+  1348→          </div>
+  1349→          <DialogFooter>
+  1350→            <Button variant="outline" onClick={() => setBulkFeeOpen(false)}>Cancel</Button>
+  1351→            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleBulkFee} disabled={bulkFeeAmount <= 0}>
+  1352→              <DollarSign className="w-4 h-4 mr-1.5" />Collect from {selectedIds.size} Students
+  1353→            </Button>
+  1354→          </DialogFooter>
+  1355→        </DialogContent>
+  1356→      </Dialog>
+  1357→    </div>
+  1358→  );
+  1359→}
+  1360→
+  1361→function InfoTile({ icon: Icon, label, value, color }: { icon: any; label: string; value: string; color?: string }) {
+  1362→  return (
+  1363→    <div className="rounded-lg bg-muted/30 p-3">
+  1364→      <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1"><Icon className={cn("w-3 h-3", color)} />{label}</p>
+  1365→      <p className="text-sm font-medium mt-0.5">{value}</p>
+  1366→    </div>
+  1367→  );
+  1368→}
+  1369→
+  1370→function ProfileCard({ icon: Icon, label, value, color, bg }: { icon: any; label: string; value: string; color?: string; bg?: string }) {
+  1371→  return (
+  1372→    <div className={cn("rounded-xl border border-border/30 p-3 flex items-center gap-3", bg)}>
+  1373→      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", bg?.replace("/5", "/15").replace("/30", "/40"))}>
+  1374→        <Icon className={cn("w-4 h-4", color)} />
+  1375→      </div>
+  1376→      <div className="min-w-0">
+  1377→        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+  1378→        <p className="text-sm font-semibold truncate">{value}</p>
+  1379→      </div>
+  1380→    </div>
+  1381→  );
+  1382→}
+  1383→
+  1384→function ProfileField({ label, value, icon: Icon }: { label: string; value: string; icon?: any }) {
+  1385→  return (
+  1386→    <div>
+  1387→      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+  1388→      <p className="text-sm font-medium flex items-center gap-1.5 mt-0.5">
+  1389→        {Icon && <Icon className="w-3 h-3 text-muted-foreground" />}
+  1390→        {value || "—"}
+  1391→      </p>
+  1392→    </div>
+  1393→  );
+  1394→}
+  1395→
+  1396→function InfoRow({ label, value, icon: Icon }: { label: string; value: string; icon?: any }) {
+  1397→  return (
+  1398→    <div>
+  1399→      <p className="text-[10px] text-muted-foreground uppercase">{label}</p>
+  1400→      <p className="font-medium flex items-center gap-1.5 mt-0.5">{Icon && <Icon className="w-3 h-3 text-muted-foreground" />}{value}</p>
+  1401→    </div>
+  1402→  );
+  1403→}
+  1404→

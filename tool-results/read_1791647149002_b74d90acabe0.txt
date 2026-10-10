@@ -1,0 +1,402 @@
+     1→"use client";
+     2→
+     3→import { useState } from "react";
+     4→import { useAppStore } from "@/lib/sms-store";
+     5→import { Card, CardContent } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { Input } from "@/components/ui/input";
+     8→import { Label } from "@/components/ui/label";
+     9→import { Badge } from "@/components/ui/badge";
+    10→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    11→import {
+    12→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    13→} from "@/components/ui/table";
+    14→import {
+    15→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    16→} from "@/components/ui/dialog";
+    17→import {
+    18→  Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
+    19→} from "@/components/ui/drawer";
+    20→import {
+    21→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    22→} from "@/components/ui/select";
+    23→import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+    24→import {
+    25→  Plus, Phone, Mail, Wallet, GraduationCap, UserCog, BookOpen,
+    26→  CalendarDays, Briefcase, IdCard, Edit, Trash2, Eye, X,
+    27→  Building2, Award, Users as UsersIcon, User, UserCircle, DollarSign,
+    28→} from "lucide-react";
+    29→import { type Teacher, type Staff } from "@/lib/sms-data";
+    30→import { cn } from "@/lib/utils";
+    31→import { useToast } from "@/hooks/use-toast";
+    32→
+    33→// ─────────────────────────────────────────────────────────────
+    34→// TEACHERS MODULE
+    35→// ─────────────────────────────────────────────────────────────
+    36→const EMPTY_TEACHER: Teacher = {
+    37→  id: "", name: "", cnic: "", designation: "Teacher", qualification: "",
+    38→  subjects: [], classes: [], monthlySalary: 0, joiningDate: new Date().toISOString().split("T")[0],
+    39→  phone: "", gender: "Male", attendance: { present: 0, late: 0, halfDay: 0, absent: 0, leave: 0 },
+    40→};
+    41→
+    42→export function TeachersModule() {
+    43→  const { teachers, addTeacher, updateTeacher, deleteTeacher, classes: storeClasses, subjects: storeSubjects } = useAppStore();
+    44→  const CLASSES = storeClasses;
+    45→  const SUBJECTS = storeSubjects;
+    46→  const { toast } = useToast();
+    47→  const [addOpen, setAddOpen] = useState(false);
+    48→  const [editTeacher, setEditTeacher] = useState<Teacher | null>(null);
+    49→  const [deleteConfirm, setDeleteConfirm] = useState<Teacher | null>(null);
+    50→  const [selected, setSelected] = useState<Teacher | null>(null);
+    51→  const [form, setForm] = useState<Teacher>(EMPTY_TEACHER);
+    52→  const [editForm, setEditForm] = useState<Partial<Teacher>>({});
+    53→
+    54→  const openAdd = () => {
+    55→    setForm({ ...EMPTY_TEACHER, id: `T-${String(teachers.length + 1).padStart(3, "0")}` });
+    56→    setAddOpen(true);
+    57→  };
+    58→
+    59→  const handleAdd = () => {
+    60→    if (!form.name.trim()) { toast({ title: "Name required", description: "Please enter teacher's name.", variant: "destructive" }); return; }
+    61→    if (!form.phone.trim()) { toast({ title: "Phone required", description: "Please enter phone number.", variant: "destructive" }); return; }
+    62→    if (form.monthlySalary <= 0) { toast({ title: "Salary required", description: "Please enter monthly salary.", variant: "destructive" }); return; }
+    63→    addTeacher(form);
+    64→    toast({ title: "Teacher Added ✓", description: `${form.name} added as ${form.designation} • ID: ${form.id}` });
+    65→    setAddOpen(false);
+    66→  };
+    67→
+    68→  return (
+    69→    <div className="space-y-3">
+    70→      <div className="flex justify-between items-center flex-wrap gap-3">
+    71→        <p className="text-sm text-muted-foreground">Manage teaching staff, subjects, classes, and salary.</p>
+    72→        <Button className="bg-primary hover:bg-primary/90" onClick={openAdd}><Plus className="w-4 h-4 mr-1.5" />Add Teacher</Button>
+    73→      </div>
+    74→
+    75→      {/* Summary cards */}
+    76→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    77→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+    78→          <div className="rounded-lg bg-primary/10 p-1.5"><GraduationCap className="w-4 h-4 text-primary" /></div>
+    79→          <div><p className="text-xs text-muted-foreground">Total Teachers</p><p className="text-xl font-bold">{teachers.length}</p></div>
+    80→        </CardContent></Card>
+    81→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+    82→          <div className="rounded-lg bg-purple-500/10 p-1.5"><UserCog className="w-4 h-4 text-purple-600" /></div>
+    83→          <div><p className="text-xs text-muted-foreground">Total Salary</p><p className="text-lg font-bold">Rs. {(teachers.reduce((s, t) => s + t.monthlySalary, 0) / 1000).toFixed(0)}K</p></div>
+    84→        </CardContent></Card>
+    85→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+    86→          <div className="rounded-lg bg-accent/10 p-1.5"><BookOpen className="w-4 h-4 text-accent" /></div>
+    87→          <div><p className="text-xs text-muted-foreground">Subjects</p><p className="text-xl font-bold">{new Set(teachers.flatMap(t => t.subjects)).size}</p></div>
+    88→        </CardContent></Card>
+    89→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+    90→          <div className="rounded-lg bg-emerald-500/10 p-1.5"><CalendarDays className="w-4 h-4 text-emerald-600" /></div>
+    91→          <div><p className="text-xs text-muted-foreground">Avg Attendance</p><p className="text-xl font-bold">{teachers.length > 0 ? Math.round(teachers.reduce((sum, t) => { const total = t.attendance.present + t.attendance.late + t.attendance.halfDay + t.attendance.absent + t.attendance.leave; return sum + (total > 0 ? (t.attendance.present + t.attendance.late * 0.75 + t.attendance.halfDay * 0.5) / total * 100 : 100); }, 0) / teachers.length) : 0}%</p></div>
+    92→        </CardContent></Card>
+    93→      </div>
+    94→
+    95→      {/* Cards grid */}
+    96→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    97→        {teachers.map(t => {
+    98→          const totalDays = t.attendance.present + t.attendance.late + t.attendance.halfDay + t.attendance.absent + t.attendance.leave;
+    99→          const attPct = totalDays > 0 ? Math.round((t.attendance.present + t.attendance.late * 0.75 + t.attendance.halfDay * 0.5) / totalDays * 100) : 100;
+   100→          return (
+   101→            <Card key={t.id} className="border-0 shadow-sm glass-card card-hover">
+   102→              <CardContent className="p-4">
+   103→                <div className="flex items-start gap-3">
+   104→                  <Avatar className="w-12 h-12 cursor-pointer" onClick={() => setSelected(t)}>
+   105→                    <AvatarFallback className={cn("font-semibold", t.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>
+   106→                      {t.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   107→                    </AvatarFallback>
+   108→                  </Avatar>
+   109→                  <div className="flex-1 min-w-0">
+   110→                    <p className="font-semibold text-sm truncate cursor-pointer hover:text-primary" onClick={() => setSelected(t)}>{t.name}</p>
+   111→                    <p className="text-xs text-muted-foreground truncate">{t.designation}</p>
+   112→                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+   113→                      <Badge variant="outline" className="text-[10px]">{t.id}</Badge>
+   114→                      <Badge variant="outline" className="text-[10px] bg-primary/5">{attPct}% att.</Badge>
+   115→                    </div>
+   116→                  </div>
+   117→                </div>
+   118→                <div className="mt-3 space-y-1.5 text-xs">
+   119→                  <div className="flex items-center gap-2 text-muted-foreground"><BookOpen className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{t.subjects.join(", ")}</span></div>
+   120→                  <div className="flex items-center gap-2 text-muted-foreground"><GraduationCap className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{t.classes.join(", ")}</span></div>
+   121→                  <div className="flex items-center gap-2 text-muted-foreground"><Phone className="w-3.5 h-3.5 shrink-0" /><span>{t.phone}</span></div>
+   122→                </div>
+   123→                <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+   124→                  <div>
+   125→                    <p className="text-[10px] text-muted-foreground uppercase">Monthly Salary</p>
+   126→                    <p className="font-bold text-sm">Rs. {t.monthlySalary.toLocaleString()}</p>
+   127→                  </div>
+   128→                  <div className="flex gap-1">
+   129→                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View" onClick={() => setSelected(t)}><Eye className="w-3.5 h-3.5" /></Button>
+   130→                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" title="Edit" onClick={() => { setEditTeacher(t); setEditForm(t); }}><Edit className="w-3.5 h-3.5" /></Button>
+   131→                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" title="Delete" onClick={() => setDeleteConfirm(t)}><Trash2 className="w-3.5 h-3.5" /></Button>
+   132→                  </div>
+   133→                </div>
+   134→                {/* Attendance mini-bar */}
+   135→                <div className="mt-2 flex gap-0.5 h-1.5 rounded-full overflow-hidden">
+   136→                  <div className="bg-emerald-500" style={{ width: `${(t.attendance.present / totalDays) * 100}%` }} />
+   137→                  <div className="bg-yellow-500" style={{ width: `${(t.attendance.late / totalDays) * 100}%` }} />
+   138→                  <div className="bg-orange-500" style={{ width: `${(t.attendance.halfDay / totalDays) * 100}%` }} />
+   139→                  <div className="bg-red-500" style={{ width: `${(t.attendance.absent / totalDays) * 100}%` }} />
+   140→                  <div className="bg-muted-foreground/40" style={{ width: `${(t.attendance.leave / totalDays) * 100}%` }} />
+   141→                </div>
+   142→              </CardContent>
+   143→            </Card>
+   144→          );
+   145→        })}
+   146→      </div>
+   147→
+   148→      {/* Add Dialog */}
+   149→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   150→        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+   151→          {/* Gradient hero header */}
+   152→          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-primary to-purple-600/80 px-5 py-4 text-primary-foreground">
+   153→            <div className="absolute inset-0 opacity-10 pattern-grid" />
+   154→            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+   155→            <div className="relative flex items-center gap-4">
+   156→              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+   157→                <GraduationCap className="w-6 h-6" />
+   158→              </div>
+   159→              <div className="flex-1">
+   160→                <h2 className="text-xl font-bold tracking-tight">Add New Teacher</h2>
+   161→                <p className="text-xs text-white/75 mt-0.5">Register a teaching staff member with subject & class assignments.</p>
+   162→              </div>
+   163→              <div className="hidden md:flex flex-col items-end text-right">
+   164→                <span className="text-[10px] uppercase tracking-wider text-white/60">Teacher ID</span>
+   165→                <span className="text-sm font-semibold mt-0.5 font-mono">{form.id}</span>
+   166→              </div>
+   167→            </div>
+   168→          </div>
+   169→
+   170→          {/* Form body */}
+   171→          <div className="px-5 py-4 space-y-3">
+   172→            {/* ─── Section 1: Personal Information ─── */}
+   173→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   174→              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   175→                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   176→                  <User className="w-3.5 h-3.5 text-primary" />
+   177→                </div>
+   178→                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Personal Information</p>
+   179→                <span className="ml-auto text-[10px] text-muted-foreground">Identity & contact</span>
+   180→              </div>
+   181→              <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+   182→                <div className="col-span-2 space-y-1">
+   183→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
+   184→                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Ahmed Khan" className="h-9" />
+   185→                </div>
+   186→                <div className="space-y-1">
+   187→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Gender</Label>
+   188→                  <Select value={form.gender} onValueChange={(v: "Male" | "Female") => setForm({...form, gender: v})}>
+   189→                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   190→                    <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent>
+   191→                  </Select>
+   192→                </div>
+   193→                <div className="space-y-1">
+   194→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNIC</Label>
+   195→                  <Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXX-X" className="h-9" />
+   196→                </div>
+   197→                <div className="space-y-1">
+   198→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Phone <span className="text-red-500">*</span></Label>
+   199→                  <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" className="h-9" />
+   200→                </div>
+   201→                <div className="space-y-1">
+   202→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Qualification</Label>
+   203→                  <Input value={form.qualification} onChange={e => setForm({...form, qualification: e.target.value})} placeholder="M.Sc, B.Ed" className="h-9" />
+   204→                </div>
+   205→              </div>
+   206→            </div>
+   207→
+   208→            {/* ─── Section 2: Professional & Salary ─── */}
+   209→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   210→              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+   211→                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+   212→                  <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
+   213→                </div>
+   214→                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Professional & Salary</p>
+   215→                <span className="ml-auto text-[10px] text-muted-foreground">Designation & compensation</span>
+   216→              </div>
+   217→              <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+   218→                <div className="space-y-1">
+   219→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Designation</Label>
+   220→                  <Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} placeholder="e.g., Senior Teacher" className="h-9" />
+   221→                </div>
+   222→                <div className="space-y-1">
+   223→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Joining Date</Label>
+   224→                  <Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} className="h-9" />
+   225→                </div>
+   226→                <div className="col-span-2 space-y-1">
+   227→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Monthly Salary (Rs.) <span className="text-red-500">*</span></Label>
+   228→                  <div className="relative">
+   229→                    <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+   230→                    <Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} placeholder="e.g., 45000" className="h-9 pl-8" />
+   231→                  </div>
+   232→                </div>
+   233→              </div>
+   234→            </div>
+   235→
+   236→            {/* ─── Section 3: Subject Assignment ─── */}
+   237→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   238→              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+   239→                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+   240→                  <BookOpen className="w-3.5 h-3.5 text-accent" />
+   241→                </div>
+   242→                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Assign Subjects</p>
+   243→                <span className="ml-auto text-[10px] text-muted-foreground">{form.subjects.length} selected</span>
+   244→              </div>
+   245→              <div className="p-3">
+   246→                {SUBJECTS.length === 0 ? (
+   247→                  <div className="text-center py-4">
+   248→                    <BookOpen className="w-6 h-6 text-muted-foreground/30 mx-auto mb-1" />
+   249→                    <p className="text-xs text-muted-foreground">No subjects added. Go to Classes → Subjects tab to add.</p>
+   250→                  </div>
+   251→                ) : (
+   252→                  <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+   253→                    {SUBJECTS.map(subj => {
+   254→                      const checked = form.subjects.includes(subj);
+   255→                      return (
+   256→                        <button
+   257→                          key={subj}
+   258→                          type="button"
+   259→                          onClick={() => setForm({...form, subjects: checked ? form.subjects.filter(s => s !== subj) : [...form.subjects, subj]})}
+   260→                          className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border-2 transition-all text-left flex items-center gap-1",
+   261→                            checked ? "bg-accent text-accent-foreground border-accent shadow-sm" : "bg-background border-border/40 hover:border-accent/40 hover:bg-accent/5")}
+   262→                        >
+   263→                          <BookOpen className={cn("w-2.5 h-2.5 shrink-0", checked ? "text-accent-foreground" : "text-muted-foreground")} />
+   264→                          <span className="truncate">{subj}</span>
+   265→                        </button>
+   266→                      );
+   267→                    })}
+   268→                  </div>
+   269→                )}
+   270→              </div>
+   271→            </div>
+   272→
+   273→            {/* ─── Section 4: Class Assignment ─── */}
+   274→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   275→              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   276→                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   277→                  <GraduationCap className="w-3.5 h-3.5 text-primary" />
+   278→                </div>
+   279→                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Assign Classes</p>
+   280→                <span className="ml-auto text-[10px] text-muted-foreground">{form.classes.length} selected</span>
+   281→              </div>
+   282→              <div className="p-3">
+   283→                {CLASSES.length === 0 ? (
+   284→                  <div className="text-center py-4">
+   285→                    <GraduationCap className="w-6 h-6 text-muted-foreground/30 mx-auto mb-1" />
+   286→                    <p className="text-xs text-muted-foreground">No classes added. Go to Classes module to add.</p>
+   287→                  </div>
+   288→                ) : (
+   289→                  <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+   290→                    {CLASSES.map(cls => {
+   291→                      const checked = form.classes.includes(cls.name);
+   292→                      return (
+   293→                        <button
+   294→                          key={cls.name}
+   295→                          type="button"
+   296→                          onClick={() => setForm({...form, classes: checked ? form.classes.filter(c => c !== cls.name) : [...form.classes, cls.name]})}
+   297→                          className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border-2 transition-all text-left flex items-center gap-1",
+   298→                            checked ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-background border-border/40 hover:border-primary/40 hover:bg-primary/5")}
+   299→                        >
+   300→                          <GraduationCap className={cn("w-2.5 h-2.5 shrink-0", checked ? "text-primary-foreground" : "text-muted-foreground")} />
+   301→                          <span className="truncate">{cls.name}</span>
+   302→                        </button>
+   303→                      );
+   304→                    })}
+   305→                  </div>
+   306→                )}
+   307→              </div>
+   308→            </div>
+   309→
+   310→            {/* Summary banner */}
+   311→            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+   312→              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+   313→                <Award className="w-3 h-3 text-primary" />
+   314→              </div>
+   315→              <p className="text-[10px] text-muted-foreground leading-relaxed">
+   316→                <span className="font-semibold text-primary">Assignment summary:</span> {form.subjects.length} subject{form.subjects.length !== 1 ? "s" : ""} • {form.classes.length} class{form.classes.length !== 1 ? "es" : ""} • Monthly salary: <span className="font-semibold text-foreground">Rs. {form.monthlySalary.toLocaleString()}</span>
+   317→              </p>
+   318→            </div>
+   319→          </div>
+   320→
+   321→          {/* Sticky footer */}
+   322→          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+   323→            <p className="text-[10px] text-muted-foreground">
+   324→              <span className="text-red-500">*</span> Required fields
+   325→            </p>
+   326→            <div className="flex gap-2">
+   327→              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+   328→              <Button className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md" onClick={handleAdd} disabled={!form.name}>
+   329→                <Plus className="w-4 h-4 mr-1.5" />Add Teacher
+   330→              </Button>
+   331→            </div>
+   332→          </div>
+   333→        </DialogContent>
+   334→      </Dialog>
+   335→
+   336→      {/* Edit Dialog */}
+   337→      <Dialog open={!!editTeacher} onOpenChange={(o) => !o && setEditTeacher(null)}>
+   338→        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+   339→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Edit className="w-4 h-4 text-primary" />Edit Teacher</DialogTitle></DialogHeader>
+   340→          <div className="grid grid-cols-2 gap-3 py-2">
+   341→            <div className="col-span-2"><Label>Name</Label><Input value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} /></div>
+   342→            <div><Label>Designation</Label><Input value={editForm.designation || ""} onChange={e => setEditForm({...editForm, designation: e.target.value})} /></div>
+   343→            <div><Label>Phone</Label><Input value={editForm.phone || ""} onChange={e => setEditForm({...editForm, phone: e.target.value})} /></div>
+   344→            <div><Label>Monthly Salary</Label><Input type="number" value={editForm.monthlySalary || 0} onChange={e => setEditForm({...editForm, monthlySalary: Number(e.target.value)})} /></div>
+   345→            <div><Label>Qualification</Label><Input value={editForm.qualification || ""} onChange={e => setEditForm({...editForm, qualification: e.target.value})} /></div>
+   346→            <div className="col-span-2"><Label>Subjects</Label><Input value={(editForm.subjects || []).join(", ")} onChange={e => setEditForm({...editForm, subjects: e.target.value.split(",").map(s => s.trim()).filter(Boolean)})} /></div>
+   347→            <div className="col-span-2"><Label>Classes</Label><Input value={(editForm.classes || []).join(", ")} onChange={e => setEditForm({...editForm, classes: e.target.value.split(",").map(s => s.trim()).filter(Boolean)})} /></div>
+   348→          </div>
+   349→          <DialogFooter>
+   350→            <Button variant="outline" onClick={() => setEditTeacher(null)}>Cancel</Button>
+   351→            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editTeacher) { updateTeacher(editTeacher.id, editForm); toast({ title: "Teacher Updated ✓", description: `${editForm.name || editTeacher.name}'s profile updated.` }); setEditTeacher(null); } }}>Save Changes</Button>
+   352→          </DialogFooter>
+   353→        </DialogContent>
+   354→      </Dialog>
+   355→
+   356→      {/* Delete confirmation */}
+   357→      <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+   358→        <DialogContent className="max-w-sm max-h-[92vh] overflow-y-auto">
+   359→          <DialogHeader><DialogTitle className="flex items-center gap-2 text-red-600"><Trash2 className="w-5 h-5" />Delete Teacher?</DialogTitle></DialogHeader>
+   360→          {deleteConfirm && (
+   361→            <div className="py-2">
+   362→              <p className="text-sm text-muted-foreground">Permanently delete:</p>
+   363→              <div className="mt-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+   364→                <p className="font-semibold text-sm">{deleteConfirm.name}</p>
+   365→                <p className="text-xs text-muted-foreground">{deleteConfirm.id} • {deleteConfirm.designation}</p>
+   366→              </div>
+   367→            </div>
+   368→          )}
+   369→          <DialogFooter>
+   370→            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+   371→            <Button variant="destructive" onClick={() => { if (deleteConfirm) { deleteTeacher(deleteConfirm.id); toast({ title: "Teacher Deleted", description: `${deleteConfirm.name} removed.`, variant: "destructive" }); setDeleteConfirm(null); } }}>Delete</Button>
+   372→          </DialogFooter>
+   373→        </DialogContent>
+   374→      </Dialog>
+   375→
+   376→      {/* Profile slide-in panel */}
+   377→      {selected && (
+   378→        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+   379→          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+   380→          <div className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right" onClick={e => e.stopPropagation()}>
+   381→            {/* Close button */}
+   382→            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+   383→              <X className="w-4 h-4" />
+   384→            </button>
+   385→
+   386→            {/* Gradient banner header */}
+   387→            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-4 text-primary-foreground overflow-hidden">
+   388→              <div className="absolute inset-0 opacity-10 pattern-grid" />
+   389→              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+   390→              <div className="relative flex items-start gap-5">
+   391→                <Avatar className="w-16 h-16 ring-2 ring-white/30 shadow-xl shrink-0">
+   392→                  <AvatarFallback className={cn("text-2xl font-bold bg-white/20 text-white")}>
+   393→                    {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   394→                  </AvatarFallback>
+   395→                </Avatar>
+   396→                <div className="flex-1 min-w-0 pt-1">
+   397→                  <h2 className="text-2xl font-bold">{selected.name}</h2>
+   398→                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+   399→                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">{selected.id}</span>
+   400→                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">{selected.designation}</span>
+
+[showing lines 1-400 of 920; use offset=401 with limit to continue reading]

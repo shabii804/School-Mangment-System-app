@@ -1,0 +1,529 @@
+     1→"use client";
+     2→
+     3→import { useAppStore } from "@/lib/sms-store";
+     4→import { STATS, FEE_TREND, STUDENT_GROWTH, ACTIVITIES, TODAY_SCHEDULE, UPCOMING_BIRTHDAYS, PENDING_TASKS, CONCESSIONS } from "@/lib/sms-data";
+     5→import { KpiCard } from "../KpiCard";
+     6→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     7→import { Button } from "@/components/ui/button";
+     8→import { Badge } from "@/components/ui/badge";
+     9→import {
+    10→  Users, GraduationCap, UserCog, ClipboardCheck, DollarSign,
+    11→  TrendingUp, AlertTriangle, Wallet, Plus, Receipt, ClipboardList,
+    12→  FileText, Activity as ActivityIcon, Cake, Calendar, Clock,
+    13→  CheckCircle2, Circle, ArrowRight, Sparkles, School, ArrowUpRight,
+    14→  ArrowDownRight, Bus, Home, BookOpen, Shield, Zap, Award,
+    15→} from "lucide-react";
+    16→import {
+    17→  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+    18→  Tooltip, ResponsiveContainer, Legend, Line, LineChart, RadialBarChart,
+    19→  RadialBar, PolarAngleAxis,
+    20→} from "recharts";
+    21→import { cn } from "@/lib/utils";
+    22→
+    23→const ACTIVITY_COLORS: Record<string, string> = {
+    24→  fee: "bg-emerald-500",
+    25→  attendance: "bg-primary",
+    26→  admission: "bg-purple-500",
+    27→  salary: "bg-accent",
+    28→  certificate: "bg-yellow-500",
+    29→  system: "bg-muted-foreground",
+    30→};
+    31→
+    32→const ACTIVITY_ICONS: Record<string, any> = {
+    33→  fee: DollarSign, attendance: ClipboardCheck, admission: UserCog,
+    34→  salary: Wallet, certificate: FileText, system: ActivityIcon,
+    35→};
+    36→
+    37→const SCHEDULE_STATUS: Record<string, { color: string; bg: string; label: string; dot: string }> = {
+    38→  completed: { color: "text-emerald-600", bg: "bg-emerald-500/10", label: "Done", dot: "bg-emerald-500" },
+    39→  "in-progress": { color: "text-primary", bg: "bg-primary/10", label: "LIVE", dot: "bg-primary animate-pulse" },
+    40→  upcoming: { color: "text-muted-foreground", bg: "bg-muted", label: "Next", dot: "bg-muted-foreground/30" },
+    41→  break: { color: "text-accent", bg: "bg-accent/10", label: "Break", dot: "bg-accent" },
+    42→};
+    43→
+    44→const PRIORITY_STYLES: Record<string, string> = {
+    45→  high: "bg-red-500/10 text-red-600 border-red-500/20",
+    46→  medium: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+    47→  low: "bg-muted text-muted-foreground border-border",
+    48→};
+    49→
+    50→export function DashboardModule() {
+    51→  const { setActiveModule, school, feeCollections } = useAppStore();
+    52→
+    53→  const quickActions = [
+    54→    { label: "Collect Fee", desc: "New receipt", icon: Receipt, module: "fees" as const, color: "bg-emerald-500/10 text-emerald-600", border: "hover:border-emerald-500/30" },
+    55→    { label: "Attendance", desc: "Mark today", icon: ClipboardList, module: "attendance" as const, color: "bg-primary/10 text-primary", border: "hover:border-primary/30" },
+    56→    { label: "Add Student", desc: "New admission", icon: Plus, module: "students" as const, color: "bg-purple-500/10 text-purple-600", border: "hover:border-purple-500/30" },
+    57→    { label: "Reports", desc: "Print PDF", icon: FileText, module: "reports" as const, color: "bg-accent/10 text-accent", border: "hover:border-accent/30" },
+    58→    { label: "Library", desc: "Issue book", icon: BookOpen, module: "library" as const, color: "bg-blue-500/10 text-blue-600", border: "hover:border-blue-500/30" },
+    59→    { label: "Events", desc: "View calendar", icon: Calendar, module: "events" as const, color: "bg-pink-500/10 text-pink-600", border: "hover:border-pink-500/30" },
+    60→  ];
+    61→
+    62→  const kpiClick = (module: "defaulters" | "fees" | "students" | "attendance") => () => setActiveModule(module);
+    63→
+    64→  // Mini data for sparkline
+    65→  const attendanceSpark = [
+    66→    { day: "M", val: 92 }, { day: "T", val: 88 }, { day: "W", val: 95 },
+    67→    { day: "T", val: 90 }, { day: "F", val: 93 }, { day: "S", val: 87 },
+    68→  ];
+    69→
+    70→  const feeSpark = [
+    71→    { day: "M", val: 12 }, { day: "T", val: 18 }, { day: "W", val: 8 },
+    72→    { day: "T", val: 15 }, { day: "F", val: 22 }, { day: "S", val: 18 },
+    73→  ];
+    74→
+    75→  return (
+    76→    <div className="space-y-3 fade-in">
+    77→      {/* ═══ Hero Banner ═══ */}
+    78→      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/90 p-4 text-primary-foreground shadow-lg">
+    79→        <div className="absolute inset-0 opacity-10 pattern-grid" />
+    80→        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/25 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
+    81→        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-y-1/2" />
+    82→        <div className="absolute top-1/2 left-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl" />
+    83→        <div className="relative flex items-start gap-6">
+    84→          {/* Logo */}
+    85→          <div className="w-20 h-20 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center overflow-hidden ring-4 ring-white/20 shadow-2xl shrink-0">
+    86→            {school.logo ? (
+    87→              <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
+    88→            ) : (
+    89→              <School className="w-8 h-8 text-primary-foreground" />
+    90→            )}
+    91→          </div>
+    92→          <div className="flex-1 min-w-0">
+    93→            <div className="flex items-center gap-2 flex-wrap">
+    94→              <p className="text-xs opacity-90">Assalam-o-Alaikum, welcome back 👋</p>
+    95→              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 font-medium backdrop-blur-sm">
+    96→                <Sparkles className="w-2.5 h-2.5 inline mr-1" />Session {school.session}
+    97→              </span>
+    98→              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/20 font-medium flex items-center gap-1 backdrop-blur-sm">
+    99→                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+   100→                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+   101→              </span>
+   102→            </div>
+   103→            <h2 className="text-2xl font-bold mt-1 tracking-tight">{school.name}</h2>
+   104→            <p className="text-sm opacity-80 mt-0.5">{school.tagline}</p>
+   105→            {/* Inline mini stats */}
+   106→            <div className="flex gap-4 mt-3">
+   107→              <div>
+   108→                <p className="text-2xl font-bold tabular-nums">{STATS.totalStudents}</p>
+   109→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Students</p>
+   110→              </div>
+   111→              <div className="border-l border-white/15 pl-5">
+   112→                <p className="text-2xl font-bold tabular-nums">{STATS.totalTeachers + STATS.totalStaff}</p>
+   113→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Staff</p>
+   114→              </div>
+   115→              <div className="border-l border-white/15 pl-5">
+   116→                <p className="text-2xl font-bold tabular-nums">{STATS.todayAttendancePct}%</p>
+   117→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Att.</p>
+   118→              </div>
+   119→              <div className="border-l border-white/15 pl-5">
+   120→                <p className="text-2xl font-bold tabular-nums">Rs. {(STATS.todayFeeCollection / 1000).toFixed(0)}K</p>
+   121→                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Coll.</p>
+   122→              </div>
+   123→            </div>
+   124→            {/* Quick action buttons */}
+   125→            <div className="flex flex-wrap gap-2 mt-4">
+   126→              <button onClick={() => setActiveModule("fees")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-semibold transition-all hover:scale-105 backdrop-blur-sm shadow-sm">
+   127→                <Receipt className="w-3.5 h-3.5" /> Collect Fee
+   128→              </button>
+   129→              <button onClick={() => setActiveModule("attendance")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition-all hover:scale-105 border border-white/20 backdrop-blur-sm">
+   130→                <ClipboardList className="w-3.5 h-3.5" /> Mark Attendance
+   131→              </button>
+   132→              <button onClick={() => setActiveModule("students")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition-all hover:scale-105 border border-white/20 backdrop-blur-sm">
+   133→                <Plus className="w-3.5 h-3.5" /> New Admission
+   134→              </button>
+   135→              <button onClick={() => setActiveModule("defaulters")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent/25 hover:bg-accent/35 text-xs font-semibold transition-all hover:scale-105 border border-accent/30 backdrop-blur-sm">
+   136→                <AlertTriangle className="w-3.5 h-3.5" /> {STATS.defaultersCount} Defaulters
+   137→              </button>
+   138→            </div>
+   139→          </div>
+   140→        </div>
+   141→      </div>
+   142→
+   143→      {/* ═══ KPI Row 1 — Primary Stats ═══ */}
+   144→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   145→        <button onClick={kpiClick("students")} className="text-left">
+   146→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm">
+   147→            <div className="flex items-start justify-between">
+   148→              <div>
+   149→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Students</p>
+   150→                <p className="text-2xl font-bold mt-1 tabular-nums">{STATS.totalStudents}</p>
+   151→                <p className="text-xs text-muted-foreground mt-0.5">Active enrollment</p>
+   152→              </div>
+   153→              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+   154→                <Users className="w-4 h-4 text-primary" />
+   155→              </div>
+   156→            </div>
+   157→            {/* Mini sparkline */}
+   158→            <div className="mt-2 h-6">
+   159→              <ResponsiveContainer width="100%" height="100%">
+   160→                <AreaChart data={STUDENT_GROWTH.slice(-6)}>
+   161→                  <defs><linearGradient id="sparkStudents" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#15857A" stopOpacity={0.4} /><stop offset="95%" stopColor="#15857A" stopOpacity={0} /></linearGradient></defs>
+   162→                  <Area type="monotone" dataKey="students" stroke="#15857A" strokeWidth={1.5} fill="url(#sparkStudents)" />
+   163→                </AreaChart>
+   164→              </ResponsiveContainer>
+   165→            </div>
+   166→          </div>
+   167→        </button>
+   168→
+   169→        <button onClick={kpiClick("attendance")} className="text-left group">
+   170→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
+   171→            <div className="flex items-start justify-between">
+   172→              <div>
+   173→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Attendance</p>
+   174→                <p className="text-2xl font-bold mt-1 tabular-nums">{STATS.todayAttendancePct}%</p>
+   175→                <p className="text-xs text-muted-foreground mt-0.5">Mark today's attendance</p>
+   176→              </div>
+   177→              <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
+   178→                <ClipboardCheck className="w-4 h-4 text-yellow-600" />
+   179→              </div>
+   180→            </div>
+   181→            {/* Mini bar chart */}
+   182→            <div className="mt-2 h-6 flex items-end gap-1">
+   183→              {attendanceSpark.map((d, i) => (
+   184→                <div key={i} className="flex-1 rounded-sm bg-yellow-500/30 hover:bg-yellow-500/50 transition-colors" style={{ height: `${d.val}%` }} title={`${d.day}: ${d.val}%`} />
+   185→              ))}
+   186→            </div>
+   187→          </div>
+   188→        </button>
+   189→
+   190→        <button onClick={kpiClick("fees")} className="text-left group">
+   191→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
+   192→            <div className="flex items-start justify-between">
+   193→              <div>
+   194→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Collection</p>
+   195→                <p className="text-2xl font-bold mt-1 tabular-nums">Rs. {STATS.todayFeeCollection.toLocaleString()}</p>
+   196→                <p className="text-xs text-muted-foreground mt-0.5">{feeCollections.filter(f => f.date === new Date().toISOString().split("T")[0]).length} receipts today</p>
+   197→              </div>
+   198→              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
+   199→                <DollarSign className="w-4 h-4 text-accent" />
+   200→              </div>
+   201→            </div>
+   202→            {/* Mini bar chart */}
+   203→            <div className="mt-2 h-6 flex items-end gap-1">
+   204→              {feeSpark.map((d, i) => (
+   205→                <div key={i} className="flex-1 rounded-sm bg-accent/30 hover:bg-accent/50 transition-colors" style={{ height: `${(d.val / 22) * 100}%` }} title={`${d.day}: Rs. ${d.val}K`} />
+   206→              ))}
+   207→            </div>
+   208→          </div>
+   209→        </button>
+   210→
+   211→        <button onClick={kpiClick("defaulters")} className="text-left group">
+   212→          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
+   213→            <div className="flex items-start justify-between">
+   214→              <div>
+   215→                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fee Defaulters</p>
+   216→                <p className="text-2xl font-bold mt-1 tabular-nums text-red-600">{STATS.defaultersCount}</p>
+   217→                <p className="text-xs text-muted-foreground mt-0.5">Past due date</p>
+   218→                <div className="flex items-center gap-1 mt-2 text-xs text-red-600 font-medium">
+   219→                  <AlertTriangle className="w-3 h-3" /> Needs follow-up
+   220→                </div>
+   221→              </div>
+   222→              <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/10 transition-colors">
+   223→                <AlertTriangle className="w-4 h-4 text-red-600" />
+   224→              </div>
+   225→            </div>
+   226→            {/* Progress bar showing collection rate */}
+   227→            <div className="mt-2">
+   228→              <div className="flex justify-between text-[9px] text-muted-foreground mb-1"><span>Collection Rate</span><span>{STATS.totalStudents > 0 ? Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100) : 0}%</span></div>
+   229→              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+   230→                <div className="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full" style={{ width: `${STATS.totalStudents > 0 ? Math.round((1 - STATS.defaultersCount / STATS.totalStudents) * 100) : 0}%` }} />
+   231→              </div>
+   232→            </div>
+   233→          </div>
+   234→        </button>
+   235→      </div>
+   236→
+   237→      {/* ═══ KPI Row 2 — Secondary Stats ═══ */}
+   238→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   239→        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
+   240→          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><GraduationCap className="w-4 h-4 text-purple-600" /></div>
+   241→          <div><p className="text-[10px] text-muted-foreground uppercase">Teaching Staff</p><p className="text-lg font-bold">{STATS.totalTeachers}</p></div>
+   242→        </div>
+   243→        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
+   244→          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><UserCog className="w-4 h-4 text-purple-600" /></div>
+   245→          <div><p className="text-[10px] text-muted-foreground uppercase">Support Staff</p><p className="text-lg font-bold">{STATS.totalStaff}</p></div>
+   246→        </div>
+   247→        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
+   248→          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><TrendingUp className="w-4 h-4 text-emerald-600" /></div>
+   249→          <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Income</p><p className="text-lg font-bold">Rs. {(STATS.monthlyIncome / 1000).toFixed(0)}K</p></div>
+   250→        </div>
+   251→        <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
+   252→          <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center"><Wallet className="w-4 h-4 text-pink-600" /></div>
+   253→          <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-lg font-bold text-red-600">Rs. {(STATS.pendingFees / 1000).toFixed(1)}K</p></div>
+   254→        </div>
+   255→      </div>
+   256→
+   257→      {/* ═══ Concession / Scholarship Summary ═══ */}
+   258→      {(() => {
+   259→        const activeConcessions = CONCESSIONS.filter(c => c.status === "Active");
+   260→        const totalSaving = activeConcessions.reduce((s, c) => s + c.monthlySaving, 0);
+   261→        const studentsBenefited = new Set(activeConcessions.map(c => c.studentId)).size;
+   262→        if (activeConcessions.length === 0) return null;
+   263→        return (
+   264→          <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+   265→            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+   266→              <Award className="w-4 h-4 text-emerald-600" />
+   267→            </div>
+   268→            <div className="flex-1 flex items-center gap-4 flex-wrap">
+   269→              <div>
+   270→                <p className="text-xs text-muted-foreground uppercase font-semibold">Active Concessions</p>
+   271→                <p className="text-lg font-bold">{activeConcessions.length} scholarships & discounts</p>
+   272→              </div>
+   273→              <div className="border-l border-border/30 pl-4">
+   274→                <p className="text-xs text-muted-foreground">Students Benefited</p>
+   275→                <p className="text-lg font-bold">{studentsBenefited}</p>
+   276→              </div>
+   277→              <div className="border-l border-border/30 pl-4">
+   278→                <p className="text-xs text-muted-foreground">Monthly Saving</p>
+   279→                <p className="text-lg font-bold text-emerald-600">Rs. {totalSaving.toLocaleString()}</p>
+   280→              </div>
+   281→            </div>
+   282→            <Button variant="ghost" size="sm" className="text-xs h-7 shrink-0" onClick={() => setActiveModule("concession")}>
+   283→              View Details <ArrowRight className="w-3 h-3 ml-1" />
+   284→            </Button>
+   285→          </div>
+   286→        );
+   287→      })()}
+   288→
+   289→      {/* ═══ Charts Row ═══ */}
+   290→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   291→        {/* Fee Collection Trend — 2/3 width */}
+   292→        <Card className="lg:col-span-2 border-0 shadow-sm glass-card card-hover">
+   293→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   294→            <div>
+   295→              <CardTitle className="text-base flex items-center gap-2">
+   296→                <TrendingUp className="w-4 h-4 text-primary" /> Fee Collection Trend
+   297→              </CardTitle>
+   298→              <p className="text-xs text-muted-foreground">Collected vs pending — last 6 months</p>
+   299→            </div>
+   300→            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("analytics")}>
+   301→              View Analytics <ArrowRight className="w-3 h-3 ml-1" />
+   302→            </Button>
+   303→          </CardHeader>
+   304→          <CardContent>
+   305→            <ResponsiveContainer width="100%" height={180}>
+   306→              <AreaChart data={FEE_TREND}>
+   307→                <defs>
+   308→                  <linearGradient id="collectedGrad" x1="0" y1="0" x2="0" y2="1">
+   309→                    <stop offset="5%" stopColor="#15857A" stopOpacity={0.5} />
+   310→                    <stop offset="95%" stopColor="#15857A" stopOpacity={0} />
+   311→                  </linearGradient>
+   312→                  <linearGradient id="pendingGrad" x1="0" y1="0" x2="0" y2="1">
+   313→                    <stop offset="5%" stopColor="#FF6A3B" stopOpacity={0.4} />
+   314→                    <stop offset="95%" stopColor="#FF6A3B" stopOpacity={0} />
+   315→                  </linearGradient>
+   316→                </defs>
+   317→                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.015 95)" vertical={false} />
+   318→                <XAxis dataKey="month" stroke="oklch(0.50 0.015 200)" fontSize={11} tickLine={false} axisLine={false} />
+   319→                <YAxis stroke="oklch(0.50 0.015 200)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v / 1000}K`} />
+   320→                <Tooltip contentStyle={{ background: "oklch(0.99 0.005 95)", border: "1px solid oklch(0.88 0.015 95)", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} formatter={(v: number) => `Rs. ${v.toLocaleString()}`} />
+   321→                <Legend wrapperStyle={{ fontSize: 12 }} />
+   322→                <Area type="monotone" dataKey="collected" stroke="#15857A" strokeWidth={2.5} fill="url(#collectedGrad)" name="Collected" />
+   323→                <Area type="monotone" dataKey="pending" stroke="#FF6A3B" strokeWidth={2.5} fill="url(#pendingGrad)" name="Pending" />
+   324→              </AreaChart>
+   325→            </ResponsiveContainer>
+   326→          </CardContent>
+   327→        </Card>
+   328→
+   329→        {/* Today's Schedule — 1/3 width */}
+   330→        <Card className="border-0 shadow-sm glass-card card-hover">
+   331→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   332→            <div>
+   333→              <CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" />Today's Schedule</CardTitle>
+   334→              <p className="text-xs text-muted-foreground">Grade 9-A • Live</p>
+   335→            </div>
+   336→            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("timetable")}>
+   337→              Full <ArrowRight className="w-3 h-3 ml-1" />
+   338→            </Button>
+   339→          </CardHeader>
+   340→          <CardContent className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+   341→            {TODAY_SCHEDULE.map((s, i) => {
+   342→              const style = SCHEDULE_STATUS[s.status];
+   343→              return (
+   344→                <div key={i} className={cn("flex items-center gap-3 p-2 rounded-xl border transition-all hover:scale-[1.02]", style.bg, s.status === "in-progress" ? "border-primary/30 ring-1 ring-primary/20" : "border-border/40")}>
+   345→                  <div className={cn("w-1 h-8 rounded-full shrink-0", style.dot)} />
+   346→                  <div className="text-center shrink-0 w-10">
+   347→                    <p className="text-[9px] text-muted-foreground">{s.time}</p>
+   348→                    <p className={cn("text-xs font-bold", style.color)}>{s.period}</p>
+   349→                  </div>
+   350→                  <div className="flex-1 min-w-0">
+   351→                    <p className="text-sm font-medium truncate">{s.subject}</p>
+   352→                    <p className="text-[10px] text-muted-foreground truncate">{s.teacher} • {s.room}</p>
+   353→                  </div>
+   354→                  {s.status === "in-progress" ? (
+   355→                    <Badge className="text-[9px] bg-primary text-primary-foreground border-0 animate-pulse">LIVE</Badge>
+   356→                  ) : s.status === "completed" ? (
+   357→                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+   358→                  ) : (
+   359→                    <Badge variant="outline" className={cn("text-[9px] border-0", style.color, style.bg)}>{style.label}</Badge>
+   360→                  )}
+   361→                </div>
+   362→              );
+   363→            })}
+   364→          </CardContent>
+   365→        </Card>
+   366→      </div>
+   367→
+   368→      {/* ═══ Quick Actions + Recent Activity ═══ */}
+   369→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   370→        {/* Quick Actions */}
+   371→        <Card className="border-0 shadow-sm glass-card card-hover">
+   372→          <CardHeader className="pb-2">
+   373→            <CardTitle className="text-base flex items-center gap-2"><Zap className="w-4 h-4 text-accent" />Quick Actions</CardTitle>
+   374→            <p className="text-xs text-muted-foreground">One-click access</p>
+   375→          </CardHeader>
+   376→          <CardContent className="grid grid-cols-2 gap-2.5">
+   377→            {quickActions.map(action => {
+   378→              const Icon = action.icon;
+   379→              return (
+   380→                <button
+   381→                  key={action.label}
+   382→                  onClick={() => setActiveModule(action.module)}
+   383→                  className={cn("flex flex-col items-start gap-2 p-3 rounded-xl border border-border/40 transition-all card-hover text-left", action.border)}
+   384→                >
+   385→                  <div className={cn("rounded-lg p-2", action.color)}>
+   386→                    <Icon className="w-4 h-4" />
+   387→                  </div>
+   388→                  <div>
+   389→                    <p className="text-xs font-semibold">{action.label}</p>
+   390→                    <p className="text-[10px] text-muted-foreground">{action.desc}</p>
+   391→                  </div>
+   392→                </button>
+   393→              );
+   394→            })}
+   395→          </CardContent>
+   396→        </Card>
+   397→
+   398→        {/* Recent activity — 2/3 width */}
+   399→        <Card className="lg:col-span-2 border-0 shadow-sm glass-card card-hover">
+   400→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   401→            <div>
+   402→              <CardTitle className="text-base flex items-center gap-2">
+   403→                <ActivityIcon className="w-4 h-4 text-primary" /> Recent Activities
+   404→              </CardTitle>
+   405→              <p className="text-xs text-muted-foreground">Latest 7 events in the system</p>
+   406→            </div>
+   407→            <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground">View all</Button>
+   408→          </CardHeader>
+   409→          <CardContent className="space-y-1 max-h-[220px] overflow-y-auto">
+   410→            {ACTIVITIES.map(act => {
+   411→              const Icon = ACTIVITY_ICONS[act.type] || ActivityIcon;
+   412→              return (
+   413→                <div key={act.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors group">
+   414→                  <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", ACTIVITY_COLORS[act.type], "bg-opacity-10")} style={{ background: act.type === "fee" ? "oklch(0.95 0.05 150)" : act.type === "attendance" ? "oklch(0.95 0.05 175)" : act.type === "admission" ? "oklch(0.95 0.05 280)" : act.type === "salary" ? "oklch(0.95 0.08 45)" : act.type === "certificate" ? "oklch(0.95 0.08 95)" : "oklch(0.95 0 0)" }}>
+   415→                    <Icon className="w-3.5 h-3.5" style={{ color: act.type === "fee" ? "#059669" : act.type === "attendance" ? "#15857A" : act.type === "admission" ? "#7C3AED" : act.type === "salary" ? "#FF6A3B" : act.type === "certificate" ? "#CA8A04" : "#6B7280" }} />
+   416→                  </div>
+   417→                  <div className="flex-1 min-w-0">
+   418→                    <p className="text-sm font-medium text-foreground">{act.action}</p>
+   419→                    <p className="text-xs text-muted-foreground truncate">{act.description}</p>
+   420→                  </div>
+   421→                  <div className="text-right shrink-0">
+   422→                    <p className="text-[10px] text-muted-foreground">{act.timestamp.split(" ")[1]}</p>
+   423→                    <p className="text-[10px] text-muted-foreground/70">{act.user.split(" ")[0]}</p>
+   424→                  </div>
+   425→                </div>
+   426→              );
+   427→            })}
+   428→          </CardContent>
+   429→        </Card>
+   430→      </div>
+   431→
+   432→      {/* ═══ Pending Tasks + Birthdays ═══ */}
+   433→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   434→        {/* Pending tasks */}
+   435→        <Card className="border-0 shadow-sm glass-card card-hover">
+   436→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   437→            <CardTitle className="text-base flex items-center gap-2">
+   438→              <Clock className="w-4 h-4 text-accent" /> Pending Tasks Today
+   439→            </CardTitle>
+   440→            <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-0">{PENDING_TASKS.length} tasks</Badge>
+   441→          </CardHeader>
+   442→          <CardContent className="space-y-1">
+   443→            {PENDING_TASKS.map(task => (
+   444→              <button
+   445→                key={task.id}
+   446→                onClick={() => setActiveModule(task.module)}
+   447→                className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors text-left group"
+   448→              >
+   449→                <Circle className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+   450→                <div className="flex-1 min-w-0">
+   451→                  <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
+   452→                  <p className="text-[10px] text-muted-foreground">Due in {task.dueIn}</p>
+   453→                </div>
+   454→                <Badge variant="outline" className={cn("text-[9px] capitalize", PRIORITY_STYLES[task.priority])}>
+   455→                  {task.priority}
+   456→                </Badge>
+   457→                <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+   458→              </button>
+   459→            ))}
+   460→          </CardContent>
+   461→        </Card>
+   462→
+   463→        {/* Birthdays */}
+   464→        <Card className="border-0 shadow-sm glass-card card-hover">
+   465→          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   466→            <CardTitle className="text-base flex items-center gap-2">
+   467→              <Cake className="w-4 h-4 text-pink-500" /> Upcoming Birthdays
+   468→            </CardTitle>
+   469→            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("students")}>
+   470→              All students <ArrowRight className="w-3 h-3 ml-1" />
+   471→            </Button>
+   472→          </CardHeader>
+   473→          <CardContent className="space-y-1.5">
+   474→            {UPCOMING_BIRTHDAYS.map((b, i) => (
+   475→              <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+   476→                <div className="relative">
+   477→                  <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold", b.date === "Today" ? "bg-gradient-to-br from-pink-500 to-purple-500 text-white" : "bg-gradient-to-br from-pink-500/15 to-purple-500/15 text-pink-600")}>
+   478→                    {b.avatar}
+   479→                  </div>
+   480→                  {b.date === "Today" && (
+   481→                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-accent border-2 border-card animate-pulse" />
+   482→                  )}
+   483→                </div>
+   484→                <div className="flex-1 min-w-0">
+   485→                  <p className="text-sm font-medium truncate">{b.name}</p>
+   486→                  <p className="text-[10px] text-muted-foreground">{b.class} • Turning {b.age}</p>
+   487→                </div>
+   488→                <Badge variant="outline" className={cn("text-[10px] border-0", b.date === "Today" ? "bg-accent/15 text-accent font-semibold" : "bg-muted text-muted-foreground")}>
+   489→                  {b.date === "Today" && "🎂 "}{b.date}
+   490→                </Badge>
+   491→              </div>
+   492→            ))}
+   493→          </CardContent>
+   494→        </Card>
+   495→      </div>
+   496→
+   497→      {/* ═══ Student Growth — Full Width ═══ */}
+   498→      <Card className="border-0 shadow-sm glass-card card-hover">
+   499→        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+   500→          <div>
+   501→            <CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> Student Growth Trend</CardTitle>
+   502→            <p className="text-xs text-muted-foreground">Last 12 months enrollment</p>
+   503→          </div>
+   504→          <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("analytics")}>
+   505→            View Analytics <ArrowRight className="w-3 h-3 ml-1" />
+   506→          </Button>
+   507→        </CardHeader>
+   508→        <CardContent>
+   509→          <ResponsiveContainer width="100%" height={140}>
+   510→            <BarChart data={STUDENT_GROWTH}>
+   511→              <defs>
+   512→                <linearGradient id="studentsGrad2" x1="0" y1="0" x2="0" y2="1">
+   513→                  <stop offset="0%" stopColor="#15857A" />
+   514→                  <stop offset="100%" stopColor="#15857A" stopOpacity={0.4} />
+   515→                </linearGradient>
+   516→              </defs>
+   517→              <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.015 95)" vertical={false} />
+   518→              <XAxis dataKey="month" stroke="oklch(0.50 0.015 200)" fontSize={10} tickLine={false} axisLine={false} interval={1} />
+   519→              <YAxis stroke="oklch(0.50 0.015 200)" fontSize={11} tickLine={false} axisLine={false} domain={[400, 480]} />
+   520→              <Tooltip contentStyle={{ background: "oklch(0.99 0.005 95)", border: "1px solid oklch(0.88 0.015 95)", borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} formatter={(v: number) => `${v} students`} />
+   521→              <Bar dataKey="students" fill="url(#studentsGrad2)" radius={[4, 4, 0, 0]} name="Students" />
+   522→            </BarChart>
+   523→          </ResponsiveContainer>
+   524→        </CardContent>
+   525→      </Card>
+   526→    </div>
+   527→  );
+   528→}
+   529→

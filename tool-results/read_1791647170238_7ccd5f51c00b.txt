@@ -1,0 +1,402 @@
+   640→          <Badge className="bg-primary text-primary-foreground">{selectedIds.size} selected</Badge>
+   641→          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setBulkClass(filtered[0]?.class || "Grade 1"); setBulkPromoteOpen(true); }}>
+   642→            <ArrowUpCircle className="w-3.5 h-3.5 mr-1" />Bulk Promote
+   643→          </Button>
+   644→          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { setBulkFeeOpen(true); setBulkFeeAmount(0); }}>
+   645→            <DollarSign className="w-3.5 h-3.5 mr-1" />Bulk Collect Fee
+   646→          </Button>
+   647→          <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>Clear Selection</Button>
+   648→        </div>
+   649→      )}
+   650→
+   651→      {/* Table */}
+   652→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   653→        <div className="overflow-x-auto">
+   654→          <Table>
+   655→            <TableHeader>
+   656→              <TableRow className="hover:bg-transparent border-border/40">
+   657→                <TableHead className="w-10">
+   658→                  <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} className="w-4 h-4 accent-primary cursor-pointer" />
+   659→                </TableHead>
+   660→                <TableHead className="w-12">Roll</TableHead>
+   661→                <TableHead>Student ID</TableHead>
+   662→                <TableHead>Name</TableHead>
+   663→                <TableHead>Class</TableHead>
+   664→                <TableHead>Father</TableHead>
+   665→                <TableHead>Phone</TableHead>
+   666→                <TableHead>Fee</TableHead>
+   667→                <TableHead>Status</TableHead>
+   668→                <TableHead className="text-right">Actions</TableHead>
+   669→              </TableRow>
+   670→            </TableHeader>
+   671→            <TableBody>
+   672→              {filtered.slice(0, 30).map(s => (
+   673→                <TableRow key={s.id} className={cn("border-border/30 hover:bg-muted/30 cursor-pointer", selectedIds.has(s.id) && "bg-primary/5")} onClick={() => setSelected(s)}>
+   674→                  <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+   675→                    <input type="checkbox" checked={selectedIds.has(s.id)} onChange={() => toggleSelect(s.id)} className="w-4 h-4 accent-primary cursor-pointer" />
+   676→                  </TableCell>
+   677→                  <TableCell className="font-mono text-xs">{s.rollNo}</TableCell>
+   678→                  <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
+   679→                  <TableCell>
+   680→                    <div className="flex items-center gap-2">
+   681→                      <Avatar className="w-8 h-8">
+   682→                        {s.photo ? (
+   683→                          <img src={s.photo} alt={s.name} className="w-full h-full object-cover rounded-full" />
+   684→                        ) : (
+   685→                          <AvatarFallback className={cn("text-xs font-semibold", s.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>
+   686→                            {s.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   687→                          </AvatarFallback>
+   688→                        )}
+   689→                      </Avatar>
+   690→                      <div>
+   691→                        <p className="font-medium text-sm flex items-center gap-1.5">
+   692→                          {s.name}
+   693→                          {s.isHosteller && <Home className="w-3 h-3 text-accent" />}
+   694→                          {s.transport && <Bus className="w-3 h-3 text-primary" />}
+   695→                        </p>
+   696→                        <p className="text-[10px] text-muted-foreground">{s.gender} • {s.bloodGroup} • {s.attendancePct}% att.</p>
+   697→                      </div>
+   698→                    </div>
+   699→                  </TableCell>
+   700→                  <TableCell><Badge variant="outline" className="text-xs">{s.class}-{s.section}</Badge></TableCell>
+   701→                  <TableCell className="text-sm">{s.fatherName}</TableCell>
+   702→                  <TableCell className="text-xs text-muted-foreground">{s.fatherPhone}</TableCell>
+   703→                  <TableCell>
+   704→                    {s.outstandingAmount > 0 ? (
+   705→                      <Badge variant="destructive" className="text-[10px]">Rs. {s.outstandingAmount.toLocaleString()}</Badge>
+   706→                    ) : (
+   707→                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-0">Paid</Badge>
+   708→                    )}
+   709→                  </TableCell>
+   710→                  <TableCell>
+   711→                    <Badge variant={s.status === "Active" ? "default" : "secondary"} className="text-[10px]">{s.status}</Badge>
+   712→                  </TableCell>
+   713→                  <TableCell className="text-right">
+   714→                    <div className="flex items-center justify-end gap-0.5">
+   715→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View"
+   716→                        onClick={(e) => { e.stopPropagation(); setSelected(s); }}
+   717→                      ><Eye className="w-3.5 h-3.5" /></Button>
+   718→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-primary" title="Edit"
+   719→                        onClick={(e) => { e.stopPropagation(); setEditStudent(s); setEditForm(s); }}
+   720→                      ><Edit className="w-3.5 h-3.5" /></Button>
+   721→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-600" title="Promote"
+   722→                        onClick={(e) => { e.stopPropagation(); setPromoteTarget(s); setPromoteClass(s.class); setPromoteSection(s.section); }}
+   723→                      ><ArrowUpCircle className="w-3.5 h-3.5" /></Button>
+   724→                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" title="Delete"
+   725→                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(s); }}
+   726→                      ><Trash2 className="w-3.5 h-3.5" /></Button>
+   727→                    </div>
+   728→                  </TableCell>
+   729→                </TableRow>
+   730→              ))}
+   731→            </TableBody>
+   732→          </Table>
+   733→        </div>
+   734→        {filtered.length > 30 && (
+   735→          <div className="px-4 py-3 border-t border-border/30 text-xs text-muted-foreground text-center">
+   736→            Showing 30 of {filtered.length} students. Use search/filters to narrow down.
+   737→          </div>
+   738→        )}
+   739→      </Card>
+   740→
+   741→      {/* Profile slide-in panel */}
+   742→      {selected && (
+   743→        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+   744→          {/* Backdrop */}
+   745→          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+   746→          {/* Panel */}
+   747→          <div
+   748→            className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right"
+   749→            onClick={e => e.stopPropagation()}
+   750→          >
+   751→            {/* Close button */}
+   752→            <button
+   753→              onClick={() => setSelected(null)}
+   754→              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+   755→            >
+   756→              <X className="w-4 h-4" />
+   757→            </button>
+   758→
+   759→            {/* Gradient banner header */}
+   760→            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-4 text-primary-foreground overflow-hidden">
+   761→              <div className="absolute inset-0 opacity-10 pattern-grid" />
+   762→              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+   763→              <div className="relative flex items-start gap-5">
+   764→                <Avatar className="w-24 h-24 ring-4 ring-white/30 shadow-xl shrink-0">
+   765→                  {selected.photo ? (
+   766→                    <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover rounded-full" />
+   767→                  ) : (
+   768→                    <AvatarFallback className="text-2xl font-bold bg-white/20 text-white">
+   769→                      {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   770→                    </AvatarFallback>
+   771→                  )}
+   772→                </Avatar>
+   773→                <div className="flex-1 min-w-0 pt-1">
+   774→                  <h2 className="text-2xl font-bold flex items-center gap-2 flex-wrap">
+   775→                    {selected.name}
+   776→                  </h2>
+   777→                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+   778→                    {selected.isHosteller && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">🏠 Hosteller</span>}
+   779→                    {selected.transport && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-medium">🚌 Transport</span>}
+   780→                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-50 font-medium flex items-center gap-1">
+   781→                      <span className={cn("w-1.5 h-1.5 rounded-full", selected.status === "Active" ? "bg-emerald-300" : "bg-red-300")} />
+   782→                      {selected.status}
+   783→                    </span>
+   784→                  </div>
+   785→                  <p className="text-white/70 text-xs mt-2">
+   786→                    {selected.id} • Roll #{selected.rollNo} • {selected.class}-{selected.section} • 🩸 {selected.bloodGroup}
+   787→                  </p>
+   788→                </div>
+   789→              </div>
+   790→              {/* Quick stats */}
+   791→              <div className="relative grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/20">
+   792→                <div>
+   793→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
+   794→                  <p className="text-xl font-bold mt-0.5">{selected.attendancePct}%</p>
+   795→                </div>
+   796→                <div className="border-l border-white/20 pl-3">
+   797→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Monthly Fee</p>
+   798→                  <p className="text-xl font-bold mt-0.5">Rs. {selected.monthlyFee.toLocaleString()}</p>
+   799→                </div>
+   800→                <div className="border-l border-white/20 pl-3">
+   801→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Outstanding</p>
+   802→                  <p className="text-xl font-bold mt-0.5">{selected.outstandingAmount > 0 ? `Rs. ${selected.outstandingAmount.toLocaleString()}` : "✓ Clear"}</p>
+   803→                </div>
+   804→                <div className="border-l border-white/20 pl-3">
+   805→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Admitted</p>
+   806→                  <p className="text-xl font-bold mt-0.5">{selected.admissionDate.slice(0, 4)}</p>
+   807→                </div>
+   808→              </div>
+   809→            </div>
+   810→
+   811→            {/* Action bar */}
+   812→            <div className="flex items-center gap-2 px-6 py-3 border-b border-border/30 bg-muted/20">
+   813→              <Button size="sm" variant="outline" onClick={() => printIDCard(selected)}>
+   814→                <QrCode className="w-3.5 h-3.5 mr-1.5" />Print ID Card
+   815→              </Button>
+   816→              <Button size="sm" variant="outline" onClick={() => { setEditStudent(selected); setEditForm(selected); }}>
+   817→                <Edit className="w-3.5 h-3.5 mr-1.5" />Edit Profile
+   818→              </Button>
+   819→              <Button size="sm" variant="outline" className="text-emerald-600" onClick={() => { setPromoteTarget(selected); setPromoteClass(selected.class); setPromoteSection(selected.section); }}>
+   820→                <ArrowUpCircle className="w-3.5 h-3.5 mr-1.5" />Promote
+   821→              </Button>
+   822→              <div className="flex-1" />
+   823→              <Button size="sm" variant="outline" className="text-red-600" onClick={() => { setDeleteConfirm(selected); }}>
+   824→                <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+   825→              </Button>
+   826→            </div>
+   827→
+   828→            {/* Tabbed content */}
+   829→            <div className="p-6">
+   830→              <Tabs defaultValue="overview">
+   831→                <TabsList className="grid w-full grid-cols-5 md:grid-cols-9 h-10 mb-4">
+   832→                  <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+   833→                  <TabsTrigger value="parents" className="text-xs">Parents</TabsTrigger>
+   834→                  <TabsTrigger value="academic" className="text-xs">Academic</TabsTrigger>
+   835→                  <TabsTrigger value="medical" className="text-xs">Medical</TabsTrigger>
+   836→                  <TabsTrigger value="fees" className="text-xs">Fees</TabsTrigger>
+   837→                  <TabsTrigger value="attendance" className="text-xs">Attend.</TabsTrigger>
+   838→                  <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
+   839→                  <TabsTrigger value="documents" className="text-xs">Docs</TabsTrigger>
+   840→                  <TabsTrigger value="communication" className="text-xs">Comm.</TabsTrigger>
+   841→                </TabsList>
+   842→
+   843→                {/* Overview */}
+   844→                <TabsContent value="overview" className="space-y-3">
+   845→                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+   846→                    <ProfileCard icon={Calendar} label="Date of Birth" value={selected.dob} color="text-primary" bg="bg-primary/5" />
+   847→                    <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
+   848→                    <ProfileCard icon={Globe} label="Nationality" value={selected.nationality} color="text-primary" bg="bg-primary/5" />
+   849→                    <ProfileCard icon={User} label="Religion" value={selected.religion} color="text-purple-600" bg="bg-purple-500/5" />
+   850→                    <ProfileCard icon={FileText} label="CNIC / B-Form" value={selected.cnic} color="text-foreground" bg="bg-muted/30" />
+   851→                    <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
+   852→                    <ProfileCard icon={DollarSign} label="Monthly Fee" value={`Rs. ${selected.monthlyFee.toLocaleString()}`} color="text-emerald-600" bg="bg-emerald-500/5" />
+   853→                    <ProfileCard icon={Home} label="Hosteller" value={selected.isHosteller ? "Yes" : "No"} color="text-accent" bg="bg-accent/5" />
+   854→                    <ProfileCard icon={Bus} label="Transport" value={selected.transport ? "Yes" : "No"} color="text-primary" bg="bg-primary/5" />
+   855→                  </div>
+   856→                  {selected.address && selected.address !== "—" && (
+   857→                    <div className="rounded-xl border border-border/40 p-3 bg-muted/20">
+   858→                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-1"><MapPin className="w-3 h-3" />Home Address</p>
+   859→                      <p className="text-sm font-medium">{selected.address}</p>
+   860→                    </div>
+   861→                  )}
+   862→                  {selected.siblings && (
+   863→                    <div className="rounded-xl border border-border/40 p-3 bg-muted/20">
+   864→                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Siblings in School</p>
+   865→                      <p className="text-sm font-medium">{selected.siblings}</p>
+   866→                    </div>
+   867→                  )}
+   868→                  {selected.transport && selected.transportRoute && (
+   869→                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+   870→                      <p className="text-[10px] text-primary uppercase tracking-wide flex items-center gap-1.5 mb-1"><Bus className="w-3 h-3" />Transport Route</p>
+   871→                      <p className="text-sm font-medium">{selected.transportRoute}</p>
+   872→                    </div>
+   873→                  )}
+   874→                </TabsContent>
+   875→
+   876→                {/* Parents */}
+   877→                <TabsContent value="parents" className="space-y-3">
+   878→                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+   879→                    <div className="flex items-center gap-2 mb-3">
+   880→                      <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center"><User className="w-4 h-4 text-primary" /></div>
+   881→                      <p className="text-sm font-semibold text-primary">Father</p>
+   882→                    </div>
+   883→                    <div className="grid grid-cols-2 gap-3">
+   884→                      <ProfileField label="Name" value={selected.fatherName} />
+   885→                      <ProfileField label="CNIC" value={selected.fatherCnic} />
+   886→                      <ProfileField label="Phone" value={selected.fatherPhone} icon={Phone} />
+   887→                      <ProfileField label="Occupation" value={selected.fatherOccupation} icon={Briefcase} />
+   888→                    </div>
+   889→                  </div>
+   890→                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+   891→                    <div className="flex items-center gap-2 mb-3">
+   892→                      <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center"><UserCircle className="w-4 h-4 text-purple-600" /></div>
+   893→                      <p className="text-sm font-semibold text-purple-600">Mother</p>
+   894→                    </div>
+   895→                    <div className="grid grid-cols-2 gap-3">
+   896→                      <ProfileField label="Name" value={selected.motherName} />
+   897→                      <ProfileField label="Phone" value={selected.motherPhone} icon={Phone} />
+   898→                      <ProfileField label="Occupation" value={selected.motherOccupation} icon={Briefcase} />
+   899→                    </div>
+   900→                  </div>
+   901→                  {selected.guardianName && (
+   902→                    <div className="rounded-xl border border-border/40 bg-muted/20 p-4">
+   903→                      <div className="flex items-center gap-2 mb-3">
+   904→                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><Users className="w-4 h-4 text-muted-foreground" /></div>
+   905→                        <p className="text-sm font-semibold">Guardian</p>
+   906→                      </div>
+   907→                      <div className="grid grid-cols-3 gap-3">
+   908→                        <ProfileField label="Name" value={selected.guardianName} />
+   909→                        <ProfileField label="Phone" value={selected.guardianPhone} icon={Phone} />
+   910→                        <ProfileField label="Relation" value={selected.guardianRelation} />
+   911→                      </div>
+   912→                    </div>
+   913→                  )}
+   914→                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+   915→                    <div className="flex items-center gap-2 mb-3">
+   916→                      <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center"><AlertCircle className="w-4 h-4 text-accent" /></div>
+   917→                      <p className="text-sm font-semibold text-accent">Emergency Contact</p>
+   918→                    </div>
+   919→                    <div className="grid grid-cols-2 gap-3">
+   920→                      <ProfileField label="Name" value={selected.emergencyName} />
+   921→                      <ProfileField label="Phone" value={selected.emergencyContact} icon={Phone} />
+   922→                    </div>
+   923→                  </div>
+   924→                </TabsContent>
+   925→
+   926→                {/* Academic */}
+   927→                <TabsContent value="academic" className="space-y-3">
+   928→                  <div className="grid grid-cols-2 gap-2">
+   929→                    <ProfileCard icon={GraduationCap} label="Current Class" value={`${selected.class}-${selected.section}`} color="text-primary" bg="bg-primary/5" />
+   930→                    <ProfileCard icon={User} label="Roll Number" value={selected.rollNo} color="text-foreground" bg="bg-muted/30" />
+   931→                    <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
+   932→                    <ProfileCard icon={FileText} label="Previous School" value={selected.previousSchool} color="text-foreground" bg="bg-muted/30" />
+   933→                  </div>
+   934→                </TabsContent>
+   935→
+   936→                {/* Medical */}
+   937→                <TabsContent value="medical" className="space-y-3">
+   938→                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+   939→                    <div className="flex items-center gap-2 mb-3">
+   940→                      <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center"><Stethoscope className="w-4 h-4 text-red-600" /></div>
+   941→                      <p className="text-sm font-semibold text-red-600">Medical Information</p>
+   942→                    </div>
+   943→                    <div className="grid grid-cols-2 gap-2">
+   944→                      <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
+   945→                      <ProfileCard icon={AlertCircle} label="Conditions" value={selected.medicalConditions} color="text-foreground" bg="bg-muted/30" />
+   946→                      <ProfileCard icon={AlertCircle} label="Allergies" value={selected.allergies} color="text-foreground" bg="bg-muted/30" />
+   947→                      <ProfileCard icon={Phone} label="Emergency Phone" value={selected.emergencyContact} color="text-foreground" bg="bg-muted/30" />
+   948→                    </div>
+   949→                  </div>
+   950→                  <div className="rounded-xl border border-border/40 p-3 text-xs text-muted-foreground">
+   951→                    <p className="font-medium text-foreground">⚠️ Important:</p>
+   952→                    <p className="mt-1">This information is used during medical emergencies and field trips. Please keep the school office updated on any changes.</p>
+   953→                  </div>
+   954→                </TabsContent>
+   955→
+   956→                {/* Fees */}
+   957→                <TabsContent value="fees" className="space-y-3">
+   958→                  <div className="grid grid-cols-3 gap-2">
+   959→                    <div className="rounded-xl bg-muted/30 p-3 border border-border/30">
+   960→                      <p className="text-[10px] text-muted-foreground uppercase">Monthly Fee</p>
+   961→                      <p className="text-xl font-bold mt-1">Rs. {selected.monthlyFee.toLocaleString()}</p>
+   962→                      {selected.isHosteller && <p className="text-[10px] text-accent mt-0.5">Hostel fee applies</p>}
+   963→                    </div>
+   964→                    <div className="rounded-xl bg-red-500/5 p-3 border border-red-500/20">
+   965→                      <p className="text-[10px] text-muted-foreground uppercase">Outstanding</p>
+   966→                      <p className="text-xl font-bold text-red-600 mt-1">Rs. {selected.outstandingAmount.toLocaleString()}</p>
+   967→                    </div>
+   968→                    <div className="rounded-xl bg-emerald-500/5 p-3 border border-emerald-500/20">
+   969→                      <p className="text-[10px] text-muted-foreground uppercase">This Month</p>
+   970→                      <p className="text-xl font-bold text-emerald-600 mt-1">{selected.feePaidThisMonth ? "Paid ✓" : "Pending"}</p>
+   971→                    </div>
+   972→                  </div>
+   973→                  <div className="rounded-xl border border-border/40 overflow-hidden">
+   974→                    <div className="px-3 py-2 bg-muted/40 border-b border-border/30 flex items-center justify-between">
+   975→                      <p className="text-xs font-semibold flex items-center gap-1.5"><ReceiptIcon className="w-3.5 h-3.5 text-primary" /> Fee Payment History</p>
+   976→                      <p className="text-[10px] text-muted-foreground">{feeCollections.filter(f => f.studentId === selected.id).length} receipts</p>
+   977→                    </div>
+   978→                    <div className="max-h-48 overflow-y-auto">
+   979→                      {feeCollections.filter(f => f.studentId === selected.id).length === 0 ? (
+   980→                        <div className="p-6 text-center text-xs text-muted-foreground">No fee payments recorded yet.</div>
+   981→                      ) : (
+   982→                        feeCollections.filter(f => f.studentId === selected.id).map(f => (
+   983→                          <div key={f.id} className="flex items-center gap-3 p-2 border-b border-border/20 hover:bg-muted/30 last:border-0">
+   984→                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0"><ReceiptIcon className="w-3.5 h-3.5 text-emerald-600" /></div>
+   985→                            <div className="flex-1 min-w-0">
+   986→                              <p className="text-xs font-mono text-muted-foreground">{f.receiptNo}</p>
+   987→                              <p className="text-[10px] text-muted-foreground">{f.date} • {f.feeType} • {f.mode}</p>
+   988→                            </div>
+   989→                            <p className="font-bold text-sm text-emerald-600">Rs. {f.amount.toLocaleString()}</p>
+   990→                            <button onClick={() => printFeeReceipt(f, selected, school)} className="text-muted-foreground hover:text-primary transition-colors p-1" title="Reprint Receipt"><Printer className="w-3.5 h-3.5" /></button>
+   991→                          </div>
+   992→                        ))
+   993→                      )}
+   994→                    </div>
+   995→                  </div>
+   996→                </TabsContent>
+   997→
+   998→                {/* Attendance */}
+   999→                <TabsContent value="attendance">
+  1000→                  <div className="rounded-xl border border-border/40 p-6 text-center">
+  1001→                    <div className="relative w-36 h-36 mx-auto">
+  1002→                      <svg className="w-full h-full transform -rotate-90">
+  1003→                        <circle cx="72" cy="72" r="64" fill="none" stroke="oklch(0.92 0.012 95)" strokeWidth="14" />
+  1004→                        <circle cx="72" cy="72" r="64" fill="none" stroke="#15857A" strokeWidth="14"
+  1005→                          strokeDasharray={`${2 * Math.PI * 64 * selected.attendancePct / 100} ${2 * Math.PI * 64}`}
+  1006→                          strokeLinecap="round" />
+  1007→                      </svg>
+  1008→                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+  1009→                        <p className="text-xl font-bold text-primary">{selected.attendancePct}%</p>
+  1010→                        <p className="text-[10px] text-muted-foreground">Attendance</p>
+  1011→                      </div>
+  1012→                    </div>
+  1013→                    <p className="text-xs text-muted-foreground mt-4">Current month attendance rate</p>
+  1014→                  </div>
+  1015→                  {/* Quick mark today */}
+  1016→                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mt-3">
+  1017→                    <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">Mark Today's Attendance</p>
+  1018→                    <div className="grid grid-cols-4 gap-2">
+  1019→                      {(["Present", "Late", "Absent", "Leave"] as const).map(status => {
+  1020→                        const colors: Record<string, string> = {
+  1021→                          Present: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20",
+  1022→                          Late: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30 hover:bg-yellow-500/20",
+  1023→                          Absent: "bg-red-500/10 text-red-600 border-red-500/30 hover:bg-red-500/20",
+  1024→                          Leave: "bg-muted text-muted-foreground border-border/40 hover:bg-muted/70",
+  1025→                        };
+  1026→                        return (
+  1027→                          <button
+  1028→                            key={status}
+  1029→                            onClick={() => {
+  1030→                              updateStudent(selected.id, {
+  1031→                                attendancePct: status === "Present" ? Math.min(100, selected.attendancePct + 1) : Math.max(0, selected.attendancePct - 1),
+  1032→                              });
+  1033→                            }}
+  1034→                            className={cn("px-3 py-2 rounded-lg text-xs font-medium border-2 transition-all", colors[status])}
+  1035→                          >
+  1036→                            {status}
+  1037→                          </button>
+  1038→                        );
+  1039→                      })}
+
+[showing lines 640-1039 of 1404; use offset=1040 with limit to continue reading]

@@ -1,0 +1,402 @@
+   401→                  </div>
+   402→                  <p className="text-white/70 text-xs mt-2">{selected.qualification} • Joined {selected.joiningDate}</p>
+   403→                </div>
+   404→              </div>
+   405→              {/* Quick stats */}
+   406→              <div className="relative grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-white/20">
+   407→                <div>
+   408→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Salary</p>
+   409→                  <p className="text-xl font-bold mt-0.5">Rs. {(selected.monthlySalary / 1000).toFixed(0)}K</p>
+   410→                </div>
+   411→                <div className="border-l border-white/20 pl-3">
+   412→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Subjects</p>
+   413→                  <p className="text-xl font-bold mt-0.5">{selected.subjects.length}</p>
+   414→                </div>
+   415→                <div className="border-l border-white/20 pl-3">
+   416→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Classes</p>
+   417→                  <p className="text-xl font-bold mt-0.5">{selected.classes.length}</p>
+   418→                </div>
+   419→                <div className="border-l border-white/20 pl-3">
+   420→                  <p className="text-[10px] uppercase text-white/60 tracking-wider">Attendance</p>
+   421→                  <p className="text-xl font-bold mt-0.5">
+   422→                    {(() => {
+   423→                      const total = selected.attendance.present + selected.attendance.late + selected.attendance.halfDay + selected.attendance.absent + selected.attendance.leave;
+   424→                      return total > 0 ? Math.round((selected.attendance.present + selected.attendance.late * 0.75 + selected.attendance.halfDay * 0.5) / total * 100) : 100;
+   425→                    })()}%
+   426→                  </p>
+   427→                </div>
+   428→              </div>
+   429→            </div>
+   430→
+   431→            {/* Action bar */}
+   432→            <div className="flex items-center gap-2 px-6 py-3 border-b border-border/30 bg-muted/20">
+   433→              <Button size="sm" variant="outline" onClick={() => { setEditTeacher(selected); setEditForm(selected); }}>
+   434→                <Edit className="w-3.5 h-3.5 mr-1.5" />Edit Profile
+   435→              </Button>
+   436→              <Button size="sm" variant="outline" className="text-red-600" onClick={() => { setDeleteConfirm(selected); }}>
+   437→                <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+   438→              </Button>
+   439→            </div>
+   440→
+   441→            {/* Content */}
+   442→            <div className="p-6 space-y-3">
+   443→              {/* Personal info */}
+   444→              <div>
+   445→                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Personal Information</p>
+   446→                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+   447→                  <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
+   448→                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><IdCard className="w-4 h-4 text-muted-foreground" /></div>
+   449→                    <div><p className="text-[10px] text-muted-foreground uppercase">CNIC</p><p className="text-sm font-semibold">{selected.cnic}</p></div>
+   450→                  </div>
+   451→                  <div className="rounded-xl border border-border/30 p-3 bg-primary/5 flex items-center gap-3">
+   452→                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Phone className="w-4 h-4 text-primary" /></div>
+   453→                    <div><p className="text-[10px] text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{selected.phone}</p></div>
+   454→                  </div>
+   455→                  <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
+   456→                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><CalendarDays className="w-4 h-4 text-muted-foreground" /></div>
+   457→                    <div><p className="text-[10px] text-muted-foreground uppercase">Joining Date</p><p className="text-sm font-semibold">{selected.joiningDate}</p></div>
+   458→                  </div>
+   459→                </div>
+   460→              </div>
+   461→
+   462→              {/* Subjects & Classes */}
+   463→              <div>
+   464→                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Assignments</p>
+   465→                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+   466→                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+   467→                    <p className="text-[10px] text-primary font-semibold uppercase mb-2 flex items-center gap-1.5"><BookOpen className="w-3 h-3" />Subjects ({selected.subjects.length})</p>
+   468→                    <div className="flex flex-wrap gap-1.5">
+   469→                      {selected.subjects.map(s => <Badge key={s} variant="outline" className="text-xs bg-primary/10 text-primary border-0">{s}</Badge>)}
+   470→                    </div>
+   471→                  </div>
+   472→                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-3">
+   473→                    <p className="text-[10px] text-accent font-semibold uppercase mb-2 flex items-center gap-1.5"><GraduationCap className="w-3 h-3" />Classes ({selected.classes.length})</p>
+   474→                    <div className="flex flex-wrap gap-1.5">
+   475→                      {selected.classes.map(c => <Badge key={c} variant="outline" className="text-xs bg-accent/10 text-accent border-0">{c}</Badge>)}
+   476→                    </div>
+   477→                  </div>
+   478→                </div>
+   479→              </div>
+   480→
+   481→              {/* Salary */}
+   482→              <div>
+   483→                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Salary Information</p>
+   484→                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-3">
+   485→                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><DollarSign className="w-4 h-4 text-emerald-600" /></div>
+   486→                  <div>
+   487→                    <p className="text-[10px] text-muted-foreground uppercase">Monthly Salary</p>
+   488→                    <p className="text-xl font-bold text-emerald-600">Rs. {selected.monthlySalary.toLocaleString()}</p>
+   489→                  </div>
+   490→                  <div className="ml-auto text-right">
+   491→                    <p className="text-[10px] text-muted-foreground uppercase">Per Day (26 days)</p>
+   492→                    <p className="text-sm font-semibold">Rs. {Math.round(selected.monthlySalary / 26).toLocaleString()}</p>
+   493→                  </div>
+   494→                </div>
+   495→              </div>
+   496→
+   497→              {/* Attendance summary */}
+   498→              <div>
+   499→                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Attendance Summary (Current Month)</p>
+   500→                <div className="grid grid-cols-5 gap-2 text-center">
+   501→                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3"><p className="text-2xl font-bold text-emerald-600">{selected.attendance.present}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Present</p></div>
+   502→                  <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3"><p className="text-2xl font-bold text-yellow-600">{selected.attendance.late}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Late</p></div>
+   503→                  <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 p-3"><p className="text-2xl font-bold text-orange-600">{selected.attendance.halfDay}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Half-Day</p></div>
+   504→                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3"><p className="text-2xl font-bold text-red-600">{selected.attendance.absent}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Absent</p></div>
+   505→                  <div className="rounded-xl bg-muted border border-border/30 p-3"><p className="text-2xl font-bold text-muted-foreground">{selected.attendance.leave}</p><p className="text-[10px] text-muted-foreground uppercase mt-0.5">Leave</p></div>
+   506→                </div>
+   507→              </div>
+   508→            </div>
+   509→          </div>
+   510→        </div>
+   511→      )}
+   512→    </div>
+   513→  );
+   514→}
+   515→
+   516→// ─────────────────────────────────────────────────────────────
+   517→// STAFF MODULE
+   518→// ─────────────────────────────────────────────────────────────
+   519→const EMPTY_STAFF: Staff = {
+   520→  id: "", name: "", cnic: "", department: "Administration", designation: "Staff",
+   521→  monthlySalary: 0, joiningDate: new Date().toISOString().split("T")[0], phone: "",
+   522→  attendance: { present: 0, late: 0, halfDay: 0, absent: 0, leave: 0 },
+   523→};
+   524→
+   525→export function StaffModule() {
+   526→  const { staff, addStaff, updateStaff, deleteStaff } = useAppStore();
+   527→  const { toast } = useToast();
+   528→  const [addOpen, setAddOpen] = useState(false);
+   529→  const [editStaff, setEditStaff] = useState<Staff | null>(null);
+   530→  const [deleteConfirm, setDeleteConfirm] = useState<Staff | null>(null);
+   531→  const [selected, setSelected] = useState<Staff | null>(null);
+   532→  const [form, setForm] = useState<Staff>(EMPTY_STAFF);
+   533→  const [editForm, setEditForm] = useState<Partial<Staff>>({});
+   534→
+   535→  const openAdd = () => {
+   536→    setForm({ ...EMPTY_STAFF, id: `ST-${String(staff.length + 1).padStart(3, "0")}` });
+   537→    setAddOpen(true);
+   538→  };
+   539→
+   540→  return (
+   541→    <div className="space-y-3">
+   542→      <div className="flex justify-between items-center flex-wrap gap-3">
+   543→        <p className="text-sm text-muted-foreground">Non-teaching staff: administration, accounts, security, transport, housekeeping.</p>
+   544→        <Button className="bg-primary hover:bg-primary/90" onClick={openAdd}><Plus className="w-4 h-4 mr-1.5" />Add Staff</Button>
+   545→      </div>
+   546→
+   547→      <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   548→        <div className="overflow-x-auto">
+   549→          <Table>
+   550→            <TableHeader>
+   551→              <TableRow className="hover:bg-transparent border-border/40">
+   552→                <TableHead>ID</TableHead>
+   553→                <TableHead>Name</TableHead>
+   554→                <TableHead>Department</TableHead>
+   555→                <TableHead>Designation</TableHead>
+   556→                <TableHead>Phone</TableHead>
+   557→                <TableHead>Salary</TableHead>
+   558→                <TableHead>Attendance</TableHead>
+   559→                <TableHead className="text-right">Actions</TableHead>
+   560→              </TableRow>
+   561→            </TableHeader>
+   562→            <TableBody>
+   563→              {staff.map(s => {
+   564→                const total = s.attendance.present + s.attendance.late + s.attendance.halfDay + s.attendance.absent + s.attendance.leave;
+   565→                const pct = total > 0 ? Math.round((s.attendance.present + s.attendance.late * 0.75 + s.attendance.halfDay * 0.5) / total * 100) : 100;
+   566→                return (
+   567→                  <TableRow key={s.id} className="border-border/30 hover:bg-muted/30">
+   568→                    <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
+   569→                    <TableCell>
+   570→                      <div className="flex items-center gap-2">
+   571→                        <Avatar className="w-8 h-8"><AvatarFallback className="text-xs font-semibold bg-accent/15 text-accent">{s.name.split(" ").map(w => w[0]).join("").slice(0, 2)}</AvatarFallback></Avatar>
+   572→                        <div><p className="font-medium text-sm">{s.name}</p><p className="text-[10px] text-muted-foreground">Since {s.joiningDate.slice(0, 4)}</p></div>
+   573→                      </div>
+   574→                    </TableCell>
+   575→                    <TableCell><Badge variant="outline" className="text-xs">{s.department}</Badge></TableCell>
+   576→                    <TableCell className="text-sm">{s.designation}</TableCell>
+   577→                    <TableCell className="text-xs text-muted-foreground">{s.phone}</TableCell>
+   578→                    <TableCell className="font-semibold text-sm">Rs. {s.monthlySalary.toLocaleString()}</TableCell>
+   579→                    <TableCell>
+   580→                      <div className="flex items-center gap-2">
+   581→                        <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} /></div>
+   582→                        <span className="text-xs font-medium">{pct}%</span>
+   583→                      </div>
+   584→                    </TableCell>
+   585→                    <TableCell className="text-right">
+   586→                      <div className="flex justify-end gap-0.5">
+   587→                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View" onClick={() => setSelected(s)}><Eye className="w-3.5 h-3.5" /></Button>
+   588→                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-primary" title="Edit" onClick={() => { setEditStaff(s); setEditForm(s); }}><Edit className="w-3.5 h-3.5" /></Button>
+   589→                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600" title="Delete" onClick={() => setDeleteConfirm(s)}><Trash2 className="w-3.5 h-3.5" /></Button>
+   590→                      </div>
+   591→                    </TableCell>
+   592→                  </TableRow>
+   593→                );
+   594→              })}
+   595→            </TableBody>
+   596→          </Table>
+   597→        </div>
+   598→      </Card>
+   599→
+   600→      {/* Department breakdown */}
+   601→      <Card className="border-0 shadow-sm glass-card">
+   602→        <CardContent className="p-4">
+   603→          <p className="text-sm font-semibold mb-3">Department Summary</p>
+   604→          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+   605→            {Array.from(new Set(staff.map(s => s.department))).map(dept => {
+   606→              const members = staff.filter(s => s.department === dept);
+   607→              const totalSal = members.reduce((sum, m) => sum + m.monthlySalary, 0);
+   608→              return (
+   609→                <div key={dept} className="rounded-lg border border-border/40 p-3 bg-muted/20">
+   610→                  <p className="text-xs font-medium text-muted-foreground uppercase">{dept}</p>
+   611→                  <p className="text-lg font-bold mt-1">{members.length}</p>
+   612→                  <p className="text-[10px] text-muted-foreground">Rs. {totalSal.toLocaleString()}/mo</p>
+   613→                </div>
+   614→              );
+   615→            })}
+   616→          </div>
+   617→        </CardContent>
+   618→      </Card>
+   619→
+   620→      {/* Add Dialog */}
+   621→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   622→        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+   623→          {/* Gradient hero header */}
+   624→          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-accent via-accent to-primary/80 px-5 py-4 text-accent-foreground">
+   625→            <div className="absolute inset-0 opacity-10 pattern-grid" />
+   626→            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+   627→            <div className="relative flex items-center gap-4">
+   628→              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+   629→                <UserCog className="w-6 h-6" />
+   630→              </div>
+   631→              <div className="flex-1">
+   632→                <h2 className="text-xl font-bold tracking-tight">Add New Staff Member</h2>
+   633→                <p className="text-xs text-white/75 mt-0.5">Register a non-teaching staff member to the school team.</p>
+   634→              </div>
+   635→              <div className="hidden md:flex flex-col items-end text-right">
+   636→                <span className="text-[10px] uppercase tracking-wider text-white/60">Staff ID</span>
+   637→                <span className="text-sm font-semibold mt-0.5 font-mono">{form.id}</span>
+   638→              </div>
+   639→            </div>
+   640→          </div>
+   641→
+   642→          {/* Form body */}
+   643→          <div className="px-5 py-4 space-y-3">
+   644→            {/* ─── Section 1: Personal Information ─── */}
+   645→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   646→              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   647→                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   648→                  <User className="w-3.5 h-3.5 text-primary" />
+   649→                </div>
+   650→                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Personal Information</p>
+   651→                <span className="ml-auto text-[10px] text-muted-foreground">Identity & contact</span>
+   652→              </div>
+   653→              <div className="p-3 grid grid-cols-2 gap-2.5">
+   654→                <div className="col-span-2 space-y-1">
+   655→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
+   656→                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Imran Sheikh" className="h-9" />
+   657→                </div>
+   658→                <div className="space-y-1">
+   659→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNIC</Label>
+   660→                  <Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" className="h-9" />
+   661→                </div>
+   662→                <div className="space-y-1">
+   663→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Phone</Label>
+   664→                  <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" className="h-9" />
+   665→                </div>
+   666→              </div>
+   667→            </div>
+   668→
+   669→            {/* ─── Section 2: Department & Designation ─── */}
+   670→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   671→              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+   672→                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+   673→                  <Building2 className="w-3.5 h-3.5 text-accent" />
+   674→                </div>
+   675→                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Department & Designation</p>
+   676→                <span className="ml-auto text-[10px] text-muted-foreground">Workplace assignment</span>
+   677→              </div>
+   678→              <div className="p-3 grid grid-cols-2 gap-2.5">
+   679→                <div className="space-y-1">
+   680→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Department</Label>
+   681→                  <Select value={form.department} onValueChange={v => setForm({...form, department: v})}>
+   682→                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   683→                    <SelectContent>
+   684→                      {["Administration", "Accounts", "Security", "Transport", "Housekeeping", "IT", "Library", "Lab"].map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+   685→                    </SelectContent>
+   686→                  </Select>
+   687→                </div>
+   688→                <div className="space-y-1">
+   689→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Designation</Label>
+   690→                  <Input value={form.designation} onChange={e => setForm({...form, designation: e.target.value})} placeholder="e.g., Accountant" className="h-9" />
+   691→                </div>
+   692→              </div>
+   693→            </div>
+   694→
+   695→            {/* ─── Section 3: Salary & Joining ─── */}
+   696→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   697→              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+   698→                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+   699→                  <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+   700→                </div>
+   701→                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Salary & Joining</p>
+   702→                <span className="ml-auto text-[10px] text-muted-foreground">Compensation details</span>
+   703→              </div>
+   704→              <div className="p-3 grid grid-cols-2 gap-2.5">
+   705→                <div className="space-y-1">
+   706→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Monthly Salary (Rs.)</Label>
+   707→                  <div className="relative">
+   708→                    <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+   709→                    <Input type="number" value={form.monthlySalary} onChange={e => setForm({...form, monthlySalary: Number(e.target.value)})} placeholder="e.g., 35000" className="h-9 pl-8" />
+   710→                  </div>
+   711→                </div>
+   712→                <div className="space-y-1">
+   713→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Joining Date</Label>
+   714→                  <Input type="date" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} className="h-9" />
+   715→                </div>
+   716→              </div>
+   717→            </div>
+   718→
+   719→            {/* Auto-generated info banner */}
+   720→            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+   721→              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+   722→                <IdCard className="w-3 h-3 text-primary" />
+   723→              </div>
+   724→              <p className="text-[10px] text-muted-foreground leading-relaxed">
+   725→                <span className="font-semibold text-primary">Auto-generated on save:</span> Staff ID (<span className="font-mono">ST-XXX</span>) • Attendance tracking enabled • Salary slip ready for monthly processing.
+   726→              </p>
+   727→            </div>
+   728→          </div>
+   729→
+   730→          {/* Sticky footer */}
+   731→          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+   732→            <p className="text-[10px] text-muted-foreground">
+   733→              <span className="text-red-500">*</span> Required fields
+   734→            </p>
+   735→            <div className="flex gap-2">
+   736→              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+   737→              <Button className="bg-accent hover:bg-accent/90 h-9 px-5 shadow-md" onClick={() => { addStaff(form); toast({ title: "Staff Added ✓", description: `${form.name} added to ${form.department}` }); setAddOpen(false); }} disabled={!form.name}>
+   738→                <Plus className="w-4 h-4 mr-1.5" />Add Staff
+   739→              </Button>
+   740→            </div>
+   741→          </div>
+   742→        </DialogContent>
+   743→      </Dialog>
+   744→
+   745→      {/* Edit Dialog */}
+   746→      <Dialog open={!!editStaff} onOpenChange={(o) => !o && setEditStaff(null)}>
+   747→        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+   748→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Edit className="w-4 h-4 text-primary" />Edit Staff</DialogTitle></DialogHeader>
+   749→          <div className="grid grid-cols-2 gap-3 py-2">
+   750→            <div className="col-span-2"><Label>Name</Label><Input value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} /></div>
+   751→            <div><Label>Department</Label><Input value={editForm.department || ""} onChange={e => setEditForm({...editForm, department: e.target.value})} /></div>
+   752→            <div><Label>Designation</Label><Input value={editForm.designation || ""} onChange={e => setEditForm({...editForm, designation: e.target.value})} /></div>
+   753→            <div><Label>Phone</Label><Input value={editForm.phone || ""} onChange={e => setEditForm({...editForm, phone: e.target.value})} /></div>
+   754→            <div><Label>Monthly Salary</Label><Input type="number" value={editForm.monthlySalary || 0} onChange={e => setEditForm({...editForm, monthlySalary: Number(e.target.value)})} /></div>
+   755→          </div>
+   756→          <DialogFooter>
+   757→            <Button variant="outline" onClick={() => setEditStaff(null)}>Cancel</Button>
+   758→            <Button className="bg-primary hover:bg-primary/90" onClick={() => { if (editStaff) { updateStaff(editStaff.id, editForm); toast({ title: "Staff Updated ✓", description: `${editForm.name || editStaff.name}'s profile updated.` }); setEditStaff(null); } }}>Save Changes</Button>
+   759→          </DialogFooter>
+   760→        </DialogContent>
+   761→      </Dialog>
+   762→
+   763→      {/* Delete confirmation */}
+   764→      <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+   765→        <DialogContent className="max-w-sm max-h-[92vh] overflow-y-auto">
+   766→          <DialogHeader><DialogTitle className="flex items-center gap-2 text-red-600"><Trash2 className="w-5 h-5" />Delete Staff?</DialogTitle></DialogHeader>
+   767→          {deleteConfirm && (
+   768→            <div className="py-2">
+   769→              <p className="text-sm text-muted-foreground">Permanently delete:</p>
+   770→              <div className="mt-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+   771→                <p className="font-semibold text-sm">{deleteConfirm.name}</p>
+   772→                <p className="text-xs text-muted-foreground">{deleteConfirm.id} • {deleteConfirm.department}</p>
+   773→              </div>
+   774→            </div>
+   775→          )}
+   776→          <DialogFooter>
+   777→            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+   778→            <Button variant="destructive" onClick={() => { if (deleteConfirm) { deleteStaff(deleteConfirm.id); toast({ title: "Staff Deleted", description: `${deleteConfirm.name} removed.`, variant: "destructive" }); setDeleteConfirm(null); } }}>Delete</Button>
+   779→          </DialogFooter>
+   780→        </DialogContent>
+   781→      </Dialog>
+   782→
+   783→      {/* Staff Profile slide-in panel */}
+   784→      {selected && (
+   785→        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+   786→          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+   787→          <div className="relative w-full max-w-2xl h-full bg-background shadow-2xl overflow-y-auto slide-in-right" onClick={e => e.stopPropagation()}>
+   788→            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+   789→              <X className="w-4 h-4" />
+   790→            </button>
+   791→
+   792→            {/* Gradient banner header */}
+   793→            <div className="relative bg-gradient-to-br from-accent via-accent to-accent/70 p-4 text-primary-foreground overflow-hidden">
+   794→              <div className="absolute inset-0 opacity-10 pattern-grid" />
+   795→              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+   796→              <div className="relative flex items-start gap-5">
+   797→                <Avatar className="w-20 h-20 ring-4 ring-white/30 shadow-xl shrink-0">
+   798→                  <AvatarFallback className="text-2xl font-bold bg-white/20 text-white">
+   799→                    {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+   800→                  </AvatarFallback>
+
+[showing lines 401-800 of 920; use offset=801 with limit to continue reading]
