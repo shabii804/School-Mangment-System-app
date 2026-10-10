@@ -1,26 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
-// SEED SCRIPT — Populate SQLite + localStorage with test data
+// SEED SCRIPT — Populate JSON database with test data
 // 20 students, 5 classes, 5 teachers, 5 subjects
 // Run: node scripts/seed-data.js
 // ═══════════════════════════════════════════════════════════════
 
-const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
 
-const DB_PATH = path.join(process.cwd(), "school.db");
-const db = new Database(DB_PATH);
-db.pragma("journal_mode = WAL");
-
-// Create schema if not exists
-db.exec(`
-  CREATE TABLE IF NOT EXISTS app_state (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TEXT DEFAULT (CURRENT_TIMESTAMP)
-  );
-  CREATE INDEX IF NOT EXISTS idx_app_state_key ON app_state(key);
-`);
+const DB_PATH = path.join(process.cwd(), "school-data.json");
 
 // ─── 5 Classes ───
 const classes = [
@@ -163,40 +150,24 @@ const state = {
   enabledModules,
 };
 
-// ─── 1. Write to SQLite ───
-const saveMany = db.transaction(() => {
-  const stmt = db.prepare(`
-    INSERT INTO app_state (key, value, updated_at) VALUES (?, ?, datetime('now'))
-    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
-  `);
-  for (const [key, value] of Object.entries(state)) {
-    stmt.run(key, JSON.stringify(value));
-  }
-});
-saveMany();
-
-// ─── 2. Write a seed marker to localStorage-format JSON file ───
-// The app reads localStorage on startup; we can't write to the browser's localStorage from Node,
-// but we CAN write the version key so the app doesn't wipe its own data.
-// The app will load from SQLite (source of truth) on startup via loadFromDatabase().
+// ─── Write to JSON database file ───
+fs.writeFileSync(DB_PATH, JSON.stringify(state, null, 2), "utf-8");
 
 // ─── Report ───
-const rowCount = db.prepare("SELECT COUNT(*) as count FROM app_state").get();
+const stats = fs.statSync(DB_PATH);
 console.log("╔══════════════════════════════════════════════╗");
-console.log("║  SEED DATA INSERTED INTO SQLITE             ║");
+console.log("║  SEED DATA INSERTED INTO JSON DB            ║");
 console.log("╠══════════════════════════════════════════════╣");
 console.log(`║  Students:  ${String(students.length).padEnd(4)}                          ║`);
 console.log(`║  Teachers:  ${String(teachers.length).padEnd(4)}                          ║`);
 console.log(`║  Classes:   ${String(classes.length).padEnd(4)}                          ║`);
 console.log(`║  Subjects:  ${String(subjects.length).padEnd(4)}                          ║`);
-console.log(`║  DB Rows:   ${String(rowCount.count).padEnd(4)}                          ║`);
-console.log("║  Database:  school.db                       ║");
+console.log(`║  File size: ${String((stats.size / 1024).toFixed(1) + "KB").padEnd(6)}                     ║`);
+console.log("║  Database:  school-data.json                ║");
 console.log("╚══════════════════════════════════════════════╝");
 console.log("\nTo load this data in the app:");
 console.log("  1. The app calls loadFromDatabase() on startup");
-console.log("  2. This fetches GET /api/state which reads from SQLite");
+console.log("  2. This fetches GET /api/state which reads from the JSON file");
 console.log("  3. The store updates with the seeded data");
-console.log("  4. The auto-sync then keeps SQLite updated on changes");
+console.log("  4. The auto-sync then keeps the JSON file updated on changes");
 console.log("\n⚠️  IMPORTANT: Reload the browser tab to trigger loadFromDatabase()");
-
-db.close();

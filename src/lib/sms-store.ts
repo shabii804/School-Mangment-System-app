@@ -440,6 +440,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   loadFromDatabase: async () => {
+    // Set the flag IMMEDIATELY (synchronously, before any async work)
+    // This prevents the subscribe block from syncing empty state to SQLite
+    // before we've had a chance to load the real data
+    isInitialLoadStarted = true;
     set({ syncStatus: "syncing" });
     try {
       const res = await fetch("/api/state", { method: "GET" });
@@ -470,13 +474,19 @@ export const useAppStore = create<AppState>((set, get) => ({
             try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(value)); } catch {}
           });
         }
-        // Mark initial load complete — now auto-sync to SQLite is safe
-        // (done via a setTimeout in page.tsx to avoid race with the set() above triggering subscribe)
+        // Mark initial load complete AFTER state is set
+        // Use setTimeout to ensure the set() above (which triggers subscribe) completes first
+        // with isInitialLoadComplete still false, THEN enable auto-sync
+        setTimeout(() => { isInitialLoadComplete = true; }, 500);
         return true;
       }
+      // Even if SQLite was empty, enable auto-sync so future changes are saved
+      setTimeout(() => { isInitialLoadComplete = true; }, 500);
       set({ syncStatus: "offline" });
       return false;
     } catch (e) {
+      // On error, enable auto-sync so localStorage data gets saved to SQLite
+      setTimeout(() => { isInitialLoadComplete = true; }, 500);
       set({ syncStatus: "offline" });
       return false;
     }
@@ -640,9 +650,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
 // Auto-persist key collections to localStorage on every change (instant)
 // + debounce-sync to SQLite (source of truth)
-// IMPORTANT: Skip auto-sync during initial load to avoid overwriting seeded data
+// IMPORTANT: Skip SQLite auto-sync until loadFromDatabase() has run, to avoid
+// overwriting seeded data with the initial empty state
 let sqliteSyncTimer: ReturnType<typeof setTimeout> | null = null;
-let isInitialLoadComplete = false;
+let isInitialLoadStarted = false; // set true synchronously when loadFromDatabase() is called
+let isInitialLoadComplete = false; // set true after loadFromDatabase() finishes
 
 useAppStore.subscribe((state) => {
   // 1. Instant localStorage save (offline cache) — always do this
@@ -660,7 +672,7 @@ useAppStore.subscribe((state) => {
   saveCollection("attendanceRecords", state.attendanceRecords);
 
   // 2. Debounced SQLite sync (source of truth) — 2 second delay after last change
-  // SKIP during initial load to avoid overwriting seeded data before loadFromDatabase() runs
+  // SKIP until initial load from SQLite has completed — prevents overwriting seeded data
   if (!isInitialLoadComplete) return;
   if (sqliteSyncTimer) clearTimeout(sqliteSyncTimer);
   sqliteSyncTimer = setTimeout(async () => {
@@ -698,8 +710,11 @@ useAppStore.subscribe((state) => {
   }, 2000);
 });
 
-// ─── Call this after loadFromDatabase() completes to enable auto-sync ───
-// Without this, the subscribe block would overwrite seeded data with the initial empty state
+// ─── enableAutoSync is no longer needed ───
+// loadFromDatabase() now sets isInitialLoadComplete = true via setTimeout
+// after the state has been loaded, which automatically enables auto-sync.
+// This prevents the race condition where the subscribe block would overwrite
+// seeded data before loadFromDatabase() had a chance to run.
 export function enableAutoSync() {
   isInitialLoadComplete = true;
 }
