@@ -299,7 +299,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "5.0-moduleData";
+  const CURRENT_VERSION = "6.0-timetable-ai";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -554,4 +554,6 @@ useAppStore.subscribe((state) => {
   saveCollection("transactions", state.transactions);
   saveCollection("classes", state.classes);
   saveCollection("subjects", state.subjects);
+  saveCollection("moduleData", state.moduleData);
+  saveCollection("attendanceRecords", state.attendanceRecords);
 });
