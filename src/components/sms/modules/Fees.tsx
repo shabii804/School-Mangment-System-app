@@ -289,222 +289,266 @@ export function FeesModule() {
 
       {/* Collect dialog with combined fee breakdown */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-emerald-600" />Collect Fee</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
           {selected && (
-            <div className="space-y-4 py-2">
-              {/* Student info */}
-              <div className="rounded-lg bg-muted/30 p-3 space-y-1">
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarFallback className="text-xs font-semibold bg-primary/15 text-primary">
-                      {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                    </AvatarFallback>
+            <>
+              {/* Gradient hero header — student info */}
+              <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-primary/70 px-5 py-4 text-white">
+                <div className="absolute inset-0 opacity-10 pattern-grid" />
+                <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                <div className="relative flex items-center gap-4">
+                  <Avatar className="w-14 h-14 ring-4 ring-white/30 shadow-xl shrink-0">
+                    {selected.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <AvatarFallback className="text-base font-bold bg-white/20 text-white border-0">
+                        {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm flex items-center gap-2">
-                      {selected.name}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg font-bold tracking-tight truncate">{selected.name}</h2>
                       {selected.isHosteller && (
-                        <Badge variant="outline" className="text-[9px] bg-accent/10 text-accent border-0 px-1 py-0">
-                          <Home className="w-2.5 h-2.5 mr-0.5" />Hosteller
-                        </Badge>
+                        <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-white/20 font-medium">
+                          <Home className="w-2.5 h-2.5" />Hosteller
+                        </span>
                       )}
+                    </div>
+                    <p className="text-xs text-white/75 mt-0.5">
+                      <span className="font-mono">{selected.id}</span> • {selected.class}-{selected.section} • Roll #{selected.rollNo}
                     </p>
-                    <p className="text-xs text-muted-foreground">{selected.id} • {selected.class}-{selected.section}</p>
+                  </div>
+                  <div className="hidden md:flex flex-col items-end text-right shrink-0">
+                    <span className="text-[10px] uppercase tracking-wider text-white/60">Receipt #</span>
+                    <span className="text-xs font-semibold mt-0.5 font-mono">RCPT-{new Date().toISOString().slice(0, 10).replace(/-/g, "")}-{String(feeCollections.length + 1).padStart(3, "0")}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                  <div><span className="text-muted-foreground">Monthly Fee:</span> <span className="font-medium">Rs. {selected.monthlyFee.toLocaleString()}</span></div>
-                  <div><span className="text-muted-foreground">Outstanding:</span> <span className="font-medium text-red-600">Rs. {selected.outstandingAmount.toLocaleString()}</span></div>
+                {/* Quick stats */}
+                <div className="relative grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-white/20">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/60">Monthly Fee</p>
+                    <p className="text-base font-bold mt-0.5">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                  </div>
+                  <div className="border-l border-white/20 pl-3">
+                    <p className="text-[10px] uppercase tracking-wider text-white/60">Outstanding</p>
+                    <p className="text-base font-bold mt-0.5 text-red-200">Rs. {selected.outstandingAmount.toLocaleString()}</p>
+                  </div>
+                  <div className="border-l border-white/20 pl-3">
+                    <p className="text-[10px] uppercase tracking-wider text-white/60">Status</p>
+                    <p className="text-base font-bold mt-0.5">
+                      {selected.feePaidThisMonth ? "Paid ✓" : "Pending"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Fee breakdown — checkboxes for combined collection */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium">Select Fees to Collect</label>
-                  <button
-                    type="button"
-                    onClick={() => setUseCustom(!useCustom)}
-                    className={cn(
-                      "text-[10px] px-2 py-0.5 rounded-full border transition-all",
-                      useCustom
-                        ? "bg-accent/10 text-accent border-accent/30"
-                        : "bg-muted text-muted-foreground border-border/40 hover:border-accent/30"
-                    )}
-                  >
-                    {useCustom ? "✓ Manual Entry" : "Manual Entry"}
-                  </button>
-                </div>
-
-                {!useCustom && (
-                  <div className="space-y-1.5">
-                    {/* Tuition */}
+              {/* Form body */}
+              <div className="px-5 py-4 space-y-3">
+                {/* ─── Section: Fee Selection ─── */}
+                <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                    <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                      <BookOpen className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">Select Fees to Collect</p>
                     <button
                       type="button"
-                      onClick={() => setIncludeTuition(!includeTuition)}
+                      onClick={() => setUseCustom(!useCustom)}
                       className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
-                        includeTuition ? "border-primary bg-primary/5" : "border-border/40 hover:border-primary/30"
+                        "ml-auto text-[10px] px-2 py-0.5 rounded-full border transition-all font-medium",
+                        useCustom
+                          ? "bg-accent/10 text-accent border-accent/30"
+                          : "bg-muted text-muted-foreground border-border/40 hover:border-accent/30"
                       )}
                     >
-                      <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                        includeTuition ? "bg-primary border-primary" : "border-border")}>
-                        {includeTuition && <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />}
-                      </div>
-                      <div className="flex-1 flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-primary" />
-                        <div className="text-left">
-                          <p className="text-sm font-medium">Tuition Fee</p>
-                          <p className="text-[10px] text-muted-foreground">Monthly</p>
-                        </div>
-                      </div>
-                      <p className="font-bold text-sm">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                      {useCustom ? "✓ Manual Entry" : "Manual Entry"}
                     </button>
-
-                    {/* Hostel — only if hosteller */}
-                    {selected.isHosteller && (
-                      <button
-                        type="button"
-                        onClick={() => setIncludeHostel(!includeHostel)}
-                        className={cn(
-                          "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
-                          includeHostel ? "border-accent bg-accent/5" : "border-border/40 hover:border-accent/30"
-                        )}
-                      >
-                        <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                          includeHostel ? "bg-accent border-accent" : "border-border")}>
-                          {includeHostel && <CheckCircle2 className="w-3.5 h-3.5 text-accent-foreground" />}
-                        </div>
-                        <div className="flex-1 flex items-center gap-2">
-                          <Home className="w-4 h-4 text-accent" />
-                          <div className="text-left">
-                            <p className="text-sm font-medium">Hostel Fee</p>
-                            <p className="text-[10px] text-muted-foreground">Monthly (boarding + meals)</p>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    {!useCustom && (
+                      <div className="space-y-2">
+                        {/* Tuition */}
+                        <button
+                          type="button"
+                          onClick={() => setIncludeTuition(!includeTuition)}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+                            includeTuition ? "border-primary bg-primary/5" : "border-border/40 hover:border-primary/30"
+                          )}
+                        >
+                          <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0",
+                            includeTuition ? "bg-primary border-primary" : "border-border")}>
+                            {includeTuition && <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />}
                           </div>
-                        </div>
-                        <p className="font-bold text-sm">Rs. {HOSTEL_FEE.toLocaleString()}</p>
-                      </button>
+                          <div className="flex-1 flex items-center gap-2 min-w-0">
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", includeTuition ? "bg-primary/15" : "bg-muted")}>
+                              <BookOpen className={cn("w-3.5 h-3.5", includeTuition ? "text-primary" : "text-muted-foreground")} />
+                            </div>
+                            <div className="text-left min-w-0">
+                              <p className="text-sm font-medium truncate">Tuition Fee</p>
+                              <p className="text-[10px] text-muted-foreground">Monthly</p>
+                            </div>
+                          </div>
+                          <p className="font-bold text-sm shrink-0">Rs. {selected.monthlyFee.toLocaleString()}</p>
+                        </button>
+
+                        {/* Hostel — only if hosteller */}
+                        {selected.isHosteller && (
+                          <button
+                            type="button"
+                            onClick={() => setIncludeHostel(!includeHostel)}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+                              includeHostel ? "border-accent bg-accent/5" : "border-border/40 hover:border-accent/30"
+                            )}
+                          >
+                            <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0",
+                              includeHostel ? "bg-accent border-accent" : "border-border")}>
+                              {includeHostel && <CheckCircle2 className="w-3.5 h-3.5 text-accent-foreground" />}
+                            </div>
+                            <div className="flex-1 flex items-center gap-2 min-w-0">
+                              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", includeHostel ? "bg-accent/15" : "bg-muted")}>
+                                <Home className={cn("w-3.5 h-3.5", includeHostel ? "text-accent" : "text-muted-foreground")} />
+                              </div>
+                              <div className="text-left min-w-0">
+                                <p className="text-sm font-medium truncate">Hostel Fee</p>
+                                <p className="text-[10px] text-muted-foreground">Monthly (boarding + meals)</p>
+                              </div>
+                            </div>
+                            <p className="font-bold text-sm shrink-0">Rs. {HOSTEL_FEE.toLocaleString()}</p>
+                          </button>
+                        )}
+
+                        {/* Admission */}
+                        <button
+                          type="button"
+                          onClick={() => setIncludeAdmission(!includeAdmission)}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
+                            includeAdmission ? "border-purple-500 bg-purple-500/5" : "border-border/40 hover:border-purple-500/30"
+                          )}
+                        >
+                          <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0",
+                            includeAdmission ? "bg-purple-500 border-purple-500" : "border-border")}>
+                            {includeAdmission && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                          <div className="flex-1 flex items-center gap-2 min-w-0">
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", includeAdmission ? "bg-purple-500/15" : "bg-muted")}>
+                              <GraduationCap className={cn("w-3.5 h-3.5", includeAdmission ? "text-purple-600" : "text-muted-foreground")} />
+                            </div>
+                            <div className="text-left min-w-0">
+                              <p className="text-sm font-medium truncate">Admission Fee</p>
+                              <p className="text-[10px] text-muted-foreground">One-time (3 × monthly)</p>
+                            </div>
+                          </div>
+                          <p className="font-bold text-sm shrink-0">Rs. {(selected.monthlyFee * ADMISSION_MULTIPLIER).toLocaleString()}</p>
+                        </button>
+                      </div>
                     )}
 
-                    {/* Admission */}
-                    <button
-                      type="button"
-                      onClick={() => setIncludeAdmission(!includeAdmission)}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all",
-                        includeAdmission ? "border-purple-500 bg-purple-500/5" : "border-border/40 hover:border-purple-500/30"
-                      )}
-                    >
-                      <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                        includeAdmission ? "bg-purple-500 border-purple-500" : "border-border")}>
-                        {includeAdmission && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                      </div>
-                      <div className="flex-1 flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-purple-500" />
-                        <div className="text-left">
-                          <p className="text-sm font-medium">Admission Fee</p>
-                          <p className="text-[10px] text-muted-foreground">One-time (3 × monthly)</p>
+                    {/* Manual amount entry */}
+                    {useCustom && (
+                      <div className="rounded-lg border-2 border-accent/30 bg-accent/5 p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-accent" />
+                          <p className="text-sm font-medium text-accent">Manual Amount Entry</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">Enter any custom amount (e.g., partial payment, fine, or other charge)</p>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">Rs.</span>
+                          <Input
+                            type="number"
+                            value={customAmount}
+                            onChange={(e) => setCustomAmount(e.target.value)}
+                            placeholder="0"
+                            className="pl-10 text-lg font-bold h-12"
+                            autoFocus
+                          />
+                        </div>
+                        {/* Quick amount buttons */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {[500, 1000, 1500, 2000, 3000, 5000].map(amt => (
+                            <button
+                              key={amt}
+                              type="button"
+                              onClick={() => setCustomAmount(String(amt))}
+                              className="px-2 py-1 text-[10px] rounded-md border border-border/40 bg-background hover:bg-accent/10 hover:border-accent/30 transition-colors"
+                            >
+                              {amt.toLocaleString()}
+                            </button>
+                          ))}
+                          {selected.outstandingAmount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setCustomAmount(String(selected.outstandingAmount))}
+                              className="px-2 py-1 text-[10px] rounded-md border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+                            >
+                              Full Outstanding ({selected.outstandingAmount.toLocaleString()})
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <p className="font-bold text-sm">Rs. {(selected.monthlyFee * ADMISSION_MULTIPLIER).toLocaleString()}</p>
-                    </button>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {/* Manual amount entry */}
-                {useCustom && (
-                  <div className="rounded-lg border-2 border-accent/30 bg-accent/5 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-accent" />
-                      <p className="text-sm font-medium text-accent">Manual Amount Entry</p>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">Enter any custom amount (e.g., partial payment, fine, or other charge)</p>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">Rs.</span>
-                      <Input
-                        type="number"
-                        value={customAmount}
-                        onChange={(e) => setCustomAmount(e.target.value)}
-                        placeholder="0"
-                        className="pl-10 text-lg font-bold h-12"
-                        autoFocus
-                      />
-                    </div>
-                    {/* Quick amount buttons */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {[500, 1000, 1500, 2000, 3000, 5000].map(amt => (
-                        <button
-                          key={amt}
-                          type="button"
-                          onClick={() => setCustomAmount(String(amt))}
-                          className="px-2 py-1 text-[10px] rounded-md border border-border/40 bg-background hover:bg-accent/10 hover:border-accent/30 transition-colors"
-                        >
-                          {amt.toLocaleString()}
-                        </button>
-                      ))}
-                      {selected.outstandingAmount > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setCustomAmount(String(selected.outstandingAmount))}
-                          className="px-2 py-1 text-[10px] rounded-md border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
-                        >
-                          Full Outstanding ({selected.outstandingAmount.toLocaleString()})
-                        </button>
+                {/* ─── Section: Total & Payment ─── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Total */}
+                  <div className="rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">Total Amount</p>
+                    <p className="text-3xl font-bold text-primary mt-1">Rs. {total.toLocaleString()}</p>
+                    <div className="mt-2 pt-2 border-t border-primary/15 space-y-0.5 text-[10px] text-muted-foreground">
+                      {useCustom ? (
+                        <div className="flex justify-between"><span>Manual Entry:</span><span className="font-medium text-foreground">Rs. {customAmt.toLocaleString()}</span></div>
+                      ) : (
+                        <>
+                          {tuitionAmt > 0 && <div className="flex justify-between"><span>Tuition:</span><span className="font-medium text-foreground">Rs. {tuitionAmt.toLocaleString()}</span></div>}
+                          {hostelAmt > 0 && <div className="flex justify-between"><span>Hostel:</span><span className="font-medium text-foreground">Rs. {hostelAmt.toLocaleString()}</span></div>}
+                          {admissionAmt > 0 && <div className="flex justify-between"><span>Admission:</span><span className="font-medium text-foreground">Rs. {admissionAmt.toLocaleString()}</span></div>}
+                        </>
                       )}
                     </div>
                   </div>
-                )}
+                  {/* Payment mode */}
+                  <div className="rounded-xl border border-border/60 bg-card p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Payment Mode</p>
+                    <Select value={mode} onValueChange={(v: "Cash" | "Cheque" | "Bank Transfer") => setMode(v)}>
+                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cash">💵 Cash</SelectItem>
+                        <SelectItem value="Cheque">📝 Cheque</SelectItem>
+                        <SelectItem value="Bank Transfer">🏦 Bank Transfer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="mt-2 rounded-md bg-muted/40 p-2 text-[10px] flex items-center gap-1.5">
+                      <IdCard className="w-3 h-3 text-primary shrink-0" />
+                      <span className="text-muted-foreground">Receipt opens in new tab for printing.</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Total */}
-              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-medium text-primary">Total Amount</p>
-                  <p className="text-2xl font-bold text-primary">Rs. {total.toLocaleString()}</p>
-                </div>
-                <div className="space-y-0.5 text-[10px] text-muted-foreground">
-                  {useCustom ? (
-                    <div className="flex justify-between"><span>Manual Entry:</span><span>Rs. {customAmt.toLocaleString()}</span></div>
+              {/* Sticky footer */}
+              <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+                <p className="text-[10px] text-muted-foreground">
+                  {total > 0 ? (
+                    <span>Ready to collect <span className="font-semibold text-foreground">Rs. {total.toLocaleString()}</span></span>
                   ) : (
-                    <>
-                      {tuitionAmt > 0 && <div className="flex justify-between"><span>Tuition:</span><span>Rs. {tuitionAmt.toLocaleString()}</span></div>}
-                      {hostelAmt > 0 && <div className="flex justify-between"><span>Hostel:</span><span>Rs. {hostelAmt.toLocaleString()}</span></div>}
-                      {admissionAmt > 0 && <div className="flex justify-between"><span>Admission:</span><span>Rs. {admissionAmt.toLocaleString()}</span></div>}
-                    </>
+                    <span>Select at least one fee to collect</span>
                   )}
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setSelected(null)} className="h-9">Cancel</Button>
+                  <Button onClick={submit} className="bg-emerald-600 hover:bg-emerald-700 h-9 px-5 shadow-md" disabled={total === 0}>
+                    <Printer className="w-4 h-4 mr-1.5" />Collect & Print Receipt
+                  </Button>
                 </div>
               </div>
-
-              {/* Payment mode */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium">Payment Mode</label>
-                <Select value={mode} onValueChange={(v: "Cash" | "Cheque" | "Bank Transfer") => setMode(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Cheque">Cheque</SelectItem>
-                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="rounded-lg bg-muted/30 p-2 text-xs flex items-center gap-2">
-                <IdCard className="w-3.5 h-3.5 text-primary" />
-                <span className="text-muted-foreground">
-                  Receipt <span className="font-mono font-medium text-foreground">RCPT-{new Date().toISOString().slice(0, 10).replace(/-/g, "")}-{String(feeCollections.length + 1).padStart(3, "0")}</span> will open in a new tab for printing.
-                </span>
-              </div>
-            </div>
+            </>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
-            <Button onClick={submit} className="bg-emerald-600 hover:bg-emerald-700" disabled={total === 0}>
-              <Printer className="w-4 h-4 mr-1.5" />Collect & Print Receipt
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

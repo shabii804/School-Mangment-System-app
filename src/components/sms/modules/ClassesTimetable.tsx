@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  School, Users, BookOpen, Plus, Eye, Edit, Trash2, UserCog, Printer,
+  School, Users, BookOpen, Plus, Eye, Edit, Trash2, UserCog, Printer, Wallet,
 } from "lucide-react";
 import { TIMETABLE } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
@@ -116,27 +116,123 @@ export function ClassesModule() {
 
       {/* Add Class Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Class</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-1">
-            <div><Label>Class Name *</Label><Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" /></div>
-            <div><Label>Sections (comma-separated)</Label><Input value={newClass.sections} onChange={e => setNewClass({...newClass, sections: e.target.value})} placeholder="A, B, C" /></div>
-            <div><Label>Monthly Fee (Rs.)</Label><Input type="number" value={newClass.monthlyFee} onChange={e => setNewClass({...newClass, monthlyFee: Number(e.target.value)})} /></div>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+          {/* Gradient hero header */}
+          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-primary to-accent/70 px-5 py-4 text-primary-foreground">
+            <div className="absolute inset-0 opacity-10 pattern-grid" />
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+                <School className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold tracking-tight">Add New Class</h2>
+                <p className="text-xs text-white/75 mt-0.5">Create a new class with sections and a monthly tuition fee.</p>
+              </div>
+              <div className="hidden md:flex flex-col items-end text-right">
+                <span className="text-[10px] uppercase tracking-wider text-white/60">Total Classes</span>
+                <span className="text-sm font-semibold mt-0.5">{classes.length}</span>
+              </div>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => {
-              if (newClass.name) {
-                addClassAction({
-                  name: newClass.name,
-                  sections: newClass.sections.split(",").map(s => s.trim()).filter(Boolean),
-                  monthlyFee: newClass.monthlyFee,
-                });
-                setAddOpen(false);
-                setNewClass({ name: "", sections: "A,B", monthlyFee: 2000 });
-              }
-            }}>Add Class</Button>
-          </DialogFooter>
+
+          {/* Form body */}
+          <div className="px-5 py-4 space-y-3">
+            {/* ─── Section: Basic Information ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <School className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Class Details</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Name & sections</span>
+              </div>
+              <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                <div className="md:col-span-2 space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class Name <span className="text-red-500">*</span></Label>
+                  <Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Sections</Label>
+                  <Input value={newClass.sections} onChange={e => setNewClass({...newClass, sections: e.target.value})} placeholder="A, B, C" className="h-9" />
+                  <p className="text-[9px] text-muted-foreground">Comma-separated</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section: Fee ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                  <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Monthly Tuition Fee</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Per student, per month</span>
+              </div>
+              <div className="p-3 space-y-2">
+                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount (Rs.)</Label>
+                <div className="relative">
+                  <Wallet className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                  <Input type="number" value={newClass.monthlyFee} onChange={e => setNewClass({...newClass, monthlyFee: Number(e.target.value)})} placeholder="e.g., 3000" className="h-10 pl-8 text-lg font-semibold" />
+                </div>
+                {/* Quick amounts */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[1000, 2000, 3000, 5000, 8000, 10000].map(amt => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setNewClass({...newClass, monthlyFee: amt})}
+                      className={cn(
+                        "px-2 py-1 text-[10px] rounded-md border transition-colors font-medium",
+                        newClass.monthlyFee === amt
+                          ? "border-emerald-500 bg-emerald-500/15 text-emerald-700"
+                          : "border-border/40 bg-background hover:bg-emerald-500/5 hover:border-emerald-500/30"
+                      )}
+                    >
+                      Rs. {amt.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Auto-generated info */}
+            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                <BookOpen className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-primary">Auto on save:</span> Class appears in Students, Teachers, Fees, Reports, and Timetable modules. Tuition fee is used for fee calculation & defaulters tracking.
+              </p>
+            </div>
+          </div>
+
+          {/* Sticky footer */}
+          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+            <p className="text-[10px] text-muted-foreground">
+              <span className="text-red-500">*</span> Required fields
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+              <Button
+                className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md"
+                disabled={!newClass.name}
+                onClick={() => {
+                  if (newClass.name) {
+                    addClassAction({
+                      name: newClass.name,
+                      sections: newClass.sections.split(",").map(s => s.trim()).filter(Boolean),
+                      monthlyFee: newClass.monthlyFee,
+                    });
+                    setAddOpen(false);
+                    setNewClass({ name: "", sections: "A,B", monthlyFee: 2000 });
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4 mr-1.5" />Add Class
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

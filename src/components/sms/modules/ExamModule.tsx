@@ -21,6 +21,7 @@ import {
   GraduationCap, Printer, BookOpen,
 } from "lucide-react";
 import { type Exam, SUBJECTS, CLASSES, EXAMS } from "@/lib/sms-data";
+import { useAppStore } from "@/lib/sms-store";
 import { cn } from "@/lib/utils";
 
 const GRADE_BANDS = [
@@ -37,10 +38,19 @@ function gradeFor(pct: number) {
 }
 
 export function ExamModule() {
+  const { classes: storeClasses } = useAppStore();
+  const CLASSES = storeClasses;
   const [tab, setTab] = useState("schedule");
   const [addOpen, setAddOpen] = useState(false);
   const [exams, setExams] = useState(EXAMS);
   const [form, setForm] = useState({ name: "", type: "Monthly", startDate: "", endDate: "", classes: "Grade 6, Grade 7, Grade 8, Grade 9, Grade 10" });
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+
+  const toggleClass = (className: string) => {
+    setSelectedClasses(prev =>
+      prev.includes(className) ? prev.filter(c => c !== className) : [...prev, className]
+    );
+  };
 
   const handleAdd = () => {
     if (!form.name || !form.startDate) return;
@@ -50,11 +60,12 @@ export function ExamModule() {
       type: form.type as any,
       startDate: form.startDate,
       endDate: form.endDate || form.startDate,
-      classes: form.classes.split(",").map(c => c.trim()),
+      classes: selectedClasses.length > 0 ? selectedClasses : form.classes.split(",").map(c => c.trim()),
     };
     setExams([...exams, newExam]);
     setAddOpen(false);
     setForm({ name: "", type: "Monthly", startDate: "", endDate: "", classes: "Grade 6, Grade 7, Grade 8, Grade 9, Grade 10" });
+    setSelectedClasses([]);
   };
 
   return (
@@ -198,26 +209,139 @@ export function ExamModule() {
 
       {/* Add Exam Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Create New Exam</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-1">
-            <div><Label>Exam Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Monthly Test - August 2026" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Type</Label>
-                <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Monthly">Monthly</SelectItem><SelectItem value="Mid-Term">Mid-Term</SelectItem><SelectItem value="Final">Final</SelectItem><SelectItem value="Quiz">Quiz</SelectItem></SelectContent>
-                </Select>
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+          {/* Gradient hero header */}
+          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-purple-600 to-accent/70 px-5 py-4 text-primary-foreground">
+            <div className="absolute inset-0 opacity-10 pattern-grid" />
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+                <ClipboardList className="w-6 h-6" />
               </div>
-              <div><Label>Start Date *</Label><Input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} /></div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold tracking-tight">Create New Exam</h2>
+                <p className="text-xs text-white/75 mt-0.5">Schedule an exam with date range and participating classes.</p>
+              </div>
+              <div className="hidden md:flex flex-col items-end text-right">
+                <span className="text-[10px] uppercase tracking-wider text-white/60">Total Exams</span>
+                <span className="text-sm font-semibold mt-0.5">{exams.length}</span>
+              </div>
             </div>
-            <div><Label>End Date</Label><Input type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} /></div>
-            <div><Label>Classes (comma-separated)</Label><Input value={form.classes} onChange={e => setForm({...form, classes: e.target.value})} /></div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.name || !form.startDate}>Create Exam</Button>
-          </DialogFooter>
+
+          {/* Form body */}
+          <div className="px-5 py-4 space-y-3">
+            {/* ─── Section 1: Exam Details ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <FileText className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Exam Details</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Name & type</span>
+              </div>
+              <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                <div className="md:col-span-2 space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Exam Name <span className="text-red-500">*</span></Label>
+                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Monthly Test - August 2026" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Type</Label>
+                  <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Monthly">📅 Monthly</SelectItem>
+                      <SelectItem value="Mid-Term">📋 Mid-Term</SelectItem>
+                      <SelectItem value="Final">🎓 Final</SelectItem>
+                      <SelectItem value="Quiz">✏️ Quiz</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section 2: Schedule ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Schedule</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Start & end dates</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Start Date <span className="text-red-500">*</span></Label>
+                  <Input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">End Date</Label>
+                  <Input type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="h-9" />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section 3: Classes (toggle chips) ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                  <GraduationCap className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Participating Classes</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">{selectedClasses.length} selected</span>
+              </div>
+              <div className="p-3">
+                {CLASSES.length === 0 ? (
+                  <div className="text-center py-4">
+                    <GraduationCap className="w-6 h-6 text-muted-foreground/30 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground mb-2">No classes added. Go to Classes module to add.</p>
+                    <Input value={form.classes} onChange={e => setForm({...form, classes: e.target.value})} placeholder="Grade 6, Grade 7, Grade 8 (comma-separated)" className="h-9 max-w-md mx-auto text-xs" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+                    {CLASSES.map(cls => {
+                      const checked = selectedClasses.includes(cls.name);
+                      return (
+                        <button
+                          key={cls.name}
+                          type="button"
+                          onClick={() => toggleClass(cls.name)}
+                          className={cn("px-2 py-1.5 rounded-md text-[11px] font-medium border-2 transition-all text-left flex items-center gap-1",
+                            checked ? "bg-accent text-accent-foreground border-accent shadow-sm" : "bg-background border-border/40 hover:border-accent/40 hover:bg-accent/5")}
+                        >
+                          <GraduationCap className={cn("w-2.5 h-2.5 shrink-0", checked ? "text-accent-foreground" : "text-muted-foreground")} />
+                          <span className="truncate">{cls.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Summary banner */}
+            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Award className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-primary">Auto on save:</span> Exam appears in schedule, grade entry, and result compilation. <span className="font-semibold text-foreground">{selectedClasses.length || "All"}</span> class{selectedClasses.length !== 1 ? "es" : ""} will participate.
+              </p>
+            </div>
+          </div>
+
+          {/* Sticky footer */}
+          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+            <p className="text-[10px] text-muted-foreground">
+              <span className="text-red-500">*</span> Required fields
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+              <Button className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md" onClick={handleAdd} disabled={!form.name || !form.startDate}>
+                <Plus className="w-4 h-4 mr-1.5" />Create Exam
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

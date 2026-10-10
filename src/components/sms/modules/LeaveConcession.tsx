@@ -350,53 +350,191 @@ export function ConcessionModule() {
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Fee Concession</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-1">
-            {/* Step 1: Select Class */}
-            <div>
-              <Label>Select Class</Label>
-              <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); setForm({...form, studentId: "", studentName: "", class: ""}); }}>
-                <SelectTrigger><SelectValue placeholder="All Classes" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  {classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Step 2: Select Student */}
-            <div>
-              <Label>Select Student *</Label>
-              <Select value={selectedStudentId} onValueChange={handleStudentSelect}>
-                <SelectTrigger><SelectValue placeholder="Choose student..." /></SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {studentOptions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} • {s.class}-{s.section} • Roll #{s.rollNo}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Auto-filled student info */}
-            {form.studentName && (
-              <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5 text-xs">
-                <div className="flex justify-between"><span className="text-muted-foreground">Student:</span><span className="font-medium">{form.studentName}</span></div>
-                <div className="flex justify-between mt-0.5"><span className="text-muted-foreground">ID:</span><span className="font-mono">{form.studentId}</span></div>
-                <div className="flex justify-between mt-0.5"><span className="text-muted-foreground">Class:</span><span className="font-medium">{form.class}</span></div>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+          {/* Gradient hero header */}
+          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-accent via-accent to-primary/70 px-5 py-4 text-accent-foreground">
+            <div className="absolute inset-0 opacity-10 pattern-grid" />
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+                <Percent className="w-6 h-6" />
               </div>
-            )}
-            <div><Label>Concession Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Sibling Discount", "Staff Child", "Merit Scholarship", "Financial Aid", "Early Payment", "Full Scholarship", "Custom"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Percentage (%)</Label><Input type="number" value={form.percentage} onChange={e => setForm({...form, percentage: Number(e.target.value)})} min={0} max={100} /></div>
-              <div><Label>Fixed Amount (Rs.)</Label><Input type="number" value={form.fixedAmount} onChange={e => setForm({...form, fixedAmount: Number(e.target.value)})} min={0} /></div>
-            </div>
-            <div><Label>Reason *</Label><Input value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="e.g., 2 siblings in same school" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Valid From</Label><Input type="date" value={form.validFrom} onChange={e => setForm({...form, validFrom: e.target.value})} /></div>
-              <div><Label>Valid To</Label><Input type="date" value={form.validTo} onChange={e => setForm({...form, validTo: e.target.value})} /></div>
-            </div>
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2 text-xs text-muted-foreground">
-              Use either percentage OR fixed amount. Percentage applies to monthly tuition fee.
+              <div className="flex-1">
+                <h2 className="text-xl font-bold tracking-tight">Add Fee Concession</h2>
+                <p className="text-xs text-white/75 mt-0.5">Apply a discount or scholarship to a student's tuition fee.</p>
+              </div>
+              <div className="hidden md:flex flex-col items-end text-right">
+                <span className="text-[10px] uppercase tracking-wider text-white/60">Active Concessions</span>
+                <span className="text-sm font-semibold mt-0.5">{concessions.filter(c => c.status === "Active").length}</span>
+              </div>
             </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => { setAddOpen(false); setSelectedClass("all"); setSelectedStudentId(""); }}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.studentName || !form.reason}>Add Concession</Button></DialogFooter>
+
+          {/* Form body */}
+          <div className="px-5 py-4 space-y-3">
+            {/* ─── Section 1: Student Selection ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Users className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Student Selection</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Pick class then student</span>
+              </div>
+              <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class</Label>
+                  <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); setForm({...form, studentId: "", studentName: "", class: ""}); }}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="All Classes" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Classes</SelectItem>
+                      {classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Student <span className="text-red-500">*</span></Label>
+                  <Select value={selectedStudentId} onValueChange={handleStudentSelect}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Choose student..." /></SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {studentOptions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} • {s.class}-{s.section} • Roll #{s.rollNo}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {/* Auto-filled student info */}
+              {form.studentName && (
+                <div className="mx-3 mb-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-2.5">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                      <Users className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <p className="text-xs font-semibold text-primary">{form.studentName}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] pl-9">
+                    <div><span className="text-muted-foreground">ID:</span> <span className="font-mono font-medium text-foreground">{form.studentId}</span></div>
+                    <div><span className="text-muted-foreground">Class:</span> <span className="font-medium text-foreground">{form.class}</span></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ─── Section 2: Concession Type ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                  <Gift className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Concession Type</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Choose discount category</span>
+              </div>
+              <div className="p-3 space-y-2">
+                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Type</Label>
+                <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["Sibling Discount", "Staff Child", "Merit Scholarship", "Financial Aid", "Early Payment", "Full Scholarship", "Custom"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* ─── Section 3: Discount Value ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                  <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Discount Value</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Percentage OR fixed</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Percentage (%)</Label>
+                  <div className="relative">
+                    <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                    <Input type="number" value={form.percentage} onChange={e => setForm({...form, percentage: Number(e.target.value)})} min={0} max={100} placeholder="0-100" className="h-9 pl-8" />
+                  </div>
+                  {/* Quick percentage buttons */}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {[10, 25, 50, 75, 100].map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setForm({...form, percentage: p, fixedAmount: 0})}
+                        className={cn(
+                          "px-1.5 py-0.5 text-[9px] rounded border transition-colors font-medium",
+                          form.percentage === p && form.fixedAmount === 0
+                            ? "border-emerald-500 bg-emerald-500/15 text-emerald-700"
+                            : "border-border/40 bg-background hover:bg-emerald-500/5"
+                        )}
+                      >
+                        {p}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Fixed Amount (Rs.)</Label>
+                  <div className="relative">
+                    <Wallet className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                    <Input type="number" value={form.fixedAmount} onChange={e => setForm({...form, fixedAmount: Number(e.target.value)})} min={0} placeholder="0" className="h-9 pl-8" />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground">Use either % or fixed</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Section 4: Reason & Validity ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/5 border-b border-purple-500/15">
+                <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                  <Shield className="w-3.5 h-3.5 text-purple-600" />
+                </div>
+                <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Reason & Validity</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Justification & dates</span>
+              </div>
+              <div className="p-3 space-y-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reason <span className="text-red-500">*</span></Label>
+                  <Input value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="e.g., 2 siblings in same school" className="h-9" />
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Valid From</Label>
+                    <Input type="date" value={form.validFrom} onChange={e => setForm({...form, validFrom: e.target.value})} className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Valid To</Label>
+                    <Input type="date" value={form.validTo} onChange={e => setForm({...form, validTo: e.target.value})} className="h-9" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Auto-generated info */}
+            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Percent className="w-3 h-3 text-primary" />
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-primary">How it works:</span> Use either percentage (applied to monthly tuition) OR a fixed amount (Rs.). The concession will be auto-applied to the next fee collection for this student.
+              </p>
+            </div>
+          </div>
+
+          {/* Sticky footer */}
+          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+            <p className="text-[10px] text-muted-foreground">
+              <span className="text-red-500">*</span> Required fields
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setAddOpen(false); setSelectedClass("all"); setSelectedStudentId(""); }} className="h-9">Cancel</Button>
+              <Button className="bg-accent hover:bg-accent/90 h-9 px-5 shadow-md" onClick={handleAdd} disabled={!form.studentName || !form.reason}>
+                <Plus className="w-4 h-4 mr-1.5" />Add Concession
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

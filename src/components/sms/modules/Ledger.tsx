@@ -242,61 +242,172 @@ export function LedgerModule() {
 
       {/* Add Transaction Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Add Transaction</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 py-1">
-            {/* Type toggle */}
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setForm({...form, type: "Income", category: incomeCategories[0]})} className={cn("flex items-center gap-2 p-3 rounded-lg border-2 transition-all",
-                form.type === "Income" ? "border-emerald-500 bg-emerald-500/5" : "border-border/40")}>
-                <ArrowDownCircle className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm font-medium">Income</span>
-              </button>
-              <button onClick={() => setForm({...form, type: "Expense", category: expenseCategories[0]})} className={cn("flex items-center gap-2 p-3 rounded-lg border-2 transition-all",
-                form.type === "Expense" ? "border-red-500 bg-red-500/5" : "border-border/40")}>
-                <ArrowUpCircle className="w-4 h-4 text-red-600" />
-                <span className="text-sm font-medium">Expense</span>
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Category</Label>
-                <Select value={form.category} onValueChange={v => setForm({...form, category: v})}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(form.type === "Income" ? incomeCategories : expenseCategories).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+          {/* Gradient hero header — color depends on type */}
+          <div className={cn(
+            "relative overflow-hidden rounded-t-xl px-5 py-4 text-white transition-colors",
+            form.type === "Income"
+              ? "bg-gradient-to-br from-emerald-600 via-emerald-700 to-primary/70"
+              : "bg-gradient-to-br from-red-500 via-red-600 to-accent/70"
+          )}>
+            <div className="absolute inset-0 opacity-10 pattern-grid" />
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="relative flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+                {form.type === "Income" ? <ArrowDownCircle className="w-6 h-6" /> : <ArrowUpCircle className="w-6 h-6" />}
               </div>
-              <div>
-                <Label className="text-xs">Date</Label>
-                <Input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="h-8" />
+              <div className="flex-1">
+                <h2 className="text-xl font-bold tracking-tight">Add {form.type}</h2>
+                <p className="text-xs text-white/75 mt-0.5">Record a new {form.type.toLowerCase()} transaction for the ledger.</p>
               </div>
-            </div>
-            <div>
-              <Label className="text-xs">Description</Label>
-              <Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="e.g., Monthly tuition fees — July" className="h-8" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Amount (Rs.)</Label>
-                <Input type="number" value={form.amount} onChange={e => setForm({...form, amount: Number(e.target.value)})} className="h-8 font-bold" />
-              </div>
-              <div>
-                <Label className="text-xs">Payment Mode</Label>
-                <Select value={form.mode} onValueChange={(v: any) => setForm({...form, mode: v})}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Bank">Bank</SelectItem><SelectItem value="Cheque">Cheque</SelectItem></SelectContent>
-                </Select>
+              <div className="hidden md:flex flex-col items-end text-right">
+                <span className="text-[10px] uppercase tracking-wider text-white/60">Today</span>
+                <span className="text-sm font-semibold mt-0.5">{new Date().toISOString().split("T")[0]}</span>
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.description || form.amount <= 0}>Add Transaction</Button>
-          </DialogFooter>
+
+          {/* Form body */}
+          <div className="px-5 py-4 space-y-3">
+            {/* ─── Section 1: Type Toggle ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/20 border-b border-border/30">
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Wallet className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Transaction Type</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Income or expense</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setForm({...form, type: "Income", category: incomeCategories[0]})}
+                  className={cn("flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
+                    form.type === "Income" ? "border-emerald-500 bg-emerald-500/5" : "border-border/40 hover:border-emerald-500/40")}
+                >
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", form.type === "Income" ? "bg-emerald-500/15" : "bg-muted")}>
+                    <ArrowDownCircle className={cn("w-5 h-5", form.type === "Income" ? "text-emerald-600" : "text-muted-foreground")} />
+                  </div>
+                  <div>
+                    <p className={cn("text-sm font-semibold", form.type === "Income" ? "text-emerald-600" : "text-muted-foreground")}>Income</p>
+                    <p className="text-[10px] text-muted-foreground">Money received</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({...form, type: "Expense", category: expenseCategories[0]})}
+                  className={cn("flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
+                    form.type === "Expense" ? "border-red-500 bg-red-500/5" : "border-border/40 hover:border-red-500/40")}
+                >
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", form.type === "Expense" ? "bg-red-500/15" : "bg-muted")}>
+                    <ArrowUpCircle className={cn("w-5 h-5", form.type === "Expense" ? "text-red-600" : "text-muted-foreground")} />
+                  </div>
+                  <div>
+                    <p className={cn("text-sm font-semibold", form.type === "Expense" ? "text-red-600" : "text-muted-foreground")}>Expense</p>
+                    <p className="text-[10px] text-muted-foreground">Money spent</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* ─── Section 2: Details ─── */}
+            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+              <div className={cn(
+                "flex items-center gap-2 px-3 py-2 border-b",
+                form.type === "Income"
+                  ? "bg-emerald-500/5 border-emerald-500/15"
+                  : "bg-red-500/5 border-red-500/15"
+              )}>
+                <div className={cn(
+                  "w-7 h-7 rounded-lg flex items-center justify-center",
+                  form.type === "Income" ? "bg-emerald-500/15" : "bg-red-500/15"
+                )}>
+                  <DollarSign className={cn("w-3.5 h-3.5", form.type === "Income" ? "text-emerald-600" : "text-red-600")} />
+                </div>
+                <p className={cn(
+                  "text-xs font-semibold uppercase tracking-wide",
+                  form.type === "Income" ? "text-emerald-600" : "text-red-600"
+                )}>Transaction Details</p>
+                <span className="ml-auto text-[10px] text-muted-foreground">Amount, category & date</span>
+              </div>
+              <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Category</Label>
+                  <Select value={form.category} onValueChange={v => setForm({...form, category: v})}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(form.type === "Income" ? incomeCategories : expenseCategories).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date</Label>
+                  <Input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="h-9" />
+                </div>
+                <div className="md:col-span-2 space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Description <span className="text-red-500">*</span></Label>
+                  <Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="e.g., Monthly tuition fees — July" className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount (Rs.) <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <DollarSign className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5", form.type === "Income" ? "text-emerald-600" : "text-red-600")} />
+                    <Input type="number" value={form.amount} onChange={e => setForm({...form, amount: Number(e.target.value)})} placeholder="0" className="h-10 pl-8 text-lg font-bold" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Payment Mode</Label>
+                  <Select value={form.mode} onValueChange={(v: any) => setForm({...form, mode: v})}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cash">💵 Cash</SelectItem>
+                      <SelectItem value="Bank">🏦 Bank</SelectItem>
+                      <SelectItem value="Cheque">📝 Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary banner */}
+            <div className={cn(
+              "rounded-lg border p-2.5 flex items-start gap-2",
+              form.type === "Income"
+                ? "bg-emerald-500/5 border-emerald-500/20"
+                : "bg-red-500/5 border-red-500/20"
+            )}>
+              <div className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                form.type === "Income" ? "bg-emerald-500/15" : "bg-red-500/15"
+              )}>
+                {form.type === "Income"
+                  ? <TrendingUp className="w-3 h-3 text-emerald-600" />
+                  : <TrendingDown className="w-3 h-3 text-red-600" />}
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <span className={cn("font-semibold", form.type === "Income" ? "text-emerald-600" : "text-red-600")}>
+                  {form.type === "Income" ? "Income" : "Expense"}:
+                </span> {form.amount > 0 ? <>This will <span className="font-semibold text-foreground">{form.type === "Income" ? "add to" : "deduct from"}</span> your cash balance by <span className="font-semibold text-foreground">Rs. {form.amount.toLocaleString()}</span>.</> : "Enter an amount to see the impact."}
+              </p>
+            </div>
+          </div>
+
+          {/* Sticky footer */}
+          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+            <p className="text-[10px] text-muted-foreground">
+              <span className="text-red-500">*</span> Required fields
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+              <Button
+                className={cn("h-9 px-5 shadow-md", form.type === "Income" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700")}
+                onClick={handleAdd}
+                disabled={!form.description || form.amount <= 0}
+              >
+                <Plus className="w-4 h-4 mr-1.5" />Add {form.type}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
