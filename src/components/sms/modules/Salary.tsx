@@ -63,23 +63,23 @@ export function SalaryModule() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2"><Wallet className="w-5 h-5 text-primary" /></div>
-          <div><p className="text-xs text-muted-foreground">Total Payroll</p><p className="text-xl font-bold">Rs. {(allEmployees.reduce((s, e) => s + e.monthlySalary, 0) / 1000).toFixed(0)}K</p></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 p-1.5"><Wallet className="w-4 h-4 text-primary" /></div>
+          <div><p className="text-xs text-muted-foreground">Total Payroll</p><p className="text-lg font-bold">Rs. {(allEmployees.reduce((s, e) => s + e.monthlySalary, 0) / 1000).toFixed(0)}K</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-red-500/10 p-2"><TrendingDown className="w-5 h-5 text-red-600" /></div>
-          <div><p className="text-xs text-muted-foreground">Total Fines</p><p className="text-xl font-bold">Rs. {allEmployees.reduce((s, e) => s + calculate(e).totalDeduction, 0).toLocaleString()}</p></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-red-500/10 p-1.5"><TrendingDown className="w-4 h-4 text-red-600" /></div>
+          <div><p className="text-xs text-muted-foreground">Total Fines</p><p className="text-lg font-bold">Rs. {allEmployees.reduce((s, e) => s + calculate(e).totalDeduction, 0).toLocaleString()}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-emerald-500/10 p-2"><CheckCircle2 className="w-5 h-5 text-emerald-600" /></div>
-          <div><p className="text-xs text-muted-foreground">Net Payable</p><p className="text-xl font-bold">Rs. {(allEmployees.reduce((s, e) => s + calculate(e).net, 0) / 1000).toFixed(0)}K</p></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-600" /></div>
+          <div><p className="text-xs text-muted-foreground">Net Payable</p><p className="text-lg font-bold">Rs. {(allEmployees.reduce((s, e) => s + calculate(e).net, 0) / 1000).toFixed(0)}K</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-accent/10 p-2"><AlertCircle className="w-5 h-5 text-accent" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-accent/10 p-1.5"><AlertCircle className="w-4 h-4 text-accent" /></div>
           <div><p className="text-xs text-muted-foreground">Employees</p><p className="text-xl font-bold">{allEmployees.length}</p></div>
         </CardContent></Card>
       </div>
@@ -88,7 +88,7 @@ export function SalaryModule() {
       <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-primary/10 p-2"><Calculator className="w-5 h-5 text-primary" /></div>
+            <div className="rounded-lg bg-primary/10 p-1.5"><Calculator className="w-4 h-4 text-primary" /></div>
             <div className="flex-1">
               <p className="font-semibold text-sm">Auto Fine Calculation — Worked Example</p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -207,12 +207,12 @@ export function SalaryModule() {
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Printer className="w-5 h-5 text-primary" />Salary Slip — {month}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Printer className="w-4 h-4 text-primary" />Salary Slip — {month}</DialogTitle>
           </DialogHeader>
           {selected && (() => {
             const calc = calculate(selected);
             return (
-              <div className="space-y-3 py-2">
+              <div className="space-y-2 py-1">
                 {/* Slip header */}
                 <div className="rounded-lg bg-gradient-to-br from-primary to-primary/70 p-4 text-primary-foreground">
                   <div className="flex items-center justify-between">

@@ -82,8 +82,8 @@ export default function Home() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
-          <div key={activeModule} className="fade-in max-w-[1600px] mx-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-4">
+          <div key={activeModule} className="fade-in max-w-[1400px] mx-auto">
             {renderModule()}
           </div>
         </main>

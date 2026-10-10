@@ -151,32 +151,32 @@ export function FeesModule() {
   const todayCollections = feeCollections.filter(f => f.date === new Date().toISOString().split("T")[0]);
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-emerald-500/10 p-2"><DollarSign className="w-5 h-5 text-emerald-600" /></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-emerald-500/10 p-1.5"><DollarSign className="w-4 h-4 text-emerald-600" /></div>
           <div>
             <p className="text-xs text-muted-foreground">Collected Today</p>
-            <p className="text-xl font-bold">Rs. {todayCollections.reduce((s, f) => s + f.amount, 0).toLocaleString()}</p>
+            <p className="text-lg font-bold">Rs. {todayCollections.reduce((s, f) => s + f.amount, 0).toLocaleString()}</p>
           </div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2"><Receipt className="w-5 h-5 text-primary" /></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 p-1.5"><Receipt className="w-4 h-4 text-primary" /></div>
           <div>
             <p className="text-xs text-muted-foreground">Receipts Today</p>
             <p className="text-xl font-bold">{todayCollections.length}</p>
           </div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-accent/10 p-2"><Wallet className="w-5 h-5 text-accent" /></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-accent/10 p-1.5"><Wallet className="w-4 h-4 text-accent" /></div>
           <div>
             <p className="text-xs text-muted-foreground">Total Outstanding</p>
-            <p className="text-xl font-bold">Rs. {students.reduce((s, st) => s + st.outstandingAmount, 0).toLocaleString()}</p>
+            <p className="text-lg font-bold">Rs. {students.reduce((s, st) => s + st.outstandingAmount, 0).toLocaleString()}</p>
           </div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-red-500/10 p-2"><AlertTriangle className="w-5 h-5 text-red-600" /></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-red-500/10 p-1.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div>
           <div>
             <p className="text-xs text-muted-foreground">Defaulters</p>
             <p className="text-xl font-bold">{students.filter(s => s.outstandingAmount > 0).length}</p>
@@ -291,7 +291,7 @@ export function FeesModule() {
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-emerald-600" />Collect Fee</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-emerald-600" />Collect Fee</DialogTitle>
           </DialogHeader>
           {selected && (
             <div className="space-y-4 py-2">
@@ -532,23 +532,23 @@ export function DefaultersModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-red-500/10 p-2"><AlertTriangle className="w-5 h-5 text-red-600" /></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-red-500/10 p-1.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div>
           <div><p className="text-xs text-muted-foreground">Total Defaulters</p><p className="text-xl font-bold">{defaulters.length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-accent/10 p-2"><Wallet className="w-5 h-5 text-accent" /></div>
-          <div><p className="text-xs text-muted-foreground">Outstanding</p><p className="text-xl font-bold">Rs. {totalOutstanding.toLocaleString()}</p></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-accent/10 p-1.5"><Wallet className="w-4 h-4 text-accent" /></div>
+          <div><p className="text-xs text-muted-foreground">Outstanding</p><p className="text-lg font-bold">Rs. {totalOutstanding.toLocaleString()}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-yellow-500/10 p-2"><Clock className="w-5 h-5 text-yellow-600" /></div>
-          <div><p className="text-xs text-muted-foreground">Avg Outstanding</p><p className="text-xl font-bold">Rs. {defaulters.length > 0 ? Math.round(totalOutstanding / defaulters.length).toLocaleString() : 0}</p></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-yellow-500/10 p-1.5"><Clock className="w-4 h-4 text-yellow-600" /></div>
+          <div><p className="text-xs text-muted-foreground">Avg Outstanding</p><p className="text-lg font-bold">Rs. {defaulters.length > 0 ? Math.round(totalOutstanding / defaulters.length).toLocaleString() : 0}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2"><TrendingUp className="w-5 h-5 text-primary" /></div>
+        <Card className="border-0 shadow-sm glass-card card-hover"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 p-1.5"><TrendingUp className="w-4 h-4 text-primary" /></div>
           <div><p className="text-xs text-muted-foreground">Collection Rate</p><p className="text-xl font-bold">{Math.round((1 - defaulters.length / students.length) * 100)}%</p></div>
         </CardContent></Card>
       </div>

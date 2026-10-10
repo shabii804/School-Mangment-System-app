@@ -41,7 +41,7 @@ export function ClassesModule() {
   const subjectAssignStudents = subjectAssignClass ? students.filter(s => s.class === subjectAssignClass && s.status === "Active") : [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Classes, sections, subjects, and class teachers.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Class</Button>
@@ -57,7 +57,7 @@ export function ClassesModule() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
-                      <School className="w-5 h-5 text-primary" />
+                      <School className="w-4 h-4 text-primary" />
                     </div>
                     <div>
                       <p className="font-bold text-sm">{cls.name}</p>
@@ -117,8 +117,8 @@ export function ClassesModule() {
       {/* Add Class Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add New Class</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Class</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Class Name *</Label><Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" /></div>
             <div><Label>Sections (comma-separated)</Label><Input value={newClass.sections} onChange={e => setNewClass({...newClass, sections: e.target.value})} placeholder="A, B, C" /></div>
             <div><Label>Monthly Fee (Rs.)</Label><Input type="number" value={newClass.monthlyFee} onChange={e => setNewClass({...newClass, monthlyFee: Number(e.target.value)})} /></div>
@@ -144,7 +144,7 @@ export function ClassesModule() {
       <Dialog open={!!rosterClass} onOpenChange={(o) => !o && setRosterClass(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Users className="w-5 h-5 text-primary" />{rosterClass} — Student Roster</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" />{rosterClass} — Student Roster</DialogTitle>
           </DialogHeader>
           <div className="py-2">
             <p className="text-xs text-muted-foreground mb-3">{rosterStudents.length} active students enrolled</p>
@@ -177,9 +177,9 @@ export function ClassesModule() {
       {/* Assign Class Teacher Dialog */}
       <Dialog open={!!assignTeacher} onOpenChange={(o) => !o && setAssignTeacher(null)}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserCog className="w-5 h-5 text-primary" />Assign Class Teacher</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserCog className="w-4 h-4 text-primary" />Assign Class Teacher</DialogTitle></DialogHeader>
           {assignTeacher && (
-            <div className="space-y-3 py-2">
+            <div className="space-y-2 py-1">
               <div className="p-3 rounded-lg bg-muted/30">
                 <p className="text-sm font-medium">{assignTeacher.className} — Section {assignTeacher.section}</p>
               </div>
@@ -215,7 +215,7 @@ export function ClassesModule() {
       <Dialog open={!!subjectAssignClass} onOpenChange={(o) => !o && setSubjectAssignClass(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" />Subject-Teacher Assignment — {subjectAssignClass}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" />Subject-Teacher Assignment — {subjectAssignClass}</DialogTitle>
           </DialogHeader>
           {subjectAssignClass && (
             <div className="space-y-2 py-2">
@@ -303,7 +303,7 @@ export function TimetableModule() {
   const getSlot = (day: string, period: number) => slots.find(s => s.day === day && s.period === period);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <p className="text-sm text-muted-foreground">Weekly class timetable</p>

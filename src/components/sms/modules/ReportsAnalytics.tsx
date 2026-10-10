@@ -127,7 +127,7 @@ export function ReportsModule() {
   const printableIds = [1, 4, 5, 6, 7, 8, 9];
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">10 printable report types with PDF / Excel / CSV export. Filter by class or student.</p>
         <div className="flex gap-2">
@@ -180,8 +180,8 @@ export function ReportsModule() {
       {/* Attendance Report Filter Dialog */}
       <Dialog open={filterOpen === 4} onOpenChange={(o) => !o && setFilterOpen(null)}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><ClipboardCheck className="w-5 h-5 text-primary" />Attendance Report — Filter</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-primary" />Attendance Report — Filter</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div>
               <Label>Class</Label>
               <Select value={attClass} onValueChange={setAttClass}>
@@ -218,8 +218,8 @@ export function ReportsModule() {
       {/* Result Card Filter Dialog */}
       <Dialog open={filterOpen === 9} onOpenChange={(o) => !o && setFilterOpen(null)}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" />Result Card — Filter</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" />Result Card — Filter</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div>
               <Label>Exam</Label>
               <Select value={resultExam} onValueChange={setResultExam}>
@@ -285,15 +285,15 @@ const PNL_DATA = [
 
 export function AnalyticsModule() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Hero stats */}
       <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/10 via-accent/5 to-transparent">
         <CardContent className="p-5">
           <div className="flex items-center gap-2 mb-3">
-            <BarChart3 className="w-5 h-5 text-primary" />
+            <BarChart3 className="w-4 h-4 text-primary" />
             <p className="font-semibold">School Performance Analytics</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div><p className="text-xs text-muted-foreground">Avg Daily Attendance</p><p className="text-2xl font-bold text-primary">94.2%</p></div>
             <div><p className="text-xs text-muted-foreground">Fee Collection Rate</p><p className="text-2xl font-bold text-emerald-600">87%</p></div>
             <div><p className="text-xs text-muted-foreground">Avg Class Size</p><p className="text-2xl font-bold">28.5</p></div>

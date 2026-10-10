@@ -86,17 +86,17 @@ export function LeaveModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage staff leave requests, balances, and approvals.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Apply Leave</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-yellow-500/10 p-2"><Clock className="w-5 h-5 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold">{pending}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><CheckCircle className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Approved</p><p className="text-xl font-bold">{approved}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-red-500/10 p-2"><XCircle className="w-5 h-5 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Rejected</p><p className="text-xl font-bold">{rejected}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Calendar className="w-5 h-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Leave Days</p><p className="text-xl font-bold">{totalDays}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-yellow-500/10 p-1.5"><Clock className="w-4 h-4 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold">{pending}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Approved</p><p className="text-xl font-bold">{approved}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><XCircle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Rejected</p><p className="text-xl font-bold">{rejected}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Calendar className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Leave Days</p><p className="text-xl font-bold">{totalDays}</p></div></CardContent></Card>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -114,7 +114,7 @@ export function LeaveModule() {
                   <div className="flex items-start gap-4">
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                       req.status === "Approved" ? "bg-emerald-500/15" : req.status === "Rejected" ? "bg-red-500/15" : "bg-yellow-500/15")}>
-                      {req.status === "Approved" ? <CheckCircle className="w-5 h-5 text-emerald-600" /> : req.status === "Rejected" ? <XCircle className="w-5 h-5 text-red-600" /> : <Clock className="w-5 h-5 text-yellow-600" />}
+                      {req.status === "Approved" ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : req.status === "Rejected" ? <XCircle className="w-4 h-4 text-red-600" /> : <Clock className="w-4 h-4 text-yellow-600" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -197,8 +197,8 @@ export function LeaveModule() {
       {/* Apply Leave Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Apply for Leave</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Apply for Leave</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Employee Name *</Label><Input value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} /></div>
               <div><Label>Employee ID</Label><Input value={form.employeeId} onChange={e => setForm({...form, employeeId: e.target.value})} placeholder="T-001" /></div>
@@ -293,17 +293,17 @@ export function ConcessionModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage fee discounts, scholarships, and financial aid for students.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Concession</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><CheckCircle className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Active Concessions</p><p className="text-xl font-bold">{activeCount}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Users className="w-5 h-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Students Benefited</p><p className="text-xl font-bold">{totalStudents}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-accent/10 p-2"><Wallet className="w-5 h-5 text-accent" /></div><div><p className="text-xs text-muted-foreground">Monthly Saving</p><p className="text-xl font-bold">Rs. {totalMonthlySaving.toLocaleString()}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-muted p-2"><Clock className="w-5 h-5 text-muted-foreground" /></div><div><p className="text-xs text-muted-foreground">Expired</p><p className="text-xl font-bold">{expiredCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Active Concessions</p><p className="text-xl font-bold">{activeCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Students Benefited</p><p className="text-xl font-bold">{totalStudents}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><Wallet className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Monthly Saving</p><p className="text-lg font-bold">Rs. {totalMonthlySaving.toLocaleString()}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-muted p-2"><Clock className="w-4 h-4 text-muted-foreground" /></div><div><p className="text-xs text-muted-foreground">Expired</p><p className="text-xl font-bold">{expiredCount}</p></div></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -351,8 +351,8 @@ export function ConcessionModule() {
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Fee Concession</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Fee Concession</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             {/* Step 1: Select Class */}
             <div>
               <Label>Select Class</Label>

@@ -74,17 +74,17 @@ export function DisciplineModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Track behavioral incidents, warnings, and parent notifications.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Log Incident</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-red-500/10 p-2"><AlertTriangle className="w-5 h-5 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Open Cases</p><p className="text-xl font-bold">{openCount}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-purple-500/10 p-2"><Shield className="w-5 h-5 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Escalated</p><p className="text-xl font-bold">{escalatedCount}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><CheckCircle className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Resolved</p><p className="text-xl font-bold">{resolvedCount}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-orange-500/10 p-2"><AlertTriangle className="w-5 h-5 text-orange-600" /></div><div><p className="text-xs text-muted-foreground">High Severity</p><p className="text-xl font-bold">{highSeverity}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Open Cases</p><p className="text-xl font-bold">{openCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><Shield className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Escalated</p><p className="text-xl font-bold">{escalatedCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Resolved</p><p className="text-xl font-bold">{resolvedCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-orange-500/10 p-1.5"><AlertTriangle className="w-5 h-5 text-orange-600" /></div><div><p className="text-xs text-muted-foreground">High Severity</p><p className="text-xl font-bold">{highSeverity}</p></div></CardContent></Card>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -128,8 +128,8 @@ export function DisciplineModule() {
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-red-600" />Log Discipline Incident</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-600" />Log Discipline Incident</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Student Name *</Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} /></div>
               <div><Label>Class</Label><Input value={form.class} onChange={e => setForm({...form, class: e.target.value})} placeholder="Grade 9-A" /></div>
@@ -175,17 +175,17 @@ export function AlumniModule() {
   const studyingCount = alumni.filter(a => a.currentStatus === "Studying").length;
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Track graduated students, their careers, and donations.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Alumnus</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Users className="w-5 h-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Alumni</p><p className="text-xl font-bold">{alumni.length}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><Briefcase className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Employed</p><p className="text-xl font-bold">{employedCount}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-purple-500/10 p-2"><GraduationCap className="w-5 h-5 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Studying</p><p className="text-xl font-bold">{studyingCount}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-accent/10 p-2"><Award className="w-5 h-5 text-accent" /></div><div><p className="text-xs text-muted-foreground">Donations</p><p className="text-xl font-bold">Rs. {totalDonations.toLocaleString()}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Alumni</p><p className="text-xl font-bold">{alumni.length}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><Briefcase className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Employed</p><p className="text-xl font-bold">{employedCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><GraduationCap className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Studying</p><p className="text-xl font-bold">{studyingCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><Award className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Donations</p><p className="text-lg font-bold">Rs. {totalDonations.toLocaleString()}</p></div></CardContent></Card>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -238,8 +238,8 @@ export function AlumniModule() {
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Alumnus</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Alumnus</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Name *</Label><Input placeholder="Full name" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Graduation Year</Label><Input type="number" placeholder="2024" /></div>
@@ -281,7 +281,7 @@ function ParentPortal({ searchId, setSearchId, foundStudent, searched, onSearch 
   const { students, feeCollections, school } = useAppStore();
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 p-6 text-primary-foreground shadow-lg">
         <div className="absolute inset-0 opacity-10 pattern-grid" />
         <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
@@ -304,7 +304,7 @@ function ParentPortal({ searchId, setSearchId, foundStudent, searched, onSearch 
       )}
 
       {foundStudent && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Student header */}
           <Card className="border-0 shadow-sm glass-card overflow-hidden">
             <div className="bg-gradient-to-r from-primary/10 to-accent/5 p-4 flex items-center gap-4">

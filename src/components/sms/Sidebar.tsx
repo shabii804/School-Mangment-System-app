@@ -89,13 +89,13 @@ export function Sidebar() {
     <aside className={cn(
       "h-screen overflow-y-auto overflow-x-hidden flex flex-col transition-all duration-200 shrink-0 z-40",
       "bg-[oklch(0.18_0.02_200)] text-white border-r border-white/5",
-      collapsed ? "w-16" : "w-64"
+      collapsed ? "w-14" : "w-56"
     )}>
       {/* Brand header */}
-      <div className="px-3 py-4 border-b border-white/10">
-        <div className="flex items-center gap-2.5">
+      <div className="px-3 py-3 border-b border-white/10">
+        <div className="flex items-center gap-2">
           {/* Logo */}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shrink-0 overflow-hidden ring-1 ring-white/10">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md shrink-0 overflow-hidden ring-1 ring-white/10">
             {school.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
@@ -105,8 +105,8 @@ export function Sidebar() {
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0 fade-in">
-              <h1 className="font-bold text-sm leading-tight text-white truncate">{school.name}</h1>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">SMS v1.0</p>
+              <h1 className="font-bold text-xs leading-tight text-white truncate">{school.name || "School Management"}</h1>
+              <p className="text-[9px] text-white/40 uppercase tracking-wider font-semibold">SMS v1.0</p>
             </div>
           )}
           <button
@@ -120,14 +120,14 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-3 space-y-4">
+      <nav className="flex-1 px-1.5 py-2 space-y-3">
         {groups.map(group => {
           const items = visibleItems.filter(i => i.group === group);
           if (items.length === 0) return null;
           return (
             <div key={group}>
               {!collapsed && (
-                <p className="px-3 mb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-wider">
+                <p className="px-2.5 mb-1 text-[9px] font-bold text-white/30 uppercase tracking-wider">
                   {GROUP_LABELS[group]}
                 </p>
               )}
@@ -141,14 +141,14 @@ export function Sidebar() {
                       onClick={() => setActiveModule(item.key)}
                       title={collapsed ? item.label : undefined}
                       className={cn(
-                        "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold text-left transition-all",
+                        "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold text-left transition-all",
                         isActive
-                          ? "bg-primary text-white shadow-md shadow-primary/20"
+                          ? "bg-primary text-white shadow-sm shadow-primary/20"
                           : "text-white/60 hover:bg-white/10 hover:text-white",
-                        collapsed && "justify-center px-2"
+                        collapsed && "justify-center px-1.5"
                       )}
                     >
-                      <Icon className={cn("w-[18px] h-[18px] shrink-0", isActive ? "text-white" : "text-white/50")} strokeWidth={2.2} />
+                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-white" : "text-white/50")} strokeWidth={2} />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </button>
                   );
@@ -160,9 +160,9 @@ export function Sidebar() {
       </nav>
 
       {/* Footer status */}
-      <div className="px-3 py-3 border-t border-white/10 mt-auto">
+      <div className="px-3 py-2 border-t border-white/10 mt-auto">
         {!collapsed ? (
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-[11px]">
             <div className="relative">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />

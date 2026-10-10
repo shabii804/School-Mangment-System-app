@@ -73,9 +73,9 @@ export function DashboardModule() {
   ];
 
   return (
-    <div className="space-y-5 fade-in">
+    <div className="space-y-3 fade-in">
       {/* ═══ Hero Banner ═══ */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/90 p-6 text-primary-foreground shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/90 p-4 text-primary-foreground shadow-lg">
         <div className="absolute inset-0 opacity-10 pattern-grid" />
         <div className="absolute top-0 right-0 w-80 h-80 bg-accent/25 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
         <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-y-1/2" />
@@ -86,7 +86,7 @@ export function DashboardModule() {
             {school.logo ? (
               <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
             ) : (
-              <School className="w-10 h-10 text-primary-foreground" />
+              <School className="w-8 h-8 text-primary-foreground" />
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -100,24 +100,24 @@ export function DashboardModule() {
                 {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
               </span>
             </div>
-            <h2 className="text-3xl font-bold mt-1.5 tracking-tight">{school.name}</h2>
+            <h2 className="text-2xl font-bold mt-1 tracking-tight">{school.name}</h2>
             <p className="text-sm opacity-80 mt-0.5">{school.tagline}</p>
             {/* Inline mini stats */}
-            <div className="flex gap-5 mt-4">
+            <div className="flex gap-4 mt-3">
               <div>
-                <p className="text-3xl font-bold tabular-nums">{STATS.totalStudents}</p>
+                <p className="text-2xl font-bold tabular-nums">{STATS.totalStudents}</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Students</p>
               </div>
               <div className="border-l border-white/15 pl-5">
-                <p className="text-3xl font-bold tabular-nums">{STATS.totalTeachers + STATS.totalStaff}</p>
+                <p className="text-2xl font-bold tabular-nums">{STATS.totalTeachers + STATS.totalStaff}</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Staff</p>
               </div>
               <div className="border-l border-white/15 pl-5">
-                <p className="text-3xl font-bold tabular-nums">{STATS.todayAttendancePct}%</p>
+                <p className="text-2xl font-bold tabular-nums">{STATS.todayAttendancePct}%</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Att.</p>
               </div>
               <div className="border-l border-white/15 pl-5">
-                <p className="text-3xl font-bold tabular-nums">Rs. {(STATS.todayFeeCollection / 1000).toFixed(0)}K</p>
+                <p className="text-2xl font-bold tabular-nums">Rs. {(STATS.todayFeeCollection / 1000).toFixed(0)}K</p>
                 <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Coll.</p>
               </div>
             </div>
@@ -141,17 +141,17 @@ export function DashboardModule() {
       </div>
 
       {/* ═══ KPI Row 1 — Primary Stats ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <button onClick={kpiClick("students")} className="text-left">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Students</p>
-                <p className="text-3xl font-bold mt-1 tabular-nums">{STATS.totalStudents}</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums">{STATS.totalStudents}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Active enrollment</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <Users className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Users className="w-4 h-4 text-primary" />
               </div>
             </div>
             {/* Mini sparkline */}
@@ -167,15 +167,15 @@ export function DashboardModule() {
         </button>
 
         <button onClick={kpiClick("attendance")} className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm ">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Attendance</p>
-                <p className="text-3xl font-bold mt-1 tabular-nums">{STATS.todayAttendancePct}%</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums">{STATS.todayAttendancePct}%</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Mark today's attendance</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
-                <ClipboardCheck className="w-5 h-5 text-yellow-600" />
+              <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
+                <ClipboardCheck className="w-4 h-4 text-yellow-600" />
               </div>
             </div>
             {/* Mini bar chart */}
@@ -188,15 +188,15 @@ export function DashboardModule() {
         </button>
 
         <button onClick={kpiClick("fees")} className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm ">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Collection</p>
-                <p className="text-3xl font-bold mt-1 tabular-nums">Rs. {STATS.todayFeeCollection.toLocaleString()}</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums">Rs. {STATS.todayFeeCollection.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{feeCollections.filter(f => f.date === new Date().toISOString().split("T")[0]).length} receipts today</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
-                <DollarSign className="w-5 h-5 text-accent" />
+              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
+                <DollarSign className="w-4 h-4 text-accent" />
               </div>
             </div>
             {/* Mini bar chart */}
@@ -209,18 +209,18 @@ export function DashboardModule() {
         </button>
 
         <button onClick={kpiClick("defaulters")} className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-4 shadow-sm ">
+          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fee Defaulters</p>
-                <p className="text-3xl font-bold mt-1 tabular-nums text-red-600">{STATS.defaultersCount}</p>
+                <p className="text-2xl font-bold mt-1 tabular-nums text-red-600">{STATS.defaultersCount}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Past due date</p>
                 <div className="flex items-center gap-1 mt-2 text-xs text-red-600 font-medium">
                   <AlertTriangle className="w-3 h-3" /> Needs follow-up
                 </div>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/10 transition-colors">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/10 transition-colors">
+                <AlertTriangle className="w-4 h-4 text-red-600" />
               </div>
             </div>
             {/* Progress bar showing collection rate */}
@@ -235,22 +235,22 @@ export function DashboardModule() {
       </div>
 
       {/* ═══ KPI Row 2 — Secondary Stats ═══ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-purple-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Teaching Staff</p><p className="text-xl font-bold">{STATS.totalTeachers}</p></div>
+          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><GraduationCap className="w-4 h-4 text-purple-600" /></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Teaching Staff</p><p className="text-lg font-bold">{STATS.totalTeachers}</p></div>
         </div>
         <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center"><UserCog className="w-5 h-5 text-purple-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Support Staff</p><p className="text-xl font-bold">{STATS.totalStaff}</p></div>
+          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center"><UserCog className="w-4 h-4 text-purple-600" /></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Support Staff</p><p className="text-lg font-bold">{STATS.totalStaff}</p></div>
         </div>
         <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><TrendingUp className="w-5 h-5 text-emerald-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Income</p><p className="text-xl font-bold">Rs. {(STATS.monthlyIncome / 1000).toFixed(0)}K</p></div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><TrendingUp className="w-4 h-4 text-emerald-600" /></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Income</p><p className="text-lg font-bold">Rs. {(STATS.monthlyIncome / 1000).toFixed(0)}K</p></div>
         </div>
         <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-pink-600" /></div>
-          <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-xl font-bold text-red-600">Rs. {(STATS.pendingFees / 1000).toFixed(1)}K</p></div>
+          <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center"><Wallet className="w-4 h-4 text-pink-600" /></div>
+          <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-lg font-bold text-red-600">Rs. {(STATS.pendingFees / 1000).toFixed(1)}K</p></div>
         </div>
       </div>
 
@@ -302,7 +302,7 @@ export function DashboardModule() {
             </Button>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={FEE_TREND}>
                 <defs>
                   <linearGradient id="collectedGrad" x1="0" y1="0" x2="0" y2="1">
@@ -506,7 +506,7 @@ export function DashboardModule() {
           </Button>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={160}>
+          <ResponsiveContainer width="100%" height={140}>
             <BarChart data={STUDENT_GROWTH}>
               <defs>
                 <linearGradient id="studentsGrad2" x1="0" y1="0" x2="0" y2="1">

@@ -58,7 +58,7 @@ export function ExamModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage examinations, schedules, grades, and result compilation.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Create Exam</Button>
@@ -66,20 +66,20 @@ export function ExamModule() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-red-500/10 p-2"><FileText className="w-5 h-5 text-red-600" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-red-500/10 p-1.5"><FileText className="w-4 h-4 text-red-600" /></div>
           <div><p className="text-xs text-muted-foreground">Total Exams</p><p className="text-xl font-bold">{exams.length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2"><Calendar className="w-5 h-5 text-primary" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 p-1.5"><Calendar className="w-4 h-4 text-primary" /></div>
           <div><p className="text-xs text-muted-foreground">Upcoming</p><p className="text-xl font-bold">{exams.filter(e => new Date(e.startDate) > new Date()).length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-emerald-500/10 p-2"><ClipboardList className="w-5 h-5 text-emerald-600" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-emerald-500/10 p-1.5"><ClipboardList className="w-4 h-4 text-emerald-600" /></div>
           <div><p className="text-xs text-muted-foreground">Completed</p><p className="text-xl font-bold">{exams.filter(e => new Date(e.endDate) < new Date()).length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-purple-500/10 p-2"><Award className="w-5 h-5 text-purple-600" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-purple-500/10 p-1.5"><Award className="w-4 h-4 text-purple-600" /></div>
           <div><p className="text-xs text-muted-foreground">Grade Bands</p><p className="text-xl font-bold">{GRADE_BANDS.length}</p></div>
         </CardContent></Card>
       </div>
@@ -199,8 +199,8 @@ export function ExamModule() {
       {/* Add Exam Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Create New Exam</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Create New Exam</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Exam Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Monthly Test - August 2026" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Type</Label>

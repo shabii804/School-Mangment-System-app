@@ -246,7 +246,7 @@ export function StudentsModule() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-60">
@@ -274,13 +274,13 @@ export function StudentsModule() {
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-primary" />New Student Admission</DialogTitle>
+              <DialogTitle className="flex items-center gap-2"><UserPlus className="w-4 h-4 text-primary" />New Student Admission</DialogTitle>
             </DialogHeader>
 
             {/* Single-page compact form — all sections visible */}
-            <div className="space-y-3 py-1">
+            <div className="space-y-2 py-1">
               {/* Row 1: Photo + Personal */}
-              <div className="grid grid-cols-12 gap-3">
+              <div className="grid grid-cols-12 gap-2">
                 {/* Photo */}
                 <div className="col-span-12 md:col-span-3">
                   <Label className="text-[10px] uppercase text-muted-foreground">Student Photo</Label>
@@ -331,7 +331,7 @@ export function StudentsModule() {
               </div>
 
               {/* Row 2: Academic + Logistics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-lg bg-primary/5 border border-primary/20 p-2.5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-lg bg-primary/5 border border-primary/20 p-2">
                 <div>
                   <Label className="text-xs">Class</Label>
                   <Select value={form.class} onValueChange={v => setForm({...form, class: v})}>
@@ -365,7 +365,7 @@ export function StudentsModule() {
               {/* Row 3: Parents — compact */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {/* Father */}
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-2">
                   <p className="text-[10px] font-semibold text-primary uppercase mb-2">Father</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="col-span-2"><Label className="text-[10px]">Name *</Label><Input value={form.fatherName} onChange={e => setForm({...form, fatherName: e.target.value})} placeholder="Father's name" className="h-8" /></div>
@@ -375,7 +375,7 @@ export function StudentsModule() {
                   </div>
                 </div>
                 {/* Mother */}
-                <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5">
+                <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-2">
                   <p className="text-[10px] font-semibold text-purple-600 uppercase mb-2">Mother</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div><Label className="text-[10px]">Name</Label><Input value={form.motherName} onChange={e => setForm({...form, motherName: e.target.value})} className="h-8" /></div>
@@ -387,7 +387,7 @@ export function StudentsModule() {
 
               {/* Row 4: Guardian + Emergency + Medical + Address */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5">
+                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Guardian (if parents unavailable)</p>
                   <div className="grid grid-cols-3 gap-2">
                     <div><Label className="text-[10px]">Name</Label><Input value={form.guardianName} onChange={e => setForm({...form, guardianName: e.target.value})} className="h-8" /></div>
@@ -395,21 +395,21 @@ export function StudentsModule() {
                     <div><Label className="text-[10px]">Relation</Label><Input value={form.guardianRelation} onChange={e => setForm({...form, guardianRelation: e.target.value})} placeholder="Uncle" className="h-8" /></div>
                   </div>
                 </div>
-                <div className="rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-2">
                   <p className="text-[10px] font-semibold text-accent uppercase mb-2">Emergency Contact</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div><Label className="text-[10px]">Name</Label><Input value={form.emergencyName} onChange={e => setForm({...form, emergencyName: e.target.value})} className="h-8" /></div>
                     <div><Label className="text-[10px]">Phone</Label><Input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} className="h-8" /></div>
                   </div>
                 </div>
-                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2.5">
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-2">Medical</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div><Label className="text-[10px]">Conditions</Label><Input value={form.medicalConditions} onChange={e => setForm({...form, medicalConditions: e.target.value})} placeholder="None" className="h-8" /></div>
                     <div><Label className="text-[10px]">Allergies</Label><Input value={form.allergies} onChange={e => setForm({...form, allergies: e.target.value})} placeholder="None" className="h-8" /></div>
                   </div>
                 </div>
-                <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5">
+                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Home Address</p>
                   <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="House #, Street, Block, City" className="h-8" />
                 </div>
@@ -433,24 +433,24 @@ export function StudentsModule() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2"><Users className="w-5 h-5 text-primary" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div>
           <div><p className="text-xs text-muted-foreground">Total</p><p className="text-xl font-bold">{filtered.length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-emerald-500/10 p-2"><UserCheck className="w-5 h-5 text-emerald-600" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-emerald-500/10 p-1.5"><UserCheck className="w-4 h-4 text-emerald-600" /></div>
           <div><p className="text-xs text-muted-foreground">Active</p><p className="text-xl font-bold">{filtered.filter(s => s.status === "Active").length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-accent/10 p-2"><Home className="w-5 h-5 text-accent" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-accent/10 p-1.5"><Home className="w-4 h-4 text-accent" /></div>
           <div><p className="text-xs text-muted-foreground">Hostellers</p><p className="text-xl font-bold">{filtered.filter(s => s.isHosteller).length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2"><Bus className="w-5 h-5 text-primary" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 p-1.5"><Bus className="w-4 h-4 text-primary" /></div>
           <div><p className="text-xs text-muted-foreground">Transport</p><p className="text-xl font-bold">{filtered.filter(s => s.transport).length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-red-500/10 p-2"><Filter className="w-5 h-5 text-red-600" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-red-500/10 p-1.5"><Filter className="w-4 h-4 text-red-600" /></div>
           <div><p className="text-xs text-muted-foreground">Defaulters</p><p className="text-xl font-bold">{filtered.filter(s => s.outstandingAmount > 0).length}</p></div>
         </CardContent></Card>
       </div>
@@ -498,7 +498,7 @@ export function StudentsModule() {
                   <TableCell className="font-mono text-xs">{s.rollNo}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                       <Avatar className="w-8 h-8">
                         {s.photo ? (
                           <img src={s.photo} alt={s.name} className="w-full h-full object-cover rounded-full" />
@@ -578,7 +578,7 @@ export function StudentsModule() {
             </button>
 
             {/* Gradient banner header */}
-            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-6 text-primary-foreground overflow-hidden">
+            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-4 text-primary-foreground overflow-hidden">
               <div className="absolute inset-0 opacity-10 pattern-grid" />
               <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
               <div className="relative flex items-start gap-5">
@@ -586,7 +586,7 @@ export function StudentsModule() {
                   {selected.photo ? (
                     <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover rounded-full" />
                   ) : (
-                    <AvatarFallback className="text-3xl font-bold bg-white/20 text-white">
+                    <AvatarFallback className="text-2xl font-bold bg-white/20 text-white">
                       {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                     </AvatarFallback>
                   )}
@@ -663,7 +663,7 @@ export function StudentsModule() {
 
                 {/* Overview */}
                 <TabsContent value="overview" className="space-y-3">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     <ProfileCard icon={Calendar} label="Date of Birth" value={selected.dob} color="text-primary" bg="bg-primary/5" />
                     <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
                     <ProfileCard icon={Globe} label="Nationality" value={selected.nationality} color="text-primary" bg="bg-primary/5" />
@@ -746,7 +746,7 @@ export function StudentsModule() {
 
                 {/* Academic */}
                 <TabsContent value="academic" className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2">
                     <ProfileCard icon={GraduationCap} label="Current Class" value={`${selected.class}-${selected.section}`} color="text-primary" bg="bg-primary/5" />
                     <ProfileCard icon={User} label="Roll Number" value={selected.rollNo} color="text-foreground" bg="bg-muted/30" />
                     <ProfileCard icon={Calendar} label="Admission Date" value={selected.admissionDate} color="text-foreground" bg="bg-muted/30" />
@@ -761,7 +761,7 @@ export function StudentsModule() {
                       <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center"><Stethoscope className="w-4 h-4 text-red-600" /></div>
                       <p className="text-sm font-semibold text-red-600">Medical Information</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-2 gap-2">
                       <ProfileCard icon={Droplet} label="Blood Group" value={selected.bloodGroup} color="text-red-600" bg="bg-red-500/5" />
                       <ProfileCard icon={AlertCircle} label="Conditions" value={selected.medicalConditions} color="text-foreground" bg="bg-muted/30" />
                       <ProfileCard icon={AlertCircle} label="Allergies" value={selected.allergies} color="text-foreground" bg="bg-muted/30" />
@@ -776,7 +776,7 @@ export function StudentsModule() {
 
                 {/* Fees */}
                 <TabsContent value="fees" className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-muted/30 p-3 border border-border/30">
                       <p className="text-[10px] text-muted-foreground uppercase">Monthly Fee</p>
                       <p className="text-xl font-bold mt-1">Rs. {selected.monthlyFee.toLocaleString()}</p>
@@ -801,7 +801,7 @@ export function StudentsModule() {
                         <div className="p-6 text-center text-xs text-muted-foreground">No fee payments recorded yet.</div>
                       ) : (
                         feeCollections.filter(f => f.studentId === selected.id).map(f => (
-                          <div key={f.id} className="flex items-center gap-3 p-2.5 border-b border-border/20 hover:bg-muted/30 last:border-0">
+                          <div key={f.id} className="flex items-center gap-3 p-2 border-b border-border/20 hover:bg-muted/30 last:border-0">
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0"><ReceiptIcon className="w-3.5 h-3.5 text-emerald-600" /></div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-mono text-muted-foreground">{f.receiptNo}</p>
@@ -827,7 +827,7 @@ export function StudentsModule() {
                           strokeLinecap="round" />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <p className="text-3xl font-bold text-primary">{selected.attendancePct}%</p>
+                        <p className="text-xl font-bold text-primary">{selected.attendancePct}%</p>
                         <p className="text-[10px] text-muted-foreground">Attendance</p>
                       </div>
                     </div>
@@ -894,8 +894,8 @@ export function StudentsModule() {
                       </div>
                     ) : (
                       documents.filter(d => d.studentId === selected.id).map(doc => (
-                        <div key={doc.id} className="flex items-center gap-3 p-2.5 rounded-xl border border-border/30 hover:bg-muted/30">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><FileText className="w-5 h-5 text-primary" /></div>
+                        <div key={doc.id} className="flex items-center gap-3 p-2 rounded-xl border border-border/30 hover:bg-muted/30">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><FileText className="w-4 h-4 text-primary" /></div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{doc.name}</p>
                             <p className="text-[10px] text-muted-foreground">{doc.type} • {doc.uploadDate} • {(doc.size / 1024).toFixed(0)} KB</p>
@@ -937,7 +937,7 @@ export function StudentsModule() {
                       </div>
                     ) : (
                       commLogs.filter(l => l.studentId === selected.id).map(log => (
-                        <div key={log.id} className="flex items-start gap-3 p-2.5 rounded-xl border border-border/30 hover:bg-muted/30">
+                        <div key={log.id} className="flex items-start gap-3 p-2 rounded-xl border border-border/30 hover:bg-muted/30">
                           <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
                             log.type === "Phone Call" ? "bg-primary/10" : log.type === "Meeting" ? "bg-purple-500/10" : log.type === "SMS" ? "bg-emerald-500/10" : "bg-accent/10")}>
                             {log.type === "Phone Call" ? <Phone className="w-4 h-4 text-primary" /> : log.type === "Meeting" ? <Users className="w-4 h-4 text-purple-600" /> : log.type === "SMS" ? <Mail className="w-4 h-4 text-emerald-600" /> : <FileText className="w-4 h-4 text-accent" />}
@@ -967,10 +967,10 @@ export function StudentsModule() {
       <Dialog open={!!editStudent} onOpenChange={(o) => !o && setEditStudent(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Edit className="w-5 h-5 text-primary" />Edit Student</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Edit className="w-4 h-4 text-primary" />Edit Student</DialogTitle>
           </DialogHeader>
           {editStudent && (
-            <div className="space-y-3 py-2">
+            <div className="space-y-2 py-1">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2"><Label>Name</Label><Input value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} /></div>
                 <div><Label>Class</Label>
@@ -1054,10 +1054,10 @@ export function StudentsModule() {
       <Dialog open={!!promoteTarget} onOpenChange={(o) => !o && setPromoteTarget(null)}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-emerald-600" />Promote Student</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-4 h-4 text-emerald-600" />Promote Student</DialogTitle>
           </DialogHeader>
           {promoteTarget && (
-            <div className="space-y-3 py-2">
+            <div className="space-y-2 py-1">
               <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
                 <p className="font-semibold text-sm">{promoteTarget.name}</p>
                 <p className="text-xs text-muted-foreground">Current: {promoteTarget.class}-{promoteTarget.section} • Roll #{promoteTarget.rollNo}</p>
@@ -1100,9 +1100,9 @@ export function StudentsModule() {
       <Dialog open={bulkPromoteOpen} onOpenChange={setBulkPromoteOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-emerald-600" />Bulk Promote Students</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><ArrowUpCircle className="w-4 h-4 text-emerald-600" />Bulk Promote Students</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
+          <div className="space-y-2 py-1">
             <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
               <p className="text-sm font-semibold">{selectedIds.size} students selected for promotion</p>
               <p className="text-xs text-muted-foreground mt-1">All selected students will be moved to the new class & section. Monthly fee will be auto-updated.</p>
@@ -1137,9 +1137,9 @@ export function StudentsModule() {
       <Dialog open={bulkFeeOpen} onOpenChange={setBulkFeeOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-emerald-600" />Bulk Fee Collection</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-emerald-600" />Bulk Fee Collection</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
+          <div className="space-y-2 py-1">
             <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
               <p className="text-sm font-semibold">{selectedIds.size} students selected</p>
               <p className="text-xs text-muted-foreground mt-1">The same amount will be collected from each student. Individual receipts will be generated.</p>
@@ -1191,7 +1191,7 @@ function InfoTile({ icon: Icon, label, value, color }: { icon: any; label: strin
 function ProfileCard({ icon: Icon, label, value, color, bg }: { icon: any; label: string; value: string; color?: string; bg?: string }) {
   return (
     <div className={cn("rounded-xl border border-border/30 p-3 flex items-center gap-3", bg)}>
-      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", bg?.replace("/5", "/15").replace("/30", "/40"))}>
+      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", bg?.replace("/5", "/15").replace("/30", "/40"))}>
         <Icon className={cn("w-4 h-4", color)} />
       </div>
       <div className="min-w-0">

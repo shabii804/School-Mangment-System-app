@@ -66,7 +66,7 @@ export function TeachersModule() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage teaching staff, subjects, classes, and salary.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={openAdd}><Plus className="w-4 h-4 mr-1.5" />Add Teacher</Button>
@@ -74,20 +74,20 @@ export function TeachersModule() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2"><GraduationCap className="w-5 h-5 text-primary" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 p-1.5"><GraduationCap className="w-4 h-4 text-primary" /></div>
           <div><p className="text-xs text-muted-foreground">Total Teachers</p><p className="text-xl font-bold">{teachers.length}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-purple-500/10 p-2"><UserCog className="w-5 h-5 text-purple-600" /></div>
-          <div><p className="text-xs text-muted-foreground">Total Salary</p><p className="text-xl font-bold">Rs. {(teachers.reduce((s, t) => s + t.monthlySalary, 0) / 1000).toFixed(0)}K</p></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-purple-500/10 p-1.5"><UserCog className="w-4 h-4 text-purple-600" /></div>
+          <div><p className="text-xs text-muted-foreground">Total Salary</p><p className="text-lg font-bold">Rs. {(teachers.reduce((s, t) => s + t.monthlySalary, 0) / 1000).toFixed(0)}K</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-accent/10 p-2"><BookOpen className="w-5 h-5 text-accent" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-accent/10 p-1.5"><BookOpen className="w-4 h-4 text-accent" /></div>
           <div><p className="text-xs text-muted-foreground">Subjects</p><p className="text-xl font-bold">{new Set(teachers.flatMap(t => t.subjects)).size}</p></div>
         </CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-emerald-500/10 p-2"><CalendarDays className="w-5 h-5 text-emerald-600" /></div>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2">
+          <div className="rounded-lg bg-emerald-500/10 p-1.5"><CalendarDays className="w-4 h-4 text-emerald-600" /></div>
           <div><p className="text-xs text-muted-foreground">Avg Attendance</p><p className="text-xl font-bold">{teachers.length > 0 ? Math.round(teachers.reduce((sum, t) => { const total = t.attendance.present + t.attendance.late + t.attendance.halfDay + t.attendance.absent + t.attendance.leave; return sum + (total > 0 ? (t.attendance.present + t.attendance.late * 0.75 + t.attendance.halfDay * 0.5) / total * 100 : 100); }, 0) / teachers.length) : 0}%</p></div>
         </CardContent></Card>
       </div>
@@ -148,8 +148,8 @@ export function TeachersModule() {
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add New Teacher</DialogTitle></DialogHeader>
-          <div className="space-y-2.5 py-1">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Teacher</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             {/* Personal */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div className="col-span-2"><Label className="text-xs">Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Teacher's full name" className="h-8" /></div>
@@ -169,7 +169,7 @@ export function TeachersModule() {
             </div>
 
             {/* Subject assignment — checkbox grid */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-2">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] font-semibold text-primary uppercase">Assign Subjects (click to toggle)</p>
                 {SUBJECTS.length === 0 && <span className="text-[9px] text-muted-foreground">No subjects yet — add in Classes module</span>}
@@ -195,7 +195,7 @@ export function TeachersModule() {
             </div>
 
             {/* Class assignment — checkbox grid */}
-            <div className="rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 p-2">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] font-semibold text-accent uppercase">Assign Classes (click to toggle)</p>
                 {CLASSES.length === 0 && <span className="text-[9px] text-muted-foreground">No classes yet</span>}
@@ -234,7 +234,7 @@ export function TeachersModule() {
       {/* Edit Dialog */}
       <Dialog open={!!editTeacher} onOpenChange={(o) => !o && setEditTeacher(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Edit className="w-5 h-5 text-primary" />Edit Teacher</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Edit className="w-4 h-4 text-primary" />Edit Teacher</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3 py-2">
             <div className="col-span-2"><Label>Name</Label><Input value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} /></div>
             <div><Label>Designation</Label><Input value={editForm.designation || ""} onChange={e => setEditForm({...editForm, designation: e.target.value})} /></div>
@@ -282,12 +282,12 @@ export function TeachersModule() {
             </button>
 
             {/* Gradient banner header */}
-            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-6 text-primary-foreground overflow-hidden">
+            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/70 p-4 text-primary-foreground overflow-hidden">
               <div className="absolute inset-0 opacity-10 pattern-grid" />
               <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
               <div className="relative flex items-start gap-5">
-                <Avatar className="w-24 h-24 ring-4 ring-white/30 shadow-xl shrink-0">
-                  <AvatarFallback className={cn("text-3xl font-bold bg-white/20 text-white")}>
+                <Avatar className="w-16 h-16 ring-2 ring-white/30 shadow-xl shrink-0">
+                  <AvatarFallback className={cn("text-2xl font-bold bg-white/20 text-white")}>
                     {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
@@ -337,21 +337,21 @@ export function TeachersModule() {
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-3">
               {/* Personal info */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Personal Information</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><IdCard className="w-4 h-4 text-muted-foreground" /></div>
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><IdCard className="w-4 h-4 text-muted-foreground" /></div>
                     <div><p className="text-[10px] text-muted-foreground uppercase">CNIC</p><p className="text-sm font-semibold">{selected.cnic}</p></div>
                   </div>
                   <div className="rounded-xl border border-border/30 p-3 bg-primary/5 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center"><Phone className="w-4 h-4 text-primary" /></div>
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Phone className="w-4 h-4 text-primary" /></div>
                     <div><p className="text-[10px] text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{selected.phone}</p></div>
                   </div>
                   <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><CalendarDays className="w-4 h-4 text-muted-foreground" /></div>
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><CalendarDays className="w-4 h-4 text-muted-foreground" /></div>
                     <div><p className="text-[10px] text-muted-foreground uppercase">Joining Date</p><p className="text-sm font-semibold">{selected.joiningDate}</p></div>
                   </div>
                 </div>
@@ -380,7 +380,7 @@ export function TeachersModule() {
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Salary Information</p>
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-emerald-600" /></div>
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><DollarSign className="w-4 h-4 text-emerald-600" /></div>
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase">Monthly Salary</p>
                     <p className="text-xl font-bold text-emerald-600">Rs. {selected.monthlySalary.toLocaleString()}</p>
@@ -436,7 +436,7 @@ export function StaffModule() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Non-teaching staff: administration, accounts, security, transport, housekeeping.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={openAdd}><Plus className="w-4 h-4 mr-1.5" />Add Staff</Button>
@@ -465,7 +465,7 @@ export function StaffModule() {
                   <TableRow key={s.id} className="border-border/30 hover:bg-muted/30">
                     <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <Avatar className="w-8 h-8"><AvatarFallback className="text-xs font-semibold bg-accent/15 text-accent">{s.name.split(" ").map(w => w[0]).join("").slice(0, 2)}</AvatarFallback></Avatar>
                         <div><p className="font-medium text-sm">{s.name}</p><p className="text-[10px] text-muted-foreground">Since {s.joiningDate.slice(0, 4)}</p></div>
                       </div>
@@ -518,7 +518,7 @@ export function StaffModule() {
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add New Staff</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Staff</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3 py-2">
             <div className="col-span-2"><Label>Full Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
             <div><Label>CNIC</Label><Input value={form.cnic} onChange={e => setForm({...form, cnic: e.target.value})} placeholder="42101-XXXXXXX-X" /></div>
@@ -545,7 +545,7 @@ export function StaffModule() {
       {/* Edit Dialog */}
       <Dialog open={!!editStaff} onOpenChange={(o) => !o && setEditStaff(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Edit className="w-5 h-5 text-primary" />Edit Staff</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Edit className="w-4 h-4 text-primary" />Edit Staff</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3 py-2">
             <div className="col-span-2"><Label>Name</Label><Input value={editForm.name || ""} onChange={e => setEditForm({...editForm, name: e.target.value})} /></div>
             <div><Label>Department</Label><Input value={editForm.department || ""} onChange={e => setEditForm({...editForm, department: e.target.value})} /></div>
@@ -590,12 +590,12 @@ export function StaffModule() {
             </button>
 
             {/* Gradient banner header */}
-            <div className="relative bg-gradient-to-br from-accent via-accent to-accent/70 p-6 text-primary-foreground overflow-hidden">
+            <div className="relative bg-gradient-to-br from-accent via-accent to-accent/70 p-4 text-primary-foreground overflow-hidden">
               <div className="absolute inset-0 opacity-10 pattern-grid" />
               <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
               <div className="relative flex items-start gap-5">
                 <Avatar className="w-20 h-20 ring-4 ring-white/30 shadow-xl shrink-0">
-                  <AvatarFallback className="text-3xl font-bold bg-white/20 text-white">
+                  <AvatarFallback className="text-2xl font-bold bg-white/20 text-white">
                     {selected.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
@@ -651,21 +651,21 @@ export function StaffModule() {
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-3">
               {/* Personal info */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Personal Information</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><IdCard className="w-4 h-4 text-muted-foreground" /></div>
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><IdCard className="w-4 h-4 text-muted-foreground" /></div>
                     <div><p className="text-[10px] text-muted-foreground uppercase">CNIC</p><p className="text-sm font-semibold">{selected.cnic || "—"}</p></div>
                   </div>
                   <div className="rounded-xl border border-border/30 p-3 bg-primary/5 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center"><Phone className="w-4 h-4 text-primary" /></div>
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center"><Phone className="w-4 h-4 text-primary" /></div>
                     <div><p className="text-[10px] text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{selected.phone || "—"}</p></div>
                   </div>
                   <div className="rounded-xl border border-border/30 p-3 bg-muted/20 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"><CalendarDays className="w-4 h-4 text-muted-foreground" /></div>
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center"><CalendarDays className="w-4 h-4 text-muted-foreground" /></div>
                     <div><p className="text-[10px] text-muted-foreground uppercase">Joining Date</p><p className="text-sm font-semibold">{selected.joiningDate}</p></div>
                   </div>
                 </div>
@@ -685,8 +685,8 @@ export function StaffModule() {
                       <div><p className="text-[10px] text-muted-foreground uppercase">Designation</p><p className="text-sm font-semibold">{selected.designation}</p></div>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-emerald-600" /></div>
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><DollarSign className="w-4 h-4 text-emerald-600" /></div>
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase">Monthly Salary</p>
                       <p className="text-xl font-bold text-emerald-600">Rs. {selected.monthlySalary.toLocaleString()}</p>

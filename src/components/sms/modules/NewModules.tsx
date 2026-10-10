@@ -42,7 +42,7 @@ export function LibraryModule() {
   const overdueCount = issues.filter(i => i.status === "Overdue").length;
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage library books, issue/return, and fines.</p>
         <div className="flex gap-2">
@@ -52,10 +52,10 @@ export function LibraryModule() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><BookOpen className="w-5 h-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Books</p><p className="text-xl font-bold">{totalBooks}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><BookMarked className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Available</p><p className="text-xl font-bold">{availableBooks}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-purple-500/10 p-2"><Users className="w-5 h-5 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Issued</p><p className="text-xl font-bold">{issues.filter(i => i.status === "Issued").length}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-red-500/10 p-2"><AlertCircle className="w-5 h-5 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Overdue</p><p className="text-xl font-bold">{overdueCount}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><BookOpen className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Books</p><p className="text-xl font-bold">{totalBooks}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><BookMarked className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Available</p><p className="text-xl font-bold">{availableBooks}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><Users className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Issued</p><p className="text-xl font-bold">{issues.filter(i => i.status === "Issued").length}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><AlertCircle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Overdue</p><p className="text-xl font-bold">{overdueCount}</p></div></CardContent></Card>
       </div>
 
       <Card className="border-0 shadow-sm glass-card overflow-hidden">
@@ -111,8 +111,8 @@ export function LibraryModule() {
       {/* Add Book Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add New Book</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Book</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Book Title *</Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
             <div><Label>Author</Label><Input value={form.author} onChange={e => setForm({...form, author: e.target.value})} /></div>
             <div className="grid grid-cols-2 gap-3">
@@ -128,8 +128,8 @@ export function LibraryModule() {
       {/* Issue Book Dialog */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><BookMarked className="w-5 h-5 text-primary" />Issue Book</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><BookMarked className="w-4 h-4 text-primary" />Issue Book</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Select Book</Label><Select defaultValue=""><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Student ID</Label><Input placeholder="SCH-2026-XXXX" /></div>
             <div className="grid grid-cols-2 gap-3"><div><Label>Issue Date</Label><Input type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div><div><Label>Due Date (14 days)</Label><Input type="date" defaultValue={new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0]} /></div></div>
@@ -152,17 +152,17 @@ export function TransportModule() {
   const totalOccupied = routes.reduce((s, r) => s + r.occupied, 0);
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage bus routes, vehicles, drivers, and student assignments.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Route</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Bus className="w-5 h-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Routes</p><p className="text-xl font-bold">{routes.length}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><Users className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Students</p><p className="text-xl font-bold">{totalOccupied}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-accent/10 p-2"><TrendingUp className="w-5 h-5 text-accent" /></div><div><p className="text-xs text-muted-foreground">Capacity</p><p className="text-xl font-bold">{totalCapacity}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-purple-500/10 p-2"><MapPin className="w-5 h-5 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Total Stops</p><p className="text-xl font-bold">{routes.reduce((s, r) => s + r.stops.length, 0)}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Bus className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Routes</p><p className="text-xl font-bold">{routes.length}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><Users className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Students</p><p className="text-xl font-bold">{totalOccupied}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><TrendingUp className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Capacity</p><p className="text-xl font-bold">{totalCapacity}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><MapPin className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Total Stops</p><p className="text-xl font-bold">{routes.reduce((s, r) => s + r.stops.length, 0)}</p></div></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,7 +173,7 @@ export function TransportModule() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center"><Bus className="w-5 h-5 text-primary" /></div>
+                    <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center"><Bus className="w-4 h-4 text-primary" /></div>
                     <div><p className="font-bold text-sm">{r.routeName}</p><p className="text-xs text-muted-foreground">{r.vehicleNo}</p></div>
                   </div>
                   <Badge variant="outline" className={cn("text-xs", pct >= 90 ? "bg-red-500/10 text-red-600" : "bg-emerald-500/10 text-emerald-600")}>{r.occupied}/{r.capacity}</Badge>
@@ -195,8 +195,8 @@ export function TransportModule() {
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Bus Route</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Bus Route</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Route Name *</Label><Input placeholder="Route F — Clifton" /></div>
             <div className="grid grid-cols-2 gap-3"><div><Label>Vehicle No.</Label><Input placeholder="KHI-XXXX" /></div><div><Label>Capacity</Label><Input type="number" defaultValue={25} /></div></div>
             <div className="grid grid-cols-2 gap-3"><div><Label>Driver Name</Label><Input /></div><div><Label>Driver Phone</Label><Input placeholder="+92 3xx" /></div></div>
@@ -219,17 +219,17 @@ export function HostelModule() {
   const availableBeds = totalCapacity - totalOccupied;
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage hostel rooms, bed allocation, and mess.</p>
         <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1.5" />Allocate Room</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Home className="w-5 h-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Rooms</p><p className="text-xl font-bold">{rooms.length}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-purple-500/10 p-2"><BedDouble className="w-5 h-5 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Total Beds</p><p className="text-xl font-bold">{totalCapacity}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><Users className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Occupied</p><p className="text-xl font-bold">{totalOccupied}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-accent/10 p-2"><BedDouble className="w-5 h-5 text-accent" /></div><div><p className="text-xs text-muted-foreground">Available</p><p className="text-xl font-bold">{availableBeds}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Home className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Rooms</p><p className="text-xl font-bold">{rooms.length}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><BedDouble className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Total Beds</p><p className="text-xl font-bold">{totalCapacity}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><Users className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Occupied</p><p className="text-xl font-bold">{totalOccupied}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><BedDouble className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Available</p><p className="text-xl font-bold">{availableBeds}</p></div></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -287,17 +287,17 @@ export function InventoryModule() {
   const needsRepair = items.filter(i => i.condition === "Needs Repair" || i.condition === "Damaged").length;
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage furniture, electronics, lab equipment, and supplies.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Item</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-primary/10 p-2"><Package className="w-5 h-5 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Items</p><p className="text-xl font-bold">{items.length}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-red-500/10 p-2"><AlertCircle className="w-5 h-5 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Low Stock</p><p className="text-xl font-bold">{lowStock}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-yellow-500/10 p-2"><Wrench className="w-5 h-5 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Needs Repair</p><p className="text-xl font-bold">{needsRepair}</p></div></CardContent></Card>
-        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-4 flex items-center gap-3"><div className="rounded-lg bg-emerald-500/10 p-2"><TrendingUp className="w-5 h-5 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Categories</p><p className="text-xl font-bold">{new Set(items.map(i => i.category)).size}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Package className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Items</p><p className="text-xl font-bold">{items.length}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><AlertCircle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Low Stock</p><p className="text-xl font-bold">{lowStock}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-yellow-500/10 p-1.5"><Wrench className="w-4 h-4 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Needs Repair</p><p className="text-xl font-bold">{needsRepair}</p></div></CardContent></Card>
+        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><TrendingUp className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Categories</p><p className="text-xl font-bold">{new Set(items.map(i => i.category)).size}</p></div></CardContent></Card>
       </div>
 
       <Card className="border-0 shadow-sm glass-card overflow-hidden">
@@ -328,8 +328,8 @@ export function InventoryModule() {
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Inventory Item</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Inventory Item</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Item Name *</Label><Input placeholder="e.g., Lab Beakers" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Category</Label><Select defaultValue="Furniture"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Furniture", "Electronics", "Lab Equipment", "Stationery", "Sports", "Medical", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
@@ -361,7 +361,7 @@ export function EventsModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">School events, holidays, exams, PTMs, and important dates.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Event</Button>
@@ -413,8 +413,8 @@ export function EventsModule() {
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5 text-primary" />Add Event</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Event</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
             <div><Label>Event Title *</Label><Input placeholder="e.g., Science Exhibition" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Type</Label><Select defaultValue="Meeting"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Exam", "Holiday", "PTM", "Sports", "Cultural", "Meeting", "Deadline"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>

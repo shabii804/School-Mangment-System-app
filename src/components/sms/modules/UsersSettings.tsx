@@ -39,7 +39,7 @@ export function UsersModule() {
   const { toast } = useToast();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">Role-based user accounts with permission control.</p>
         <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><UserPlus className="w-4 h-4 mr-1.5" />Add User</Button>
@@ -53,7 +53,7 @@ export function UsersModule() {
           { role: "Teacher", count: USERS.filter(u => u.role === "Teacher").length, color: "bg-purple-500/10 text-purple-600", desc: "Attendance and results only" },
         ].map(r => (
           <Card key={r.role} className="border-0 shadow-sm glass-card">
-            <CardContent className="p-4 flex items-center gap-3">
+            <CardContent className="p-3 flex items-center gap-2">
               <div className={cn("rounded-xl p-3", r.color)}><Shield className="w-5 h-5" /></div>
               <div>
                 <p className="font-bold text-2xl">{r.count}</p>
@@ -111,7 +111,7 @@ export function UsersModule() {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Add New User</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+          <div className="space-y-2 py-1">
             <div><Label>Full Name</Label><Input placeholder="e.g., Mr. Ali Khan" /></div>
             <div><Label>Username</Label><Input placeholder="e.g., ali.khan" /></div>
             <div><Label>Email</Label><Input type="email" placeholder="user@greenwood.edu" /></div>
@@ -183,7 +183,7 @@ export function SettingsModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <Tabs defaultValue="school">
         <TabsList className="grid w-full max-w-2xl grid-cols-7">
           <TabsTrigger value="school">School</TabsTrigger>
@@ -391,7 +391,7 @@ export function SettingsModule() {
         <TabsContent value="fines">
           <Card className="border-0 shadow-sm glass-card">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" />Attendance Fine Rules</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Late Arrival Fine (Rs.)</Label>
@@ -470,7 +470,7 @@ export function SettingsModule() {
         <TabsContent value="backup">
           <Card className="border-0 shadow-sm glass-card">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><Database className="w-4 h-4 text-primary" />Backup & Restore</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-lg border border-border/40 p-4">
                 <div>
                   <p className="font-medium text-sm">Automatic Daily Backup</p>
@@ -518,10 +518,10 @@ export function SettingsModule() {
         <TabsContent value="theme">
           <Card className="border-0 shadow-sm glass-card">
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><Palette className="w-4 h-4 text-primary" />Appearance</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-lg border border-border/40 p-4">
                 <div className="flex items-center gap-3">
-                  {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-accent" />}
+                  {isDark ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-accent" />}
                   <div>
                     <p className="font-medium text-sm">{isDark ? "Dark Theme" : "Light Theme"}</p>
                     <p className="text-xs text-muted-foreground">Toggle between light and dark mode</p>

@@ -26,11 +26,11 @@ export function KpiCard({ title, value, subtitle, icon: Icon, trend, variant = "
   const styles = variantStyles[variant];
   return (
     <Card className="kpi-card relative overflow-hidden border-0 shadow-sm glass-card">
-      <CardContent className="p-5">
+      <CardContent className="p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
-            <p className="text-2xl font-bold mt-2 text-foreground tabular-nums">{value}</p>
+            <p className="text-xl font-bold mt-1 text-foreground tabular-nums">{value}</p>
             {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
             {trend && (
               <div className={cn("flex items-center gap-1 mt-2 text-xs font-medium", trend.up ? "text-emerald-600" : "text-red-500")}>
@@ -39,8 +39,8 @@ export function KpiCard({ title, value, subtitle, icon: Icon, trend, variant = "
               </div>
             )}
           </div>
-          <div className={cn("rounded-xl p-2.5 ring-1", styles.bg, styles.fg, styles.ring)}>
-            <Icon className="w-5 h-5" />
+          <div className={cn("rounded-lg p-2 ring-1", styles.bg, styles.fg, styles.ring)}>
+            <Icon className="w-4 h-4" />
           </div>
         </div>
       </CardContent>

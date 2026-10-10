@@ -33,7 +33,7 @@ const STATUS_STYLES: Record<AttStatus, string> = {
 export function AttendanceModule() {
   const [tab, setTab] = useState("students");
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="students">Students</TabsTrigger>
@@ -83,7 +83,7 @@ function StudentAttendance() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Select value={classFilter} onValueChange={setClassFilter}>
@@ -176,7 +176,7 @@ function StaffAttendance({ group }: { group: "teachers" | "staff" }) {
   const [statuses, setStatuses] = useState<Record<string, AttStatus>>({});
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Card className="border-0 shadow-sm glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <Table>

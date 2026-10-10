@@ -59,7 +59,7 @@ export function ResultsModule() {
   }).sort((a, b) => b.pct - a.pct);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={selectedExam} onValueChange={setSelectedExam}>
@@ -186,7 +186,7 @@ export function ResultsModule() {
       <Dialog open={marksDialog} onOpenChange={setMarksDialog}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><FileText className="w-5 h-5 text-primary" />Enter Marks — {selectedClass} • {EXAMS.find(e => e.id === selectedExam)?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><FileText className="w-4 h-4 text-primary" />Enter Marks — {selectedClass} • {EXAMS.find(e => e.id === selectedExam)?.name}</DialogTitle>
           </DialogHeader>
           <div className="max-h-96 overflow-y-auto -mx-6 px-6">
             <Table>
@@ -281,7 +281,7 @@ export function CertificatesModule() {
   };
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       <p className="text-sm text-muted-foreground">Generate official school certificates with auto-filled data, school letterhead, and QR-ready PDF output.</p>
 
       {/* Recipient type toggle */}
@@ -377,7 +377,7 @@ export function CertificatesModule() {
         <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-primary" />
+              <Award className="w-4 h-4 text-primary" />
               {selectedCert?.type}
               {selectedCert?.category === "award" && (
                 <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-0 ml-2">AWARD</Badge>
@@ -426,7 +426,7 @@ export function CertificatesModule() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={school.logo} alt="logo" className="w-full h-full object-cover" />
                       ) : (
-                        <GraduationCap className="w-5 h-5 text-primary-foreground" />
+                        <GraduationCap className="w-4 h-4 text-primary-foreground" />
                       )}
                     </div>
                     <div>

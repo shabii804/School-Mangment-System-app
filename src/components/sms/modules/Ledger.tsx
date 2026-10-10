@@ -94,7 +94,7 @@ export function LedgerModule() {
   const expenseCategories = ["Salary", "Utilities", "Maintenance", "Stationery", "Transport", "Rent", "Marketing", "Other Expense"];
 
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-3 fade-in">
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border-0 shadow-sm glass-card card-hover">
@@ -244,9 +244,9 @@ export function LedgerModule() {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-primary" />Add Transaction</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Add Transaction</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
+          <div className="space-y-2 py-1">
             {/* Type toggle */}
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => setForm({...form, type: "Income", category: incomeCategories[0]})} className={cn("flex items-center gap-2 p-3 rounded-lg border-2 transition-all",

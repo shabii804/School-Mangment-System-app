@@ -71,11 +71,11 @@ export function Topbar() {
 
   return (
     <header className="shrink-0 z-30 glass-card border-b border-border/40">
-      <div className="px-4 md:px-6 py-3 flex items-center gap-2 md:gap-4">
+      <div className="px-4 md:px-5 py-2 flex items-center gap-2 md:gap-3">
         {/* Title block */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-bold text-foreground leading-tight">{meta.title}</h2>
-          <p className="text-xs text-muted-foreground truncate">{meta.subtitle} • {today}</p>
+          <h2 className="text-base font-bold text-foreground leading-tight">{meta.title}</h2>
+          <p className="text-[11px] text-muted-foreground truncate">{meta.subtitle} • {today}</p>
         </div>
 
         {/* Session Switcher */}
