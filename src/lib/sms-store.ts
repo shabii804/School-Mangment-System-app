@@ -125,6 +125,14 @@ interface AppState {
   isDark: boolean;
   toggleTheme: () => void;
 
+  // ─── Database sync state ───
+  syncStatus: "idle" | "syncing" | "online" | "offline" | "error";
+  lastSyncAt: string | null;
+  dbStats: { size: number; collections: number; lastSync: string | null } | null;
+  setSyncStatus: (s: AppState["syncStatus"]) => void;
+  syncToDatabase: () => Promise<boolean>;
+  loadFromDatabase: () => Promise<boolean>;
+
   // Search
   searchQuery: string;
   setSearchQuery: (q: string) => void;
@@ -299,7 +307,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "7.0-ai-assistant";
+  const CURRENT_VERSION = "8.0-sqlite";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -385,6 +393,92 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   isDark: false,
   toggleTheme: () => set((s) => ({ isDark: !s.isDark })),
+
+  // ─── Database sync ───
+  syncStatus: "idle",
+  lastSyncAt: null,
+  dbStats: null,
+  setSyncStatus: (s) => set({ syncStatus: s }),
+  syncToDatabase: async () => {
+    set({ syncStatus: "syncing" });
+    try {
+      const state = get();
+      const stateToSave = {
+        students: state.students,
+        teachers: state.teachers,
+        staff: state.staff,
+        feeCollections: state.feeCollections,
+        activities: state.activities,
+        documents: state.documents,
+        commLogs: state.commLogs,
+        transactions: state.transactions,
+        classes: state.classes,
+        subjects: state.subjects,
+        moduleData: state.moduleData,
+        attendanceRecords: state.attendanceRecords,
+        school: state.school,
+        feeStructure: state.feeStructure,
+        enabledModules: state.enabledModules,
+      };
+      const res = await fetch("/api/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: stateToSave }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        set({ syncStatus: "online", lastSyncAt: new Date().toISOString(), dbStats: data.stats });
+        return true;
+      } else {
+        set({ syncStatus: "error" });
+        return false;
+      }
+    } catch (e) {
+      // Network error — we're offline, data is still in localStorage
+      set({ syncStatus: "offline" });
+      return false;
+    }
+  },
+  loadFromDatabase: async () => {
+    set({ syncStatus: "syncing" });
+    try {
+      const res = await fetch("/api/state", { method: "GET" });
+      const data = await res.json();
+      if (data.success && data.state) {
+        const s = data.state;
+        // Only update collections that exist in the database (don't overwrite with undefined)
+        const patch: Partial<AppState> = { syncStatus: "online", dbStats: data.stats, lastSyncAt: new Date().toISOString() };
+        if (s.students) patch.students = s.students;
+        if (s.teachers) patch.teachers = s.teachers;
+        if (s.staff) patch.staff = s.staff;
+        if (s.feeCollections) patch.feeCollections = s.feeCollections;
+        if (s.activities) patch.activities = s.activities;
+        if (s.documents) patch.documents = s.documents;
+        if (s.commLogs) patch.commLogs = s.commLogs;
+        if (s.transactions) patch.transactions = s.transactions;
+        if (s.classes) patch.classes = s.classes;
+        if (s.subjects) patch.subjects = s.subjects;
+        if (s.moduleData) patch.moduleData = s.moduleData;
+        if (s.attendanceRecords) patch.attendanceRecords = s.attendanceRecords;
+        if (s.school) patch.school = s.school;
+        if (s.feeStructure) patch.feeStructure = s.feeStructure;
+        if (s.enabledModules) patch.enabledModules = s.enabledModules;
+        set(patch);
+        // Also update localStorage as cache
+        if (typeof window !== "undefined") {
+          Object.entries(s).forEach(([key, value]) => {
+            try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(value)); } catch {}
+          });
+        }
+        return true;
+      }
+      set({ syncStatus: "offline" });
+      return false;
+    } catch (e) {
+      set({ syncStatus: "offline" });
+      return false;
+    }
+  },
 
   searchQuery: "",
   setSearchQuery: (q) => set({ searchQuery: q }),
@@ -542,8 +636,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
 }));
 
-// Auto-persist key collections to localStorage on every change
+// Auto-persist key collections to localStorage on every change (instant)
+// + debounce-sync to SQLite (source of truth)
+let sqliteSyncTimer: ReturnType<typeof setTimeout> | null = null;
 useAppStore.subscribe((state) => {
+  // 1. Instant localStorage save (offline cache)
   saveCollection("students", state.students);
   saveCollection("teachers", state.teachers);
   saveCollection("staff", state.staff);
@@ -556,4 +653,40 @@ useAppStore.subscribe((state) => {
   saveCollection("subjects", state.subjects);
   saveCollection("moduleData", state.moduleData);
   saveCollection("attendanceRecords", state.attendanceRecords);
+
+  // 2. Debounced SQLite sync (source of truth) — 2 second delay after last change
+  if (sqliteSyncTimer) clearTimeout(sqliteSyncTimer);
+  sqliteSyncTimer = setTimeout(async () => {
+    try {
+      const stateToSave = {
+        students: state.students,
+        teachers: state.teachers,
+        staff: state.staff,
+        feeCollections: state.feeCollections,
+        activities: state.activities,
+        documents: state.documents,
+        commLogs: state.commLogs,
+        transactions: state.transactions,
+        classes: state.classes,
+        subjects: state.subjects,
+        moduleData: state.moduleData,
+        attendanceRecords: state.attendanceRecords,
+        school: state.school,
+        feeStructure: state.feeStructure,
+        enabledModules: state.enabledModules,
+      };
+      const res = await fetch("/api/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: stateToSave }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        useAppStore.setState({ syncStatus: "online", lastSyncAt: new Date().toISOString(), dbStats: data.stats });
+      }
+    } catch (e) {
+      // Offline — data is safe in localStorage, will sync when back online
+      useAppStore.setState({ syncStatus: "offline" });
+    }
+  }, 2000);
 });

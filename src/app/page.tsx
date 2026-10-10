@@ -24,7 +24,7 @@ import { AIAssistantModule } from "@/components/sms/modules/AIAssistant";
 import { Settings, Power } from "lucide-react";
 
 export default function Home() {
-  const { activeModule, isDark, setCommandOpen, enabledModules, setActiveModule } = useAppStore();
+  const { activeModule, isDark, setCommandOpen, enabledModules, setActiveModule, syncStatus, lastSyncAt, loadFromDatabase, dbStats } = useAppStore();
 
   // Apply dark class to <html>
   useEffect(() => {
@@ -32,6 +32,36 @@ export default function Home() {
       document.documentElement.classList.toggle("dark", isDark);
     }
   }, [isDark]);
+
+  // ─── On first mount: load from SQLite (source of truth) ───
+  // Falls back to localStorage cache if SQLite is unavailable (offline mode)
+  useEffect(() => {
+    loadFromDatabase().then((ok) => {
+      if (ok) {
+        console.log("[Sync] Loaded from SQLite — data is fresh");
+      } else {
+        console.log("[Sync] Using localStorage cache (offline mode)");
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Listen for online/offline events ───
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("[Sync] Back online — syncing to SQLite");
+      loadFromDatabase();
+    };
+    const handleOffline = () => {
+      useAppStore.setState({ syncStatus: "offline" });
+      console.log("[Sync] Went offline — using localStorage cache");
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   // Global keyboard shortcut: Ctrl/Cmd+K opens command palette
   useEffect(() => {

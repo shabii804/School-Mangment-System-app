@@ -740,18 +740,42 @@ export function SettingsModule() {
                 <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-16 flex-col" onClick={() => toast({ title: "Backup Created", description: `backup-${new Date().toISOString().split("T")[0]}.db` })}>
+                <Button variant="outline" className="h-16 flex-col" onClick={async () => {
+                  // Download a JSON backup of all data from SQLite
+                  try {
+                    const res = await fetch("/api/state");
+                    const data = await res.json();
+                    if (data.success) {
+                      const blob = new Blob([JSON.stringify(data.state, null, 2)], { type: "application/json" });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = `school-backup-${new Date().toISOString().split("T")[0]}.json`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                      toast({ title: "Backup Downloaded ✓", description: "All data saved to your downloads folder." });
+                    } else {
+                      toast({ title: "Backup failed", description: "Could not read from database.", variant: "destructive" });
+                    }
+                  } catch (e) {
+                    toast({ title: "Backup failed", description: "Server error. Try again.", variant: "destructive" });
+                  }
+                }}>
                   <Download className="w-5 h-5 mb-1" />
-                  <span>Backup Now</span>
+                  <span>Backup Now (JSON)</span>
                 </Button>
-                <Button variant="outline" className="h-16 flex-col" onClick={() => toast({ title: "Restore dialog", description: "Select a .db backup file to restore." })}>
+                <Button variant="outline" className="h-16 flex-col" onClick={() => toast({ title: "Restore from file", description: "Upload a .json backup file to restore. (Coming soon — use Danger Zone reset for now.)" })}>
                   <Upload className="w-5 h-5 mb-1" />
                   <span>Restore from File</span>
                 </Button>
               </div>
-              <div className="rounded-lg bg-muted/30 p-3 text-xs">
-                <p className="font-medium">Last Backup:</p>
-                <p className="text-muted-foreground mt-0.5">No backups yet — click "Backup Now" to create one.</p>
+              <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3 text-xs">
+                <p className="font-medium text-emerald-700 flex items-center gap-1.5">
+                  <Database className="w-3.5 h-3.5" /> SQLite Database Active
+                </p>
+                <p className="text-muted-foreground mt-1">Your data is automatically saved to a local SQLite database file (school.db). This file persists across server restarts and is the source of truth. The download above creates a portable JSON backup you can keep anywhere.</p>
               </div>
               <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
                 <p className="text-xs font-semibold text-red-600 mb-2">⚠️ Danger Zone</p>
@@ -760,11 +784,17 @@ export function SettingsModule() {
                   variant="outline"
                   size="sm"
                   className="text-red-600 border-red-500/30 hover:bg-red-500/10 h-7 text-xs"
-                  onClick={() => {
-                    ["students", "teachers", "staff", "feeCollections", "activities", "documents", "commLogs", "transactions"].forEach(k => {
+                  onClick={async () => {
+                    if (!window.confirm("Are you sure? This will permanently delete ALL data from both localStorage AND the SQLite database. This cannot be undone.")) return;
+                    // Clear localStorage
+                    ["students", "teachers", "staff", "feeCollections", "activities", "documents", "commLogs", "transactions", "classes", "subjects", "moduleData", "attendanceRecords"].forEach(k => {
                       try { window.localStorage.removeItem(`edudesk_${k}`); } catch {}
                     });
-                    toast({ title: "Data Reset ✓", description: "All data cleared. Reloading with demo data...", variant: "destructive" });
+                    // Clear SQLite database
+                    try {
+                      await fetch("/api/state", { method: "DELETE" });
+                    } catch {}
+                    toast({ title: "Data Reset ✓", description: "All data cleared from localStorage + SQLite. Reloading...", variant: "destructive" });
                     setTimeout(() => window.location.reload(), 1500);
                   }}
                 >

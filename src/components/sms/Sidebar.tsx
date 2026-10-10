@@ -60,7 +60,7 @@ const GROUP_LABELS: Record<NavItem["group"], string> = {
 };
 
 export function Sidebar() {
-  const { activeModule, setActiveModule, role, school, enabledModules } = useAppStore();
+  const { activeModule, setActiveModule, role, school, enabledModules, syncStatus, dbStats, lastSyncAt } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -164,18 +164,47 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer status */}
+      {/* Footer status — SQLite sync indicator */}
       <div className="px-3 py-2 border-t border-white/10 mt-auto">
         {!collapsed ? (
-          <div className="flex items-center gap-2 text-[11px]">
-            <div className="relative">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[11px]">
+              <div className="relative">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  syncStatus === "online" ? "bg-emerald-400" :
+                  syncStatus === "syncing" ? "bg-yellow-400 animate-pulse" :
+                  syncStatus === "offline" ? "bg-amber-500" :
+                  syncStatus === "error" ? "bg-red-500" :
+                  "bg-muted-foreground"
+                )} />
+                {syncStatus === "online" && (
+                  <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                )}
+              </div>
+              <span className="text-white/70 font-medium">
+                {syncStatus === "online" ? "Database Synced" :
+                 syncStatus === "syncing" ? "Syncing..." :
+                 syncStatus === "offline" ? "Offline Mode" :
+                 syncStatus === "error" ? "Sync Error" :
+                 "Connecting..."}
+              </span>
             </div>
-            <span className="text-white/70 font-medium">Online • Offline-ready</span>
+            {dbStats && dbStats.collections > 0 && (
+              <div className="text-[9px] text-white/40 leading-tight pl-4">
+                {dbStats.collections} collections • {(dbStats.size / 1024).toFixed(1)}KB
+                {lastSyncAt && <div>Last: {new Date(lastSyncAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>}
+              </div>
+            )}
           </div>
         ) : (
-          <div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto" />
+          <div className={cn(
+            "w-2 h-2 rounded-full mx-auto",
+            syncStatus === "online" ? "bg-emerald-400" :
+            syncStatus === "syncing" ? "bg-yellow-400 animate-pulse" :
+            syncStatus === "offline" ? "bg-amber-500" :
+            "bg-muted-foreground"
+          )} />
         )}
       </div>
     </aside>
