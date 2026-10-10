@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore, type Role } from "@/lib/sms-store";
-import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check, Calendar, Plus } from "lucide-react";
+import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check, Calendar, Plus, LogOut, Database, Settings as SettingsIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const ROLE_LABELS: Record<Role, { label: string; color: string }> = {
   admin: { label: "Admin", color: "bg-primary/15 text-primary" },
@@ -59,12 +60,13 @@ const NOTIF_COLORS: Record<string, string> = {
 
 export function Topbar() {
   const {
-    role, setRole, userName, activeModule, isDark, toggleTheme,
+    role, setRole, userName, activeModule, setActiveModule, isDark, toggleTheme,
     setCommandOpen, notifications, markNotificationRead, markAllNotificationsRead, unreadCount,
     school,
   } = useAppStore();
 
   const roleInfo = ROLE_LABELS[role];
+  const { toast } = useToast();
   const meta = MODULE_TITLES[activeModule] || { title: "Dashboard", subtitle: "" };
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const unread = unreadCount();
@@ -118,7 +120,7 @@ export function Topbar() {
               <Badge variant="outline" className="text-[9px] bg-muted text-muted-foreground border-0">Archive</Badge>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-primary">
+            <DropdownMenuItem className="cursor-pointer text-primary" onClick={() => { setActiveModule("settings"); toast({ title: "Open Settings", description: "Configure a new academic session in School tab." }); }}>
               <Plus className="w-3.5 h-3.5" />
               <span className="text-sm">Start New Session...</span>
             </DropdownMenuItem>
@@ -165,7 +167,13 @@ export function Topbar() {
               {notifications.map(n => (
                 <button
                   key={n.id}
-                  onClick={() => markNotificationRead(n.id)}
+                  onClick={() => {
+                    markNotificationRead(n.id);
+                    if (n.action?.module) {
+                      setActiveModule(n.action.module);
+                      setNotifOpen(false);
+                    }
+                  }}
                   className={cn(
                     "w-full flex items-start gap-3 p-3 border-b border-border/30 hover:bg-muted/40 text-left transition-colors",
                     !n.read && "bg-primary/5"
@@ -218,8 +226,12 @@ export function Topbar() {
               <div className="w-2 h-2 rounded-full bg-purple-500" /> Teacher — Attendance & Results
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-muted-foreground text-xs">Backup database…</DropdownMenuItem>
-            <DropdownMenuItem className="text-muted-foreground text-xs">Sign out</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-muted-foreground text-xs" onClick={() => { setActiveModule("settings"); toast({ title: "Open Settings", description: "Backup & restore is in the Backup tab." }); }}>
+              <Database className="w-3.5 h-3.5" />Backup database…
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-muted-foreground text-xs" onClick={() => { toast({ title: "Signed out", description: "Session ended (demo mode — reload to sign back in)." }); }}>
+              <LogOut className="w-3.5 h-3.5" />Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

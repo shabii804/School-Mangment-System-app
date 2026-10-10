@@ -39,7 +39,7 @@ interface SalaryRow {
 export function SalaryModule() {
   const { toast } = useToast();
   const { school } = useAppStore();
-  const [month, setMonth] = useState("July 2026");
+  const [month, setMonth] = useState(new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" }));
   const [selected, setSelected] = useState<SalaryRow | null>(null);
   const [deptFilter, setDeptFilter] = useState("all");
 
@@ -107,9 +107,16 @@ export function SalaryModule() {
           <Select value={month} onValueChange={setMonth}>
             <SelectTrigger className="w-40 bg-background/60"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="July 2026">July 2026</SelectItem>
-            <SelectItem value="June 2026">June 2026</SelectItem>
-            <SelectItem value="May 2026">May 2026</SelectItem>
+            {(() => {
+              const now = new Date();
+              const months = [];
+              for (let i = 0; i < 12; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const label = d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+                months.push(<SelectItem key={label} value={label}>{label}</SelectItem>);
+              }
+              return months;
+            })()}
           </SelectContent>
           </Select>
           <Select value={deptFilter} onValueChange={setDeptFilter}>
@@ -130,7 +137,18 @@ export function SalaryModule() {
             <FileDown className="w-4 h-4 mr-1.5" />Payroll Summary PDF
           </Button>
           <Button size="sm" className="bg-primary hover:bg-primary/90"
-            onClick={() => toast({ title: "All Salary Slips Generated", description: `${filteredEmployees.length} slips for ${month}.` })}
+            onClick={() => {
+              if (filteredEmployees.length === 0) {
+                toast({ title: "No employees", description: "No employees match the current filter.", variant: "destructive" });
+                return;
+              }
+              try {
+                printPayrollBatch(filteredEmployees, month, school);
+                toast({ title: "Payroll Finalized ✓", description: `${filteredEmployees.length} salary slips for ${month} generated.` });
+              } catch (e) {
+                toast({ title: "Generation failed", description: "Could not generate payroll PDF.", variant: "destructive" });
+              }
+            }}
           >
             <Printer className="w-4 h-4 mr-1.5" />Finalize & Generate Slips
           </Button>
@@ -222,7 +240,7 @@ export function SalaryModule() {
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] opacity-80">Slip No.</p>
-                      <p className="text-xs font-mono">SLIP-202607-{selected.id.slice(-3)}</p>
+                      <p className="text-xs font-mono">SLIP-{month.replace(/[^a-zA-Z0-9]/g, "")}-{selected.id.slice(-4)}</p>
                     </div>
                   </div>
                 </div>
@@ -303,7 +321,7 @@ export function SalaryModule() {
             <Button className="bg-primary hover:bg-primary/90" onClick={() => {
               if (!selected) return;
               const calc = calculate(selected);
-              const slipNo = `SLIP-202607-${selected.id.slice(-3)}`;
+              const slipNo = `SLIP-${month.replace(/[^a-zA-Z0-9]/g, "")}-${String(Date.now()).slice(-6)}`;
               toast({ title: "Opening salary slip PDF...", description: slipNo });
               printSalarySlip(selected, month, calc, slipNo, school);
             }}>
@@ -318,6 +336,8 @@ export function SalaryModule() {
 
 function numberToWords(num: number): string {
   if (num === 0) return "Zero";
+  if (num < 0) return "Minus " + numberToWords(Math.abs(num));
+
   const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
   const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
   const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
@@ -336,10 +356,18 @@ function numberToWords(num: number): string {
     return s;
   }
 
-  const thousands = Math.floor(num / 1000);
-  const remainder = num % 1000;
+  // South Asian numbering: crore (10,000,000) → lakh (100,000) → thousand (1,000) → remainder
+  const crores = Math.floor(num / 10000000);
+  const afterCrore = num % 10000000;
+  const lakhs = Math.floor(afterCrore / 100000);
+  const afterLakh = afterCrore % 100000;
+  const thousands = Math.floor(afterLakh / 1000);
+  const remainder = afterLakh % 1000;
+
   let result = "";
-  if (thousands > 0) result += twoDigits(thousands) + " Thousand";
-  if (remainder > 0) result += (thousands > 0 ? " " : "") + threeDigits(remainder);
+  if (crores > 0) result += twoDigits(crores) + " Crore";
+  if (lakhs > 0) result += (result ? " " : "") + twoDigits(lakhs) + " Lakh";
+  if (thousands > 0) result += (result ? " " : "") + twoDigits(thousands) + " Thousand";
+  if (remainder > 0) result += (result ? " " : "") + threeDigits(remainder);
   return result.trim();
 }

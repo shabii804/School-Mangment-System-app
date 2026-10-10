@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -13,7 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { useAppStore } from "@/lib/sms-store";
-import { CLASSES, TEACHERS, STAFF } from "@/lib/sms-data";
+import { TEACHERS, STAFF } from "@/lib/sms-data";
 import {
   ClipboardCheck, Save, CheckCircle2, Clock, AlertCircle, Calendar,
 } from "lucide-react";
@@ -49,12 +50,16 @@ export function AttendanceModule() {
 }
 
 function StudentAttendance() {
-  const { students, markAttendance } = useAppStore();
+  const { students, saveAttendance, userName, classes: storeClasses } = useAppStore();
+  const CLASSES = storeClasses;
   const { toast } = useToast();
-  const [classFilter, setClassFilter] = useState("Grade 9");
+  const [classFilter, setClassFilter] = useState(students[0]?.class || "all");
   const [statuses, setStatuses] = useState<Record<string, AttStatus>>({});
+  const [attDate, setAttDate] = useState(new Date().toISOString().split("T")[0]);
 
-  const filtered = students.filter(s => s.class === classFilter && s.status === "Active");
+  const filtered = classFilter === "all"
+    ? students.filter(s => s.status === "Active")
+    : students.filter(s => s.class === classFilter && s.status === "Active");
 
   const setStatus = (id: string, status: AttStatus) => {
     setStatuses(prev => ({ ...prev, [id]: status }));
@@ -68,11 +73,27 @@ function StudentAttendance() {
 
   const save = () => {
     const marked = filtered.filter(s => statuses[s.id]);
-    markAttendance(marked.map(s => s.id), "Mixed");
+    if (marked.length === 0) {
+      toast({ title: "No students marked", description: "Mark attendance for at least one student first.", variant: "destructive" });
+      return;
+    }
+    // Build per-student attendance records
+    const records = marked.map(s => ({
+      id: `ATT-${s.id}-${attDate}`,
+      studentId: s.id,
+      date: attDate,
+      status: statuses[s.id],
+      markedBy: userName,
+      markedAt: new Date().toISOString(),
+    }));
+    saveAttendance(records);
+    const present = marked.filter(s => statuses[s.id] === "Present").length;
+    const absent = marked.filter(s => statuses[s.id] === "Absent").length;
     toast({
-      title: "Attendance Saved",
-      description: `${marked.length} students marked for ${classFilter}.`,
+      title: "Attendance Saved ✓",
+      description: `${marked.length} students marked for ${classFilter} on ${attDate}. Present: ${present}, Absent: ${absent}`,
     });
+    setStatuses({});
   };
 
   const counts = {
@@ -89,13 +110,17 @@ function StudentAttendance() {
           <Select value={classFilter} onValueChange={setClassFilter}>
             <SelectTrigger className="w-40 bg-background/60"><SelectValue /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All Classes</SelectItem>
               {CLASSES.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Badge variant="outline" className="text-xs">
-            <Calendar className="w-3 h-3 mr-1" />
-            {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-          </Badge>
+          <Input
+            type="date"
+            value={attDate}
+            onChange={e => setAttDate(e.target.value)}
+            className="w-36 h-9 bg-background/60"
+            aria-label="Attendance date"
+          />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={markAllPresent}>Mark All Present</Button>

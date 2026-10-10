@@ -111,10 +111,145 @@ export interface TimetableSlot {
 export interface Exam {
   id: string;
   name: string;
-  type: "Monthly" | "Mid-Term" | "Final";
+  type: "Monthly" | "Mid-Term" | "Final" | "Quiz";
   startDate: string;
   endDate: string;
   classes: string[];
+}
+
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+  isbn: string;
+  totalCopies: number;
+  availableCopies: number;
+  shelf: string;
+}
+
+export interface BookIssue {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  studentId: string;
+  issueDate: string;
+  dueDate: string;
+  status: "Issued" | "Returned" | "Overdue";
+}
+
+export interface BusRoute {
+  id: string;
+  routeName: string;
+  vehicleNo: string;
+  capacity: number;
+  occupied: number;
+  driverName: string;
+  driverPhone: string;
+  morningTime: string;
+  eveningTime: string;
+  stops: string[];
+}
+
+export interface HostelRoom {
+  id: string;
+  roomNo: string;
+  capacity: number;
+  occupied: number;
+  type: "Single" | "Double" | "Triple" | "Dorm";
+  floor: number;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  minStock: number;
+  location: string;
+  condition: "Good" | "Needs Repair" | "Damaged";
+}
+
+export interface SchoolEvent {
+  id: string;
+  title: string;
+  type: "Exam" | "Holiday" | "PTM" | "Sports" | "Cultural" | "Meeting" | "Deadline";
+  date: string;
+  description: string;
+  color: string;
+}
+
+export interface Incident {
+  id: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  date: string;
+  category: string;
+  description: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  action: string;
+  status: "Open" | "Escalated" | "Resolved";
+  reportedBy: string;
+  parentNotified: boolean;
+}
+
+export interface Alumnus {
+  id: string;
+  name: string;
+  graduationYear: string;
+  lastClass: string;
+  currentStatus: "Studying" | "Employed" | "Business" | "Unknown";
+  institution: string;
+  profession: string;
+  email: string;
+  phone: string;
+  donationAmount: number;
+}
+
+export interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: "Casual" | "Sick" | "Earned" | "Unpaid";
+  fromDate: string;
+  toDate: string;
+  days: number;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected";
+  appliedOn: string;
+}
+
+export interface LeaveBalance {
+  employeeId: string;
+  employeeName: string;
+  casual: { used: number; total: number; remaining: number };
+  sick: { used: number; total: number; remaining: number };
+  earned: { used: number; total: number; remaining: number };
+}
+
+export interface Concession {
+  id: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  type: string;
+  percentage: number;
+  fixedAmount: number;
+  reason: string;
+  validFrom: string;
+  validTo: string;
+  monthlySaving: number;
+  status: "Active" | "Expired" | "Revoked";
+}
+
+export interface AcademicSession {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: "Active" | "Archived";
 }
 
 export interface Activity {

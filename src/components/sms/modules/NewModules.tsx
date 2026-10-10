@@ -25,6 +25,7 @@ import {
   SCHOOL_EVENTS, type Book, type BookIssue, type BusRoute, type HostelRoom,
   type InventoryItem, type SchoolEvent,
 } from "@/lib/sms-data";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 // ═══════════════════════════════════════════════════════════════
@@ -36,10 +37,34 @@ export function LibraryModule() {
   const [books, setBooks] = useState<Book[]>(BOOKS);
   const [issues, setIssues] = useState<BookIssue[]>(BOOK_ISSUES);
   const [form, setForm] = useState({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" });
+  const [issueForm, setIssueForm] = useState({ bookId: "", studentId: "", issueDate: new Date().toISOString().split("T")[0], dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0] });
+  const { toast } = useToast();
 
   const totalBooks = books.reduce((s, b) => s + b.totalCopies, 0);
   const availableBooks = books.reduce((s, b) => s + b.availableCopies, 0);
   const overdueCount = issues.filter(i => i.status === "Overdue").length;
+
+  const handleIssue = () => {
+    if (!issueForm.bookId || !issueForm.studentId.trim()) {
+      toast({ title: "Missing info", description: "Please select a book and enter Student ID.", variant: "destructive" });
+      return;
+    }
+    const newIssue: BookIssue = {
+      id: `ISS-${String(Date.now()).slice(-6)}`,
+      bookId: issueForm.bookId,
+      bookTitle: books.find(b => b.id === issueForm.bookId)?.title || "Unknown",
+      studentId: issueForm.studentId,
+      issueDate: issueForm.issueDate,
+      dueDate: issueForm.dueDate,
+      status: "Issued",
+    };
+    setIssues([newIssue, ...issues]);
+    // Decrement available copies
+    setBooks(books.map(b => b.id === issueForm.bookId ? { ...b, availableCopies: Math.max(0, b.availableCopies - 1) } : b));
+    toast({ title: "Book Issued ✓", description: `${newIssue.bookTitle} issued to ${issueForm.studentId}.` });
+    setIssueOpen(false);
+    setIssueForm({ bookId: "", studentId: "", issueDate: new Date().toISOString().split("T")[0], dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0] });
+  };
 
   return (
     <div className="space-y-3 fade-in">
@@ -130,11 +155,11 @@ export function LibraryModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><BookMarked className="w-4 h-4 text-primary" />Issue Book</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Select Book</Label><Select defaultValue=""><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Student ID</Label><Input placeholder="SCH-2026-XXXX" /></div>
-            <div className="grid grid-cols-2 gap-3"><div><Label>Issue Date</Label><Input type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div><div><Label>Due Date (14 days)</Label><Input type="date" defaultValue={new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0]} /></div></div>
+            <div><Label>Select Book *</Label><Select value={issueForm.bookId} onValueChange={v => setIssueForm({...issueForm, bookId: v})}><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Student ID *</Label><Input value={issueForm.studentId} onChange={e => setIssueForm({...issueForm, studentId: e.target.value})} placeholder="SCH-2026-XXXX" /></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label>Issue Date</Label><Input type="date" value={issueForm.issueDate} onChange={e => setIssueForm({...issueForm, issueDate: e.target.value})} /></div><div><Label>Due Date (14 days)</Label><Input type="date" value={issueForm.dueDate} onChange={e => setIssueForm({...issueForm, dueDate: e.target.value})} /></div></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setIssueOpen(false)}>Issue Book</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleIssue} disabled={!issueForm.bookId || !issueForm.studentId.trim()}>Issue Book</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -232,15 +257,34 @@ export function TransportModule() {
 // ═══════════════════════════════════════════════════════════════
 export function HostelModule() {
   const [rooms, setRooms] = useState<HostelRoom[]>(HOSTEL_ROOMS);
+  const [allocOpen, setAllocOpen] = useState(false);
+  const [allocForm, setAllocForm] = useState({ roomId: "", studentId: "", studentName: "" });
+  const { toast } = useToast();
   const totalCapacity = rooms.reduce((s, r) => s + r.capacity, 0);
   const totalOccupied = rooms.reduce((s, r) => s + r.occupied, 0);
   const availableBeds = totalCapacity - totalOccupied;
+
+  const handleAllocate = () => {
+    if (!allocForm.roomId || !allocForm.studentId.trim()) {
+      toast({ title: "Missing info", description: "Please select a room and enter Student ID.", variant: "destructive" });
+      return;
+    }
+    const room = rooms.find(r => r.id === allocForm.roomId);
+    if (!room || room.occupied >= room.capacity) {
+      toast({ title: "Room full", description: "This room has no available beds.", variant: "destructive" });
+      return;
+    }
+    setRooms(rooms.map(r => r.id === allocForm.roomId ? { ...r, occupied: r.occupied + 1 } : r));
+    toast({ title: "Room Allocated ✓", description: `${allocForm.studentName || allocForm.studentId} assigned to ${room.roomNo}.` });
+    setAllocOpen(false);
+    setAllocForm({ roomId: "", studentId: "", studentName: "" });
+  };
 
   return (
     <div className="space-y-3 fade-in">
       <div className="flex justify-between items-center flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">Manage hostel rooms, bed allocation, and mess.</p>
-        <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1.5" />Allocate Room</Button>
+        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAllocOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Allocate Room</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -290,6 +334,19 @@ export function HostelModule() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Allocate Room Dialog */}
+      <Dialog open={allocOpen} onOpenChange={setAllocOpen}>
+        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><BedDouble className="w-4 h-4 text-primary" />Allocate Room</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-1">
+            <div><Label>Select Room *</Label><Select value={allocForm.roomId} onValueChange={v => setAllocForm({...allocForm, roomId: v})}><SelectTrigger><SelectValue placeholder="Choose room..." /></SelectTrigger><SelectContent>{rooms.filter(r => r.occupied < r.capacity).map(r => <SelectItem key={r.id} value={r.id}>{r.roomNo} ({r.capacity - r.occupied} beds free)</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Student ID *</Label><Input value={allocForm.studentId} onChange={e => setAllocForm({...allocForm, studentId: e.target.value})} placeholder="SCH-2026-XXXX" /></div>
+            <div><Label>Student Name</Label><Input value={allocForm.studentName} onChange={e => setAllocForm({...allocForm, studentName: e.target.value})} placeholder="Optional" /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setAllocOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAllocate} disabled={!allocForm.roomId || !allocForm.studentId.trim()}>Allocate</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

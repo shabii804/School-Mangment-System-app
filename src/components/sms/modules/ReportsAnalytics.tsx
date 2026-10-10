@@ -39,7 +39,7 @@ const REPORTS = [
   { id: 5, name: "Fee Collection Report", desc: "All fee collections with breakdown", icon: DollarSign, color: "bg-emerald-500/10 text-emerald-600", filters: "Date, Class, Mode" },
   { id: 6, name: "Fee Defaulter Report", desc: "Students with outstanding fees", icon: AlertTriangle, color: "bg-red-500/10 text-red-600", filters: "Month, Class" },
   { id: 7, name: "Salary Report", desc: "Monthly payroll summary", icon: Wallet, color: "bg-primary/10 text-primary", filters: "Month, Department" },
-  { id: 8, name: "Fine / Deduction Report", desc: "All salary deductions by type", icon: TrendingDown, color: "bg-orange-500/10 text-orange-700", filters: "Month, Type" },
+  { id: 8, name: "Fee Reminder Letters", desc: "Defaulters notification letters", icon: TrendingDown, color: "bg-orange-500/10 text-orange-700", filters: "Month" },
   { id: 9, name: "Result Report", desc: "Exam results with grades and positions", icon: BookOpen, color: "bg-blue-500/10 text-blue-700", filters: "Exam, Class" },
   { id: 10, name: "Monthly Summary", desc: "One-page KPI snapshot for principal", icon: CalendarDays, color: "bg-accent/10 text-accent", filters: "Month" },
 ];
@@ -55,6 +55,53 @@ export function ReportsModule() {
   const [resultClass, setResultClass] = useState("");
   const [resultStudent, setResultStudent] = useState("");
   const [resultExam, setResultExam] = useState("");
+
+  // Real CSV export — generates a downloadable .csv file
+  const exportReportCSV = (reportId: number, name: string) => {
+    let headers: string[] = [];
+    let rows: (string | number)[][] = [];
+    let filename = name.replace(/[^a-zA-Z0-9]/g, "_");
+
+    if (reportId === 1) {
+      // Student directory
+      headers = ["ID", "Name", "Class", "Section", "Roll No", "Father", "Phone", "Status"];
+      rows = students.map(s => [s.id, s.name, s.class, s.section, s.rollNo, s.fatherName, s.fatherPhone, s.status]);
+    } else if (reportId === 5) {
+      // Fee collection
+      headers = ["Receipt No", "Date", "Student", "Class", "Amount", "Mode", "Fee Type"];
+      rows = feeCollections.map(f => [f.receiptNo, f.date, f.studentName, f.class, f.amount, f.mode, f.feeType]);
+    } else if (reportId === 6) {
+      // Defaulters
+      const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
+      headers = ["ID", "Name", "Class", "Section", "Father", "Phone", "Outstanding"];
+      rows = defaulters.map(s => [s.id, s.name, s.class, s.section, s.fatherName, s.fatherPhone, s.outstandingAmount]);
+    } else if (reportId === 7) {
+      // Payroll
+      headers = ["ID", "Name", "Designation", "Monthly Salary"];
+      rows = [...TEACHERS, ...STAFF].map(e => [e.id, e.name, e.designation, e.monthlySalary]);
+    } else {
+      toast({ title: "CSV not available", description: `${name} does not support CSV export. Try PDF.`, variant: "destructive" });
+      return;
+    }
+
+    if (rows.length === 0) {
+      toast({ title: "No data to export", description: "There are no records for this report.", variant: "destructive" });
+      return;
+    }
+
+    // Build CSV content
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${filename}_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({ title: "CSV Exported ✓", description: `${rows.length} rows downloaded — opens in Excel` });
+  };
 
   const handlePrint = (reportId: number, name: string) => {
     // Reports with filters need the filter dialog
@@ -167,7 +214,7 @@ export function ReportsModule() {
                     {isCSV ? <FileDown className="w-3 h-3 mr-1" /> : <FileText className="w-3 h-3 mr-1" />}
                     {isCSV ? "CSV" : hasFilter ? "Filter & Print" : "PDF"}
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs" onClick={() => toast({ title: "Exporting to Excel...", description: r.name })}>
+                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs" onClick={() => exportReportCSV(r.id, r.name)}>
                     <FileDown className="w-3 h-3 mr-1" />Excel
                   </Button>
                 </div>
@@ -284,6 +331,32 @@ const PNL_DATA = [
 ];
 
 export function AnalyticsModule() {
+  const { students, teachers, staff, feeCollections, transactions } = useAppStore();
+  const { toast } = useToast();
+
+  // Compute real KPIs from store data
+  const totalStudents = students.length;
+  const activeStudents = students.filter(s => s.status === "Active").length;
+  const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
+  const collectionRate = totalStudents > 0 ? Math.round((1 - defaulters.length / totalStudents) * 100) : 0;
+  const totalCollected = feeCollections.reduce((s, f) => s + f.amount, 0);
+  const totalOutstanding = defaulters.reduce((s, d) => s + d.outstandingAmount, 0);
+
+  // Profit/loss from ledger transactions
+  const totalIncome = transactions.filter(t => t.type === "Income").reduce((s, t) => s + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.type === "Expense").reduce((s, t) => s + t.amount, 0);
+  const profitLoss = totalIncome - totalExpense;
+
+  // Avg class size
+  const classCounts: Record<string, number> = {};
+  students.forEach(s => { classCounts[s.class] = (classCounts[s.class] || 0) + 1; });
+  const classSizes = Object.values(classCounts);
+  const avgClassSize = classSizes.length > 0 ? (classSizes.reduce((s, n) => s + n, 0) / classSizes.length).toFixed(1) : "0.0";
+
+  // Total employees
+  const totalEmployees = teachers.length + staff.length;
+  const totalPayroll = [...teachers, ...staff].reduce((s, e) => s + e.monthlySalary, 0);
+
   return (
     <div className="space-y-3">
       {/* Hero stats */}
@@ -292,12 +365,13 @@ export function AnalyticsModule() {
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4 text-primary" />
             <p className="font-semibold">School Performance Analytics</p>
+            <Badge variant="outline" className="text-[9px] ml-auto bg-primary/10 text-primary border-0">Live data</Badge>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div><p className="text-xs text-muted-foreground">Avg Daily Attendance</p><p className="text-2xl font-bold text-primary">94.2%</p></div>
-            <div><p className="text-xs text-muted-foreground">Fee Collection Rate</p><p className="text-2xl font-bold text-emerald-600">87%</p></div>
-            <div><p className="text-xs text-muted-foreground">Avg Class Size</p><p className="text-2xl font-bold">28.5</p></div>
-            <div><p className="text-xs text-muted-foreground">Monthly Profit/Loss</p><p className="text-2xl font-bold text-red-600">-Rs. 105K</p></div>
+            <div><p className="text-xs text-muted-foreground">Active Students</p><p className="text-2xl font-bold text-primary">{activeStudents}</p></div>
+            <div><p className="text-xs text-muted-foreground">Fee Collection Rate</p><p className="text-2xl font-bold text-emerald-600">{collectionRate}%</p></div>
+            <div><p className="text-xs text-muted-foreground">Avg Class Size</p><p className="text-2xl font-bold">{avgClassSize}</p></div>
+            <div><p className="text-xs text-muted-foreground">Net Profit / Loss</p><p className={cn("text-2xl font-bold", profitLoss >= 0 ? "text-emerald-600" : "text-red-600")}>{profitLoss >= 0 ? "+" : "-"}Rs. {Math.abs(profitLoss).toLocaleString()}</p></div>
           </div>
         </CardContent>
       </Card>

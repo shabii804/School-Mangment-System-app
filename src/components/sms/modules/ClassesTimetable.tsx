@@ -19,10 +19,12 @@ import {
 } from "lucide-react";
 import { TIMETABLE } from "@/lib/sms-data";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import { printTimetablePDF } from "@/lib/pdf-service";
 
 export function ClassesModule() {
-  const { students, teachers, classes: storeClasses, addClass: addClassAction, subjects: storeSubjects } = useAppStore();
+  const { students, teachers, classes: storeClasses, addClass: addClassAction, updateClass, subjects: storeSubjects } = useAppStore();
+  const { toast } = useToast();
   const CLASSES = storeClasses;
   const SUBJECTS = storeSubjects;
   const [addOpen, setAddOpen] = useState(false);
@@ -224,6 +226,7 @@ export function ClassesModule() {
                       sections: newClass.sections.split(",").map(s => s.trim()).filter(Boolean),
                       monthlyFee: newClass.monthlyFee,
                     });
+                    toast({ title: "Class Added ✓", description: `${newClass.name} created with monthly fee Rs. ${newClass.monthlyFee.toLocaleString()}.` });
                     setAddOpen(false);
                     setNewClass({ name: "", sections: "A,B", monthlyFee: 2000 });
                   }
@@ -292,13 +295,12 @@ export function ClassesModule() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignTeacher(null)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => {
+            <Button className="bg-primary hover:bg-primary/90" disabled={!assignTeacher?.teacherId} onClick={() => {
               if (assignTeacher && assignTeacher.teacherId) {
                 const teacher = teachers.find(t => t.id === assignTeacher.teacherId);
                 if (teacher) {
-                  // Update class teacher via store would need updateClass action
-                  // For now just close — the assignment is visible in the UI
-                  setAssignTeacher(null);
+                  updateClass(assignTeacher.className, { classTeacher: teacher.name });
+                  toast({ title: "Class Teacher Assigned ✓", description: `${teacher.name} assigned to ${assignTeacher.className}-${assignTeacher.section}.` });
                   setAssignTeacher(null);
                 }
               }
@@ -392,9 +394,13 @@ const PERIOD_TIMES = [
 ];
 
 export function TimetableModule() {
-  const { school } = useAppStore();
-  const [selectedClass, setSelectedClass] = useState("Grade 9-A");
-  const slots = TIMETABLE["Grade 9-A"] || [];
+  const { school, classes: storeClasses } = useAppStore();
+  const CLASSES = storeClasses;
+  const classOptions = CLASSES.length > 0
+    ? CLASSES.flatMap(c => (c.sections.length > 0 ? c.sections : ["A"]).map(s => `${c.name}-${s}`))
+    : ["Grade 9-A"];
+  const [selectedClass, setSelectedClass] = useState(classOptions[0]);
+  const slots = TIMETABLE[selectedClass] || [];
 
   const getSlot = (day: string, period: number) => slots.find(s => s.day === day && s.period === period);
 
@@ -406,9 +412,7 @@ export function TimetableModule() {
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-40 bg-background/60"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="Grade 9-A">Grade 9-A</SelectItem>
-              <SelectItem value="Grade 10-A">Grade 10-A</SelectItem>
-              <SelectItem value="Grade 8-A">Grade 8-A</SelectItem>
+              {classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

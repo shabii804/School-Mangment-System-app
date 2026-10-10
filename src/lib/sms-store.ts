@@ -106,6 +106,7 @@ interface AppState {
   classes: { name: string; sections: string[]; monthlyFee: number; classTeacher?: string }[];
   subjects: string[];
   addClass: (cls: { name: string; sections: string[]; monthlyFee: number }) => void;
+  updateClass: (name: string, patch: Partial<{ sections: string[]; monthlyFee: number; classTeacher: string }>) => void;
   deleteClass: (name: string) => void;
   addSubject: (subject: string) => void;
   deleteSubject: (subject: string) => void;
@@ -167,6 +168,29 @@ interface AppState {
   // Transactions (income/expense ledger)
   addTransaction: (t: Transaction) => void;
   deleteTransaction: (id: string) => void;
+
+  // === Generic module data store ===
+  // For entities that don't have dedicated typed collections (exams, leave, concessions, incidents, alumni, books, routes, inventory, events, hostel rooms).
+  // Each collection is keyed by name and persisted to localStorage.
+  moduleData: Record<string, any[]>;
+  addModuleItem: (collection: string, item: any) => void;
+  updateModuleItem: (collection: string, id: string, patch: any) => void;
+  deleteModuleItem: (collection: string, id: string) => void;
+  setModuleData: (collection: string, items: any[]) => void;
+
+  // Attendance records (per-student, per-day)
+  attendanceRecords: AttendanceRecord[];
+  saveAttendance: (records: AttendanceRecord[]) => void;
+}
+
+// Attendance record — one per student per day
+export interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  date: string; // ISO date YYYY-MM-DD
+  status: "Present" | "Absent" | "Late" | "Leave";
+  markedBy: string;
+  markedAt: string;
 }
 
 const ROLE_NAMES: Record<Role, string> = {
@@ -348,6 +372,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   classes: loadCollection("classes", []),
   subjects: loadCollection("subjects", []),
   addClass: (cls) => set((state) => ({ classes: [...state.classes, cls] })),
+  updateClass: (name, patch) => set((state) => ({ classes: state.classes.map(c => c.name === name ? { ...c, ...patch } : c) })),
   deleteClass: (name) => set((state) => ({ classes: state.classes.filter(c => c.name !== name) })),
   addSubject: (subject) => set((state) => ({ subjects: [...state.subjects, subject] })),
   deleteSubject: (subject) => set((state) => ({ subjects: state.subjects.filter(s => s !== subject) })),
@@ -477,6 +502,44 @@ export const useAppStore = create<AppState>((set, get) => ({
   transactions: [],
   addTransaction: (t) => set((state) => ({ transactions: [t, ...state.transactions] })),
   deleteTransaction: (id) => set((state) => ({ transactions: state.transactions.filter(t => t.id !== id) })),
+
+  // === Generic module data store ===
+  moduleData: loadCollection("moduleData", {}),
+  addModuleItem: (collection, item) => set((state) => {
+    const current = state.moduleData[collection] || [];
+    const next = { ...state.moduleData, [collection]: [item, ...current] };
+    saveCollection("moduleData", next);
+    return { moduleData: next };
+  }),
+  updateModuleItem: (collection, id, patch) => set((state) => {
+    const current = state.moduleData[collection] || [];
+    const next = { ...state.moduleData, [collection]: current.map((it: any) => it.id === id ? { ...it, ...patch } : it) };
+    saveCollection("moduleData", next);
+    return { moduleData: next };
+  }),
+  deleteModuleItem: (collection, id) => set((state) => {
+    const current = state.moduleData[collection] || [];
+    const next = { ...state.moduleData, [collection]: current.filter((it: any) => it.id !== id) };
+    saveCollection("moduleData", next);
+    return { moduleData: next };
+  }),
+  setModuleData: (collection, items) => set((state) => {
+    const next = { ...state.moduleData, [collection]: items };
+    saveCollection("moduleData", next);
+    return { moduleData: next };
+  }),
+
+  // Attendance records (per-student, per-day)
+  attendanceRecords: loadCollection("attendanceRecords", []),
+  saveAttendance: (records) => set((state) => {
+    // Merge: replace any existing record with same studentId+date
+    const existing = state.attendanceRecords.filter(r =>
+      !records.some(nr => nr.studentId === r.studentId && nr.date === r.date)
+    );
+    const next = [...records, ...existing];
+    saveCollection("attendanceRecords", next);
+    return { attendanceRecords: next };
+  }),
 }));
 
 // Auto-persist key collections to localStorage on every change

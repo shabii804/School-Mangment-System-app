@@ -22,6 +22,7 @@ import {
   Calendar, User, Zap,
 } from "lucide-react";
 import { INCIDENTS, ALUMNI, type Incident, type Alumnus } from "@/lib/sms-data";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 // ═══════════════════════════════════════════════════════════════
@@ -165,6 +166,8 @@ export function AlumniModule() {
   const [alumni, setAlumni] = useState<Alumnus[]>(ALUMNI);
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
+  const [form, setForm] = useState({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying" as Alumnus["currentStatus"], institution: "", profession: "", email: "", phone: "", donationAmount: 0 });
+  const { toast } = useToast();
 
   const years = Array.from(new Set(alumni.map(a => a.graduationYear))).sort((a, b) => b.localeCompare(a));
   const filtered = alumni
@@ -174,6 +177,29 @@ export function AlumniModule() {
   const totalDonations = alumni.reduce((s, a) => s + a.donationAmount, 0);
   const employedCount = alumni.filter(a => a.currentStatus === "Employed").length;
   const studyingCount = alumni.filter(a => a.currentStatus === "Studying").length;
+
+  const handleAdd = () => {
+    if (!form.name.trim()) {
+      toast({ title: "Name required", description: "Please enter the alumnus name.", variant: "destructive" });
+      return;
+    }
+    const newAlumnus: Alumnus = {
+      id: `ALU-${String(Date.now()).slice(-6)}`,
+      name: form.name,
+      graduationYear: form.graduationYear,
+      lastClass: form.lastClass,
+      currentStatus: form.currentStatus,
+      institution: form.institution || "—",
+      profession: form.profession || "—",
+      email: form.email || "—",
+      phone: form.phone || "—",
+      donationAmount: Number(form.donationAmount) || 0,
+    };
+    setAlumni([newAlumnus, ...alumni]);
+    toast({ title: "Alumnus Added ✓", description: `${newAlumnus.name} (Class of ${newAlumnus.graduationYear}) added.` });
+    setAddOpen(false);
+    setForm({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying", institution: "", profession: "", email: "", phone: "", donationAmount: 0 });
+  };
 
   return (
     <div className="space-y-3 fade-in">
@@ -241,18 +267,18 @@ export function AlumniModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Alumnus</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Name *</Label><Input placeholder="Full name" /></div>
+            <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Graduation Year</Label><Input type="number" placeholder="2024" /></div>
-              <div><Label>Last Class</Label><Input placeholder="Grade 10" /></div>
+              <div><Label>Graduation Year</Label><Input type="number" value={form.graduationYear} onChange={e => setForm({...form, graduationYear: e.target.value})} placeholder="2024" /></div>
+              <div><Label>Last Class</Label><Input value={form.lastClass} onChange={e => setForm({...form, lastClass: e.target.value})} placeholder="Grade 10" /></div>
             </div>
-            <div><Label>Current Status</Label><Select defaultValue="Studying"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Studying">Studying</SelectItem><SelectItem value="Employed">Employed</SelectItem><SelectItem value="Business">Business</SelectItem><SelectItem value="Unknown">Unknown</SelectItem></SelectContent></Select></div>
-            <div><Label>Institution / Company</Label><Input placeholder="University or company name" /></div>
-            <div><Label>Profession</Label><Input placeholder="e.g., Software Developer" /></div>
-            <div className="grid grid-cols-2 gap-3"><div><Label>Email</Label><Input type="email" /></div><div><Label>Phone</Label><Input placeholder="+92 3xx" /></div></div>
-            <div><Label>Donation Amount (Rs.)</Label><Input type="number" defaultValue={0} /></div>
+            <div><Label>Current Status</Label><Select value={form.currentStatus} onValueChange={v => setForm({...form, currentStatus: v as Alumnus["currentStatus"]})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Studying">Studying</SelectItem><SelectItem value="Employed">Employed</SelectItem><SelectItem value="Business">Business</SelectItem><SelectItem value="Unknown">Unknown</SelectItem></SelectContent></Select></div>
+            <div><Label>Institution / Company</Label><Input value={form.institution} onChange={e => setForm({...form, institution: e.target.value})} placeholder="University or company name" /></div>
+            <div><Label>Profession</Label><Input value={form.profession} onChange={e => setForm({...form, profession: e.target.value})} placeholder="e.g., Software Developer" /></div>
+            <div className="grid grid-cols-2 gap-3"><div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div><div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" /></div></div>
+            <div><Label>Donation Amount (Rs.)</Label><Input type="number" value={form.donationAmount} onChange={e => setForm({...form, donationAmount: Number(e.target.value)})} /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(false)}>Add Alumnus</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.name.trim()}>Add Alumnus</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
