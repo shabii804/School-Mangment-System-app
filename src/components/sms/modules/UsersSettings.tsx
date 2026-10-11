@@ -782,7 +782,10 @@ export function SettingsModule() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    exportFeeStructureCSV(feeStructure.classFees, feeStructure.hostelFee, feeStructure.admissionMultiplier, feeStructure.lateFee, feeStructure.dueDate);
+                    const items = (feeStructure as any).feeItems || [];
+                    const oneTime = items.filter((f: any) => f.enabled && f.type === "one-time").reduce((s: number, f: any) => s + f.amount, 0);
+                    const annual = items.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount, 0);
+                    exportFeeStructureCSV(feeStructure.classFees, feeStructure.hostelFee || 0, oneTime + annual, feeStructure.lateFee || 0, feeStructure.dueDate || 10);
                     toast({ title: "Fee Structure Exported ✓", description: "CSV file downloaded — opens in Excel" });
                   }}
                 >

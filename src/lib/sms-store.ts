@@ -309,7 +309,15 @@ function loadFeeStructure(): FeeStructureConfig {
   if (typeof window === "undefined") return DEFAULT_FEE_STRUCTURE;
   try {
     const raw = window.localStorage.getItem("edudesk_fees");
-    if (raw) return { ...DEFAULT_FEE_STRUCTURE, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Deep-merge feeItems so old data without feeItems gets the defaults
+      const merged = { ...DEFAULT_FEE_STRUCTURE, ...parsed };
+      if (!merged.feeItems || !Array.isArray(merged.feeItems) || merged.feeItems.length === 0) {
+        merged.feeItems = DEFAULT_FEE_STRUCTURE.feeItems;
+      }
+      return merged;
+    }
   } catch {}
   return DEFAULT_FEE_STRUCTURE;
 }
@@ -354,7 +362,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "17.0-nan-fix";
+  const CURRENT_VERSION = "18.0-nan-perm-fix";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];

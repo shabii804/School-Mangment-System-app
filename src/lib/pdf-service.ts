@@ -1516,22 +1516,22 @@ export function printExamSeatingPlan(
 export function exportFeeStructureCSV(
   classFees: Record<string, number>,
   hostelFee: number,
-  admissionMultiplier: number,
+  admissionFee: number,
   lateFee: number,
   dueDate: number
 ) {
-  const headers = ["Class", "Monthly Tuition (Rs.)", "Admission Fee (Rs.)", "Hostel Fee (Rs.)", "Hosteller Total (Rs.)"];
+  const headers = ["Class", "Monthly Tuition (Rs.)", "Admission + Annual (Rs.)", "Hostel Fee (Rs.)", "Hosteller Total (Rs.)"];
   const rows = Object.entries(classFees).map(([className, fee]) => [
     className,
     fee,
-    fee * admissionMultiplier,
+    admissionFee,
     hostelFee,
     fee + hostelFee,
   ]);
   rows.push(["", "", "", "", ""]);
   rows.push(["GLOBAL SETTINGS", "", "", "", ""]);
   rows.push(["Hostel Fee (monthly)", hostelFee, "", "", ""]);
-  rows.push(["Admission Multiplier", `${admissionMultiplier}x`, "", "", ""]);
+  rows.push(["Admission + Annual Fee (flat)", admissionFee, "", "", ""]);
   rows.push(["Late Fee", lateFee, "", "", ""]);
   rows.push(["Due Date (day of month)", dueDate, "", "", ""]);
 
