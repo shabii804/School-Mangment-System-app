@@ -362,7 +362,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "18.0-nan-perm-fix";
+  const CURRENT_VERSION = "19.0-crash-proof";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -399,7 +399,7 @@ if (typeof window !== "undefined") {
               ...s,
               feePaidThisMonth: false,
               // Add this month's fee to outstanding (since it hasn't been paid)
-              outstandingAmount: s.outstandingAmount + s.monthlyFee,
+              outstandingAmount: (s.outstandingAmount || 0) + (s.monthlyFee || 0),
               lastPaidMonth: s.lastPaidMonth || lastResetMonth || currentMonth,
             };
           }
@@ -674,7 +674,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       feeCollections: [newCollection, ...state.feeCollections],
       students: state.students.map(s => {
         if (s.id !== studentId) return s;
-        const newOutstanding = Math.max(0, s.outstandingAmount - amount);
+        const newOutstanding = Math.max(0, (s.outstandingAmount || 0) - amount);
         // Only mark feePaidThisMonth = true when outstanding reaches 0
         // Partial payments keep the flag false so the student still appears in Defaulters
         const fullyPaid = newOutstanding <= 0;

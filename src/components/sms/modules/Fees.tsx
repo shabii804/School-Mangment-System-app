@@ -580,18 +580,18 @@ export function FeesModule() {
 }
 
 export function DefaultersModule() {
-  const { students, setActiveModule, setSelectedStudent, school } = useAppStore();
+  const { students, setActiveModule, setSelectedStudent, school, feeStructure } = useAppStore();
   const { toast } = useToast();
   const [classFilter, setClassFilter] = useState("all");
 
   const defaulters = useMemo(() => {
     return students
-      .filter(s => s.outstandingAmount > 0 && s.status === "Active")
+      .filter(s => (s.outstandingAmount || 0) > 0 && s.status === "Active")
       .filter(s => classFilter === "all" || s.class === classFilter)
-      .sort((a, b) => b.outstandingAmount - a.outstandingAmount);
+      .sort((a, b) => (b.outstandingAmount || 0) - (a.outstandingAmount || 0));
   }, [students, classFilter]);
 
-  const totalOutstanding = defaulters.reduce((s, d) => s + d.outstandingAmount, 0);
+  const totalOutstanding = defaulters.reduce((s, d) => s + (d.outstandingAmount || 0), 0);
   const classes = Array.from(new Set(students.map(s => s.class)));
 
   const handlePrint = () => {
@@ -696,8 +696,8 @@ export function DefaultersModule() {
                   <TableCell><Badge variant="outline" className="text-xs">{d.class}-{d.section}</Badge></TableCell>
                   <TableCell className="text-sm">{d.fatherName}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{d.fatherPhone}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs bg-red-500/5">{(() => { const denom = d.monthlyFee + (d.isHosteller ? HOSTEL_FEE : 0); return denom > 0 ? Math.ceil(d.outstandingAmount / denom) : 0; })()} month(s)</Badge></TableCell>
-                  <TableCell className="text-right"><span className="font-bold text-red-600">Rs. {d.outstandingAmount.toLocaleString()}</span></TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs bg-red-500/5">{(() => { const denom = (d.monthlyFee || 0) + (d.isHosteller ? (feeStructure.hostelFee || 0) : 0); return denom > 0 ? Math.ceil((d.outstandingAmount || 0) / denom) : 0; })()} month(s)</Badge></TableCell>
+                  <TableCell className="text-right"><span className="font-bold text-red-600">Rs. {(d.outstandingAmount || 0).toLocaleString()}</span></TableCell>
                   <TableCell className="text-right">
                     <Button
                       size="sm"

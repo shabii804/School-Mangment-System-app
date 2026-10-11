@@ -101,7 +101,7 @@ export function StudentsModule() {
       if (s.status === "Active") active++;
       if (s.isHosteller) hostellers++;
       if (s.transport) transport++;
-      if (s.outstandingAmount > 0) defaulters++;
+      if ((s.outstandingAmount || 0) > 0) defaulters++;
     }
     return { total: filtered.length, active, hostellers, transport, defaulters };
   }, [filtered]);
@@ -827,8 +827,8 @@ export function StudentsModule() {
                   <TableCell className="text-sm">{s.fatherName}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.fatherPhone}</TableCell>
                   <TableCell>
-                    {s.outstandingAmount > 0 ? (
-                      <Badge variant="destructive" className="text-[10px]">Rs. {s.outstandingAmount.toLocaleString()}</Badge>
+                    {(s.outstandingAmount || 0) > 0 ? (
+                      <Badge variant="destructive" className="text-[10px]">Rs. {(s.outstandingAmount || 0).toLocaleString()}</Badge>
                     ) : (
                       <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-0">Paid</Badge>
                     )}
@@ -940,7 +940,7 @@ export function StudentsModule() {
                 </div>
                 <div className="border-l border-white/20 pl-3">
                   <p className="text-[10px] uppercase text-white/60 tracking-wider">Outstanding</p>
-                  <p className="text-xl font-bold mt-0.5">{selected.outstandingAmount > 0 ? `Rs. ${selected.outstandingAmount.toLocaleString()}` : "✓ Clear"}</p>
+                  <p className="text-xl font-bold mt-0.5">{(selected.outstandingAmount || 0) > 0 ? `Rs. ${(selected.outstandingAmount || 0).toLocaleString()}` : "✓ Clear"}</p>
                 </div>
                 <div className="border-l border-white/20 pl-3">
                   <p className="text-[10px] uppercase text-white/60 tracking-wider">Admitted</p>
@@ -1104,7 +1104,7 @@ export function StudentsModule() {
                     </div>
                     <div className="rounded-xl bg-red-500/5 p-3 border border-red-500/20">
                       <p className="text-[10px] text-muted-foreground uppercase">Outstanding</p>
-                      <p className="text-xl font-bold text-red-600 mt-1">Rs. {selected.outstandingAmount.toLocaleString()}</p>
+                      <p className="text-xl font-bold text-red-600 mt-1">Rs. {(selected.outstandingAmount || 0).toLocaleString()}</p>
                     </div>
                     <div className="rounded-xl bg-emerald-500/5 p-3 border border-emerald-500/20">
                       <p className="text-[10px] text-muted-foreground uppercase">This Month</p>
@@ -1450,7 +1450,7 @@ export function StudentsModule() {
               const feeDiff = newFee - oldFee;
               if (feeDiff > 0) {
                 // Fee increased — student owes the difference
-                patch.outstandingAmount = promoteTarget.outstandingAmount + feeDiff;
+                patch.outstandingAmount = (promoteTarget.outstandingAmount || 0) + feeDiff;
                 if (promoteTarget.feePaidThisMonth) {
                   patch.feePaidThisMonth = false;
                 }

@@ -200,7 +200,7 @@ export function SettingsModule() {
   const [dueDate, setDueDate] = useState("10");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [classFeeDraft, setClassFeeDraft] = useState<Record<string, string>>(
-    () => Object.fromEntries(Object.entries(feeStructure.classFees).map(([k, v]) => [k, String(v)]))
+    () => Object.fromEntries(Object.entries(feeStructure.classFees || {}).map(([k, v]) => [k, String(v)]))
   );
 
   // Module control counts
@@ -589,7 +589,7 @@ export function SettingsModule() {
                     <span className="text-sm text-muted-foreground">Rs.</span>
                     <Input
                       type="number"
-                      value={feeStructure.hostelFee}
+                      value={feeStructure.hostelFee || 0}
                       onChange={e => updateFeeStructure({ hostelFee: Number(e.target.value) })}
                       className="h-8 font-bold"
                     />
@@ -601,7 +601,7 @@ export function SettingsModule() {
                     <span className="text-sm text-muted-foreground">Rs.</span>
                     <Input
                       type="number"
-                      value={feeStructure.lateFee}
+                      value={feeStructure.lateFee || 0}
                       onChange={e => updateFeeStructure({ lateFee: Number(e.target.value) })}
                       className="h-8 font-bold"
                     />
@@ -613,7 +613,7 @@ export function SettingsModule() {
                     type="number"
                     min={1}
                     max={28}
-                    value={feeStructure.dueDate}
+                    value={feeStructure.dueDate || 10}
                     onChange={e => updateFeeStructure({ dueDate: Number(e.target.value) })}
                     className="h-8 font-bold mt-1"
                   />
@@ -710,7 +710,7 @@ export function SettingsModule() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-semibold">Per-Class Tuition Fees</p>
-                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-0">{Object.keys(feeStructure.classFees).length} classes</Badge>
+                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-0">{Object.keys(feeStructure.classFees || {}).length} classes</Badge>
                 </div>
                 <div className="rounded-lg border border-border/40 overflow-hidden">
                   <Table>
@@ -723,7 +723,7 @@ export function SettingsModule() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Object.entries(feeStructure.classFees).map(([className, fee]) => (
+                      {Object.entries(feeStructure.classFees || {}).map(([className, fee]) => (
                         <TableRow key={className} className="border-border/30 hover:bg-muted/20">
                           <TableCell className="font-medium text-sm">{className}</TableCell>
                           <TableCell className="text-right">
@@ -785,7 +785,7 @@ export function SettingsModule() {
                     const items = (feeStructure as any).feeItems || [];
                     const oneTime = items.filter((f: any) => f.enabled && f.type === "one-time").reduce((s: number, f: any) => s + f.amount, 0);
                     const annual = items.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount, 0);
-                    exportFeeStructureCSV(feeStructure.classFees, feeStructure.hostelFee || 0, oneTime + annual, feeStructure.lateFee || 0, feeStructure.dueDate || 10);
+                    exportFeeStructureCSV(feeStructure.classFees || {}, feeStructure.hostelFee || 0, oneTime + annual, feeStructure.lateFee || 0, feeStructure.dueDate || 10);
                     toast({ title: "Fee Structure Exported ✓", description: "CSV file downloaded — opens in Excel" });
                   }}
                 >

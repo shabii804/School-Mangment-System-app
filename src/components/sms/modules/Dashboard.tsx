@@ -55,7 +55,7 @@ export function DashboardModule() {
   // ─── Compute ALL KPIs from real store data ───
   const todayStr = localDateStr();
   const activeStudents = students.filter(s => s.status === "Active");
-  const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
+  const defaulters = students.filter(s => (s.outstandingAmount || 0) > 0 && s.status === "Active");
   const todayCollections = feeCollections.filter(f => f.date === todayStr);
   const todayFeeCollection = todayCollections.reduce((s, f) => s + f.amount, 0);
 
@@ -71,7 +71,7 @@ export function DashboardModule() {
   const monthlyIncome = monthlyFeeIncome + monthlyOtherIncome;
 
   // Pending fees: total outstanding across active students
-  const pendingFees = defaulters.reduce((s, d) => s + d.outstandingAmount, 0);
+  const pendingFees = defaulters.reduce((s, d) => s + (d.outstandingAmount || 0), 0);
 
   const KPI = {
     totalStudents: activeStudents.length,
