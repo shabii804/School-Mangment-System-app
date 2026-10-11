@@ -135,7 +135,12 @@ export function StudentsModule() {
 
     const cls = CLASSES.find(c => c.name === form.class);
     const monthlyFee = cls?.monthlyFee ?? 0;
-    const hostelFee = form.isHosteller ? (useAppStore.getState().feeStructure.hostelFee || 0) : 0;
+    const feeStructure = useAppStore.getState().feeStructure;
+    const hostelFee = form.isHosteller ? (feeStructure.hostelFee || 0) : 0;
+    // Admission fee = monthly fee × admission multiplier (default 3)
+    const admissionFee = monthlyFee * (feeStructure.admissionMultiplier || 3);
+    // Total outstanding = Admission fee + first month tuition + hostel fee (if hosteller)
+    const totalOutstanding = admissionFee + monthlyFee + hostelFee;
     // Compute next available roll number for THIS class+section (not global)
     const sameClassStudents = students.filter(s => s.class === form.class && s.section === form.section);
     const maxRoll = sameClassStudents.reduce((max, s) => {
@@ -174,6 +179,7 @@ export function StudentsModule() {
       admissionDate: new Date().toISOString().split("T")[0],
       monthlyFee,
       status: "Active",
+      academicStatus: "New",
       attendancePct: 100,
       feePaidThisMonth: false,
       isHosteller: form.isHosteller,
@@ -181,10 +187,13 @@ export function StudentsModule() {
       transportRoute: form.transport ? form.transportRoute : undefined,
       siblings: form.siblings,
       photo: form.photo || undefined,
-      outstandingAmount: monthlyFee + hostelFee,
+      outstandingAmount: totalOutstanding,
     };
     addStudent(newStudent);
-    toast({ title: "Student Admitted ✓", description: `${newStudent.name} admitted to ${newStudent.class}-${newStudent.section} • ID: ${newStudent.id}` });
+    toast({
+      title: "Student Admitted ✓",
+      description: `${newStudent.name} → ${newStudent.class}-${newStudent.section} • ID: ${newStudent.id}\nAdmission: Rs. ${admissionFee.toLocaleString()} + Tuition: Rs. ${monthlyFee.toLocaleString()}${hostelFee > 0 ? " + Hostel: Rs. " + hostelFee.toLocaleString() : ""} = Rs. ${totalOutstanding.toLocaleString()} outstanding`,
+    });
     setAddOpen(false);
     setForm(EMPTY_FORM);
     setFormSection(0);
@@ -674,7 +683,8 @@ export function StudentsModule() {
                   <FileText className="w-3 h-3 text-primary" />
                 </div>
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  <span className="font-semibold text-primary">Auto-generated on save:</span> Student ID (SCH-YYYY-XXXX) • Roll Number • QR Code • Monthly Fee: <span className="font-semibold text-foreground">Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}</span>{form.isHosteller ? " + Hostel fee applied" : ""}
+                  <span className="font-semibold text-primary">Auto-generated on save:</span> Student ID (SCH-YYYY-XXXX) • Roll Number • QR Code<br/>
+                  <span className="font-semibold text-primary">Fee breakdown:</span> Admission Rs. {((CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0) * (useAppStore.getState().feeStructure.admissionMultiplier || 3)).toLocaleString()} + Tuition Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}{form.isHosteller ? " + Hostel Rs. " + (useAppStore.getState().feeStructure.hostelFee || 0).toLocaleString() : ""} = <span className="font-bold text-foreground">Rs. {((CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0) * (useAppStore.getState().feeStructure.admissionMultiplier || 3) + (CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0) + (form.isHosteller ? (useAppStore.getState().feeStructure.hostelFee || 0) : 0)).toLocaleString()} outstanding</span>
                 </p>
               </div>
             </div>

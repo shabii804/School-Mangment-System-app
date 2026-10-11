@@ -50,7 +50,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 
 export function DashboardModule() {
   useNowTick(); // Force re-render every 60s so date-based KPIs update at midnight
-  const { setActiveModule, school, feeCollections, students, teachers, staff, transactions, attendanceRecords, classes } = useAppStore();
+  const { setActiveModule, school, feeCollections, students, teachers, staff, transactions, attendanceRecords, classes, feeStructure } = useAppStore();
 
   // ─── Compute ALL KPIs from real store data ───
   const todayStr = localDateStr();
@@ -310,6 +310,73 @@ export function DashboardModule() {
           <div><p className="text-[10px] text-muted-foreground uppercase">Pending Fees</p><p className="text-lg font-bold text-red-600">Rs. {(KPI.pendingFees / 1000).toFixed(1)}K</p></div>
         </div>
       </div>
+
+      {/* ═══ Fee Breakdown Card ═══ */}
+      {defaulters.length > 0 && (
+        <Card className="border-0 shadow-sm glass-card">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-accent" />
+                Fee Collection Status
+              </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("defaulters")}>
+                View Defaulters <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Total Outstanding */}
+              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Total Outstanding</p>
+                <p className="text-lg font-bold text-red-600 mt-1">Rs. {KPI.pendingFees.toLocaleString()}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{defaulters.length} students owe fees</p>
+              </div>
+              {/* Expected Monthly Revenue */}
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Expected Monthly</p>
+                <p className="text-lg font-bold text-emerald-600 mt-1">Rs. {activeStudents.reduce((s, st) => s + st.monthlyFee, 0).toLocaleString()}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{activeStudents.length} × monthly tuition</p>
+              </div>
+              {/* Collected This Month */}
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Collected This Month</p>
+                <p className="text-lg font-bold text-primary mt-1">Rs. {monthlyFeeIncome.toLocaleString()}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{feeCollections.filter(f => f.date.startsWith(todayStr.slice(0, 7))).length} receipts</p>
+              </div>
+              {/* Collection Rate */}
+              <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
+                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Collection Rate</p>
+                <p className="text-lg font-bold text-accent mt-1">{KPI.totalStudents > 0 ? Math.round(Math.max(0, (1 - defaulters.length / KPI.totalStudents) * 100)) : 0}%</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{KPI.totalStudents - defaulters.length} of {KPI.totalStudents} paid</p>
+              </div>
+            </div>
+
+            {/* Fee breakdown by type */}
+            <div className="mt-3 pt-3 border-t border-border/30">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Fee Breakdown (New Admissions)</p>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                  <p className="text-[9px] text-muted-foreground">Admission Fee</p>
+                  <p className="font-bold text-sm mt-0.5">Rs. {activeStudents.reduce((s, st) => s + st.monthlyFee * (feeStructure.admissionMultiplier || 3), 0).toLocaleString()}</p>
+                  <p className="text-[9px] text-muted-foreground">{feeStructure.admissionMultiplier || 3}× tuition</p>
+                </div>
+                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                  <p className="text-[9px] text-muted-foreground">Monthly Tuition</p>
+                  <p className="font-bold text-sm mt-0.5">Rs. {activeStudents.reduce((s, st) => s + st.monthlyFee, 0).toLocaleString()}</p>
+                  <p className="text-[9px] text-muted-foreground">per month</p>
+                </div>
+                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                  <p className="text-[9px] text-muted-foreground">Hostel Fee</p>
+                  <p className="font-bold text-sm mt-0.5">Rs. {(feeStructure.hostelFee * activeStudents.filter(s => s.isHosteller).length).toLocaleString()}</p>
+                  <p className="text-[9px] text-muted-foreground">{activeStudents.filter(s => s.isHosteller).length} hostellers</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ═══ Concession / Scholarship Summary ═══ */}
       {(() => {

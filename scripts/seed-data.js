@@ -96,7 +96,10 @@ const students = studentData.map((s, i) => {
     transport: false,
     siblings: "",
     photo: undefined,
-    outstandingAmount: 0,
+    // Outstanding = Admission fee (3× monthly) + first month tuition
+    outstandingAmount: (cls ? cls.monthlyFee : 2000) * 3 + (cls ? cls.monthlyFee : 2000),
+    academicStatus: "New",
+    feePaidThisMonth: false,
   };
 });
 
