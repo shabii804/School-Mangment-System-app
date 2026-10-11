@@ -50,17 +50,27 @@ export interface SchoolInfo {
   session: string;
 }
 
+export type FeeType = "one-time" | "annual" | "monthly";
+
+export interface FeeItem {
+  name: string;
+  amount: number;
+  type: FeeType;        // one-time = charged once at admission; annual = once per year; monthly = every month
+  enabled: boolean;
+  description?: string;
+}
+
 export interface FeeStructureConfig {
   // Per-class tuition fees (class name → monthly tuition)
   classFees: Record<string, number>;
-  // Global hostel fee (applied to all hostellers)
+  // Global hostel fee (applied to all hostellers, monthly)
   hostelFee: number;
-  // Admission fee = multiplier × monthly tuition
-  admissionMultiplier: number;
   // Late payment fine (flat, after due date)
   lateFee: number;
   // Fee due date (day of month, 1-28)
   dueDate: number;
+  // Dynamic fee items — admin controls these
+  feeItems: FeeItem[];
 }
 
 export interface StudentDocument {
@@ -247,10 +257,19 @@ const DEFAULT_SCHOOL: SchoolInfo = {
 
 const DEFAULT_FEE_STRUCTURE: FeeStructureConfig = {
   classFees: {},
-  hostelFee: 0,
-  admissionMultiplier: 0,
-  lateFee: 0,
-  dueDate: 0,
+  hostelFee: 5000,
+  lateFee: 500,
+  dueDate: 10,
+  feeItems: [
+    { name: "Admission Fee", amount: 5000, type: "one-time", enabled: true, description: "One-time charge when student is admitted" },
+    { name: "Annual Registration Fee", amount: 2000, type: "annual", enabled: true, description: "Charged once per academic year" },
+    { name: "Tuition Fee", amount: 0, type: "monthly", enabled: true, description: "Monthly tuition — set per class" },
+    { name: "Hostel Fee", amount: 5000, type: "monthly", enabled: false, description: "Monthly — only for hostellers" },
+    { name: "Transport Fee", amount: 1500, type: "monthly", enabled: false, description: "Monthly — only for transport users" },
+    { name: "Exam Fee", amount: 500, type: "annual", enabled: false, description: "Annual exam fee" },
+    { name: "Library Security", amount: 1000, type: "one-time", enabled: false, description: "Refundable security deposit" },
+    { name: "Lab Fee", amount: 800, type: "annual", enabled: false, description: "Annual science lab fee" },
+  ],
 };
 
 // === Module Control ===
@@ -335,7 +354,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "15.0-stable-sync";
+  const CURRENT_VERSION = "16.0-dynamic-fees";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];

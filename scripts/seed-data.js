@@ -96,20 +96,30 @@ const students = studentData.map((s, i) => {
     transport: false,
     siblings: "",
     photo: undefined,
-    // Outstanding = Admission fee (3× monthly) + first month tuition
-    outstandingAmount: (cls ? cls.monthlyFee : 2000) * 3 + (cls ? cls.monthlyFee : 2000),
+    // Outstanding = one-time fees (admission 5000 + library security 1000) + annual fees (registration 2000 + exam 500) + first month tuition
+    // = 5000 + 1000 + 2000 + 500 + monthlyFee = 8500 + monthlyFee
+    outstandingAmount: 8500 + (cls ? cls.monthlyFee : 2000),
     academicStatus: "New",
     feePaidThisMonth: false,
   };
 });
 
-// ─── Fee structure ───
+// ─── Fee structure (dynamic fee items) ───
 const feeStructure = {
   classFees: Object.fromEntries(classes.map(c => [c.name, c.monthlyFee])),
   hostelFee: 5000,
-  admissionMultiplier: 3,
   lateFee: 500,
   dueDate: 10,
+  feeItems: [
+    { name: "Admission Fee", amount: 5000, type: "one-time", enabled: true, description: "One-time charge when student is admitted" },
+    { name: "Annual Registration Fee", amount: 2000, type: "annual", enabled: true, description: "Charged once per academic year" },
+    { name: "Tuition Fee", amount: 0, type: "monthly", enabled: true, description: "Monthly tuition — set per class" },
+    { name: "Hostel Fee", amount: 5000, type: "monthly", enabled: false, description: "Monthly — only for hostellers" },
+    { name: "Transport Fee", amount: 1500, type: "monthly", enabled: false, description: "Monthly — only for transport users" },
+    { name: "Exam Fee", amount: 500, type: "annual", enabled: true, description: "Annual exam fee" },
+    { name: "Library Security", amount: 1000, type: "one-time", enabled: true, description: "Refundable security deposit" },
+    { name: "Lab Fee", amount: 800, type: "annual", enabled: false, description: "Annual science lab fee" },
+  ],
 };
 
 // ─── School info ───

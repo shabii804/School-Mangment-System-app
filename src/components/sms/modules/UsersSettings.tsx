@@ -270,27 +270,35 @@ export function SettingsModule() {
     updateSchool(form);
 
     if (sessionChanged) {
-      // BATCH reset feePaidThisMonth for all active students in a single set() call
+      // Reset feePaidThisMonth + charge annual fees for new session
+      const feeItems = feeStructure.feeItems || [];
+      const annualFees = feeItems.filter((f: any) => f.enabled && f.type === "annual");
+      const annualTotal = annualFees.reduce((s: number, f: any) => s + f.amount, 0);
       const paidCount = students.filter(s => s.status === "Active" && s.feePaidThisMonth).length;
+
       students.forEach(s => {
-        if (s.status === "Active" && s.feePaidThisMonth) {
-          updateStudent(s.id, { feePaidThisMonth: false });
+        if (s.status === "Active") {
+          const patch: any = { feePaidThisMonth: false };
+          // Add annual fees to outstanding (new session = new annual charges)
+          if (annualTotal > 0) {
+            patch.outstandingAmount = s.outstandingAmount + annualTotal;
+          }
+          updateStudent(s.id, patch);
         }
       });
 
-      // Archive current timetables before the new session starts
+      // Archive current timetables
       const currentTimetables = (moduleData as any).timetables || {};
       if (Object.keys(currentTimetables).length > 0) {
         const archiveKey = `timetables_archive_${oldSession}`;
         const existingArchive = (moduleData as any)[archiveKey] || {};
         setModuleData(archiveKey, { ...existingArchive, ...currentTimetables } as any);
-        // Clear current timetables so admin can create fresh ones for the new session
         setModuleData("timetables", {} as any);
       }
 
       toast({
         title: "Academic Session Changed ✓",
-        description: `"${oldSession}" → "${newSession}". ${paidCount} fee flags reset. Timetables archived.`,
+        description: `"${oldSession}" → "${newSession}". ${paidCount} fee flags reset${annualTotal > 0 ? `. Annual fees (Rs. ${annualTotal.toLocaleString()}) charged to all students.` : ""}. Timetables archived.`,
       });
     } else {
       toast({ title: "School Information Saved ✓", description: "Changes are now reflected across the app." });

@@ -355,22 +355,28 @@ export function DashboardModule() {
 
             {/* Fee breakdown by type */}
             <div className="mt-3 pt-3 border-t border-border/30">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Fee Breakdown (New Admissions)</p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Fee Breakdown by Type</p>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground">Admission Fee</p>
-                  <p className="font-bold text-sm mt-0.5">Rs. {activeStudents.reduce((s, st) => s + st.monthlyFee * (feeStructure.admissionMultiplier || 3), 0).toLocaleString()}</p>
-                  <p className="text-[9px] text-muted-foreground">{feeStructure.admissionMultiplier || 3}× tuition</p>
+                  <p className="text-[9px] text-muted-foreground">One-Time Fees</p>
+                  <p className="font-bold text-sm mt-0.5">Rs. {(() => {
+                    const items = (feeStructure as any).feeItems || [];
+                    return items.filter((f: any) => f.enabled && f.type === "one-time").reduce((s: number, f: any) => s + f.amount * activeStudents.length, 0);
+                  })().toLocaleString()}</p>
+                  <p className="text-[9px] text-muted-foreground">admission + security</p>
                 </div>
                 <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground">Monthly Tuition</p>
+                  <p className="text-[9px] text-muted-foreground">Annual Fees</p>
+                  <p className="font-bold text-sm mt-0.5">Rs. {(() => {
+                    const items = (feeStructure as any).feeItems || [];
+                    return items.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount * activeStudents.length, 0);
+                  })().toLocaleString()}</p>
+                  <p className="text-[9px] text-muted-foreground">registration + exam</p>
+                </div>
+                <div className="rounded-lg bg-muted/20 p-2 text-center">
+                  <p className="text-[9px] text-muted-foreground">Monthly Fees</p>
                   <p className="font-bold text-sm mt-0.5">Rs. {activeStudents.reduce((s, st) => s + st.monthlyFee, 0).toLocaleString()}</p>
-                  <p className="text-[9px] text-muted-foreground">per month</p>
-                </div>
-                <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground">Hostel Fee</p>
-                  <p className="font-bold text-sm mt-0.5">Rs. {(feeStructure.hostelFee * activeStudents.filter(s => s.isHosteller).length).toLocaleString()}</p>
-                  <p className="text-[9px] text-muted-foreground">{activeStudents.filter(s => s.isHosteller).length} hostellers</p>
+                  <p className="text-[9px] text-muted-foreground">tuition per month</p>
                 </div>
               </div>
             </div>

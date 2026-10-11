@@ -137,10 +137,26 @@ export function StudentsModule() {
     const monthlyFee = cls?.monthlyFee ?? 0;
     const feeStructure = useAppStore.getState().feeStructure;
     const hostelFee = form.isHosteller ? (feeStructure.hostelFee || 0) : 0;
-    // Admission fee = monthly fee × admission multiplier (default 3)
-    const admissionFee = monthlyFee * (feeStructure.admissionMultiplier || 3);
-    // Total outstanding = Admission fee + first month tuition + hostel fee (if hosteller)
-    const totalOutstanding = admissionFee + monthlyFee + hostelFee;
+    const transportFee = form.transport ? (feeStructure.feeItems?.find(f => f.name === "Transport Fee")?.amount || 0) : 0;
+
+    // Calculate one-time + annual fees from the dynamic fee items
+    const feeItems = feeStructure.feeItems || [];
+    const oneTimeFees = feeItems.filter(f => f.enabled && f.type === "one-time");
+    const annualFees = feeItems.filter(f => f.enabled && f.type === "annual");
+    // Monthly fees: tuition + hostel (if hosteller) + transport (if transport user)
+    const monthlyFees = monthlyFee + hostelFee + transportFee;
+
+    // Total outstanding at admission = one-time fees + annual fees + first month's monthly fees
+    const oneTimeTotal = oneTimeFees.reduce((s, f) => s + f.amount, 0);
+    const annualTotal = annualFees.reduce((s, f) => s + f.amount, 0);
+    const totalOutstanding = oneTimeTotal + annualTotal + monthlyFees;
+
+    // Build fee breakdown string for the toast
+    const feeBreakdown: string[] = [];
+    if (oneTimeTotal > 0) feeBreakdown.push(`One-time: Rs. ${oneTimeTotal.toLocaleString()}`);
+    if (annualTotal > 0) feeBreakdown.push(`Annual: Rs. ${annualTotal.toLocaleString()}`);
+    feeBreakdown.push(`Monthly: Rs. ${monthlyFees.toLocaleString()}`);
+
     // Compute next available roll number for THIS class+section (not global)
     const sameClassStudents = students.filter(s => s.class === form.class && s.section === form.section);
     const maxRoll = sameClassStudents.reduce((max, s) => {
@@ -192,7 +208,7 @@ export function StudentsModule() {
     addStudent(newStudent);
     toast({
       title: "Student Admitted ✓",
-      description: `${newStudent.name} → ${newStudent.class}-${newStudent.section} • ID: ${newStudent.id}\nAdmission: Rs. ${admissionFee.toLocaleString()} + Tuition: Rs. ${monthlyFee.toLocaleString()}${hostelFee > 0 ? " + Hostel: Rs. " + hostelFee.toLocaleString() : ""} = Rs. ${totalOutstanding.toLocaleString()} outstanding`,
+      description: `${newStudent.name} → ${newStudent.class}-${newStudent.section} • ID: ${newStudent.id}\n${feeBreakdown.join(" | ")} = Rs. ${totalOutstanding.toLocaleString()} outstanding`,
     });
     setAddOpen(false);
     setForm(EMPTY_FORM);
@@ -684,7 +700,15 @@ export function StudentsModule() {
                 </div>
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
                   <span className="font-semibold text-primary">Auto-generated on save:</span> Student ID (SCH-YYYY-XXXX) • Roll Number • QR Code<br/>
-                  <span className="font-semibold text-primary">Fee breakdown:</span> Admission Rs. {((CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0) * (useAppStore.getState().feeStructure.admissionMultiplier || 3)).toLocaleString()} + Tuition Rs. {(CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0).toLocaleString()}{form.isHosteller ? " + Hostel Rs. " + (useAppStore.getState().feeStructure.hostelFee || 0).toLocaleString() : ""} = <span className="font-bold text-foreground">Rs. {((CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0) * (useAppStore.getState().feeStructure.admissionMultiplier || 3) + (CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0) + (form.isHosteller ? (useAppStore.getState().feeStructure.hostelFee || 0) : 0)).toLocaleString()} outstanding</span>
+                  <span className="font-semibold text-primary">Fee structure:</span> {(() => {
+                    const fs = useAppStore.getState().feeStructure;
+                    const items = fs.feeItems || [];
+                    const oneTime = items.filter((f: any) => f.enabled && f.type === "one-time").reduce((s: number, f: any) => s + f.amount, 0);
+                    const annual = items.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount, 0);
+                    const monthly = (CLASSES.find(c => c.name === form.class)?.monthlyFee ?? 0) + (form.isHosteller ? (fs.hostelFee || 0) : 0);
+                    const total = oneTime + annual + monthly;
+                    return `One-time Rs. ${oneTime.toLocaleString()} + Annual Rs. ${annual.toLocaleString()} + Monthly Rs. ${monthly.toLocaleString()} = Rs. ${total.toLocaleString()} outstanding`;
+                  })()}
                 </p>
               </div>
             </div>
