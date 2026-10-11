@@ -170,6 +170,7 @@ interface AppState {
   setSyncStatus: (s: AppState["syncStatus"]) => void;
   syncToDatabase: () => Promise<boolean>;
   loadFromDatabase: () => Promise<boolean>;
+  loadFromLocalStorage: () => void;
 
   // Search
   searchQuery: string;
@@ -287,39 +288,10 @@ const DEFAULT_ENABLED_MODULES: Record<ModuleKey, boolean> = {
   alumni: true, parent: true, sms: true, leave: true, concession: true, ai: true,
 };
 
-function loadEnabledModules(): Record<ModuleKey, boolean> {
-  if (typeof window === "undefined") return DEFAULT_ENABLED_MODULES;
-  try {
-    const raw = window.localStorage.getItem("edudesk_modules");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // Merge with defaults to handle new modules added in updates
-      return { ...DEFAULT_ENABLED_MODULES, ...parsed };
-    }
-  } catch {}
-  return DEFAULT_ENABLED_MODULES;
-}
-
+// saveEnabledModules and saveFeeStructure are still needed (called by store actions)
 function saveEnabledModules(modules: Record<ModuleKey, boolean>) {
   if (typeof window === "undefined") return;
   try { window.localStorage.setItem("edudesk_modules", JSON.stringify(modules)); } catch {}
-}
-
-function loadFeeStructure(): FeeStructureConfig {
-  if (typeof window === "undefined") return DEFAULT_FEE_STRUCTURE;
-  try {
-    const raw = window.localStorage.getItem("edudesk_fees");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // Deep-merge feeItems so old data without feeItems gets the defaults
-      const merged = { ...DEFAULT_FEE_STRUCTURE, ...parsed };
-      if (!merged.feeItems || !Array.isArray(merged.feeItems) || merged.feeItems.length === 0) {
-        merged.feeItems = DEFAULT_FEE_STRUCTURE.feeItems;
-      }
-      return merged;
-    }
-  } catch {}
-  return DEFAULT_FEE_STRUCTURE;
 }
 
 function saveFeeStructure(fs: FeeStructureConfig) {
@@ -327,14 +299,51 @@ function saveFeeStructure(fs: FeeStructureConfig) {
   try { window.localStorage.setItem("edudesk_fees", JSON.stringify(fs)); } catch {}
 }
 
-// Load persisted school info from localStorage (client-side only)
-function loadSchool(): SchoolInfo {
-  if (typeof window === "undefined") return DEFAULT_SCHOOL;
+// HYDRATION FIX: Always return defaults during store initialization.
+// localStorage is loaded separately in a useEffect (loadFromLocalStorage)
+// to avoid SSR/client mismatch which causes React hydration errors.
+function loadSchool(): SchoolInfo { return DEFAULT_SCHOOL; }
+function loadFeeStructure(): FeeStructureConfig { return DEFAULT_FEE_STRUCTURE; }
+function loadEnabledModules(): Record<ModuleKey, boolean> { return DEFAULT_ENABLED_MODULES; }
+function loadCollection<T>(key: string, fallback: T): T { return fallback; }
+
+// Client-only loader — called from useEffect in page.tsx
+function loadFromLocalStorageClient(): Partial<AppState> {
+  if (typeof window === "undefined") return {};
   try {
-    const raw = window.localStorage.getItem("edudesk_school");
-    if (raw) return { ...DEFAULT_SCHOOL, ...JSON.parse(raw) };
-  } catch {}
-  return DEFAULT_SCHOOL;
+    const patch: Partial<AppState> = {};
+
+    // School
+    const rawSchool = window.localStorage.getItem("edudesk_school");
+    if (rawSchool) patch.school = { ...DEFAULT_SCHOOL, ...JSON.parse(rawSchool) };
+
+    // Fee structure
+    const rawFees = window.localStorage.getItem("edudesk_fees");
+    if (rawFees) {
+      const parsed = JSON.parse(rawFees);
+      const merged = { ...DEFAULT_FEE_STRUCTURE, ...parsed };
+      if (!merged.feeItems || !Array.isArray(merged.feeItems) || merged.feeItems.length === 0) {
+        merged.feeItems = DEFAULT_FEE_STRUCTURE.feeItems;
+      }
+      patch.feeStructure = merged;
+    }
+
+    // Enabled modules
+    const rawModules = window.localStorage.getItem("edudesk_modules");
+    if (rawModules) patch.enabledModules = { ...DEFAULT_ENABLED_MODULES, ...JSON.parse(rawModules) };
+
+    // Collections
+    for (const key of ["students", "teachers", "staff", "feeCollections", "activities", "documents", "commLogs", "transactions", "classes", "subjects", "moduleData", "attendanceRecords"]) {
+      const raw = window.localStorage.getItem(`edudesk_${key}`);
+      if (raw) {
+        try { (patch as any)[key] = JSON.parse(raw); } catch {}
+      }
+    }
+
+    return patch;
+  } catch {
+    return {};
+  }
 }
 
 function saveSchool(s: SchoolInfo) {
@@ -343,15 +352,7 @@ function saveSchool(s: SchoolInfo) {
 }
 
 // Generic persistence helpers for collections
-function loadCollection<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(`edudesk_${key}`);
-    if (raw) return JSON.parse(raw) as T;
-  } catch {}
-  return fallback;
-}
-
+// saveCollection is still needed (called by store subscribe)
 function saveCollection<T>(key: string, data: T) {
   if (typeof window === "undefined") return;
   try { window.localStorage.setItem(`edudesk_${key}`, JSON.stringify(data)); } catch {}
@@ -362,7 +363,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "19.0-crash-proof";
+  const CURRENT_VERSION = "20.0-hydration-fix";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -530,6 +531,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Network error — we're offline, data is still in localStorage
       set({ syncStatus: "offline" });
       return false;
+    }
+  },
+  loadFromLocalStorage: () => {
+    const patch = loadFromLocalStorageClient();
+    if (Object.keys(patch).length > 0) {
+      set(patch);
     }
   },
   loadFromDatabase: async () => {

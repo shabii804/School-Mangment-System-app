@@ -24,7 +24,7 @@ import { AIAssistantModule } from "@/components/sms/modules/AIAssistant";
 import { Settings, Power } from "lucide-react";
 
 export default function Home() {
-  const { activeModule, isDark, setCommandOpen, enabledModules, setActiveModule, syncStatus, lastSyncAt, loadFromDatabase, dbStats } = useAppStore();
+  const { activeModule, isDark, setCommandOpen, enabledModules, setActiveModule, syncStatus, lastSyncAt, loadFromDatabase, loadFromLocalStorage, dbStats } = useAppStore();
 
   // Apply dark class to <html>
   useEffect(() => {
@@ -33,11 +33,13 @@ export default function Home() {
     }
   }, [isDark]);
 
-  // ─── On first mount: load from JSON database (source of truth) ───
-  // Falls back to localStorage cache if server is unavailable (offline mode)
+  // ─── On first mount: load from localStorage (instant) then JSON database ───
+  // Step 1: Load from localStorage synchronously — this runs BEFORE hydration
+  // so the client renders with real data matching what the user expects
   useEffect(() => {
+    loadFromLocalStorage();
     loadFromDatabase().catch((e) => {
-      console.error("[Sync] Load failed, using localStorage:", e);
+      console.error("[Sync] Load failed:", e);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
