@@ -33,18 +33,11 @@ export default function Home() {
     }
   }, [isDark]);
 
-  // ─── On first mount: load from SQLite (source of truth) ───
-  // Falls back to localStorage cache if SQLite is unavailable (offline mode)
+  // ─── On first mount: load from JSON database (source of truth) ───
+  // Falls back to localStorage cache if server is unavailable (offline mode)
   useEffect(() => {
-    loadFromDatabase().then((ok) => {
-      if (ok) {
-        console.log("[Sync] Loaded from SQLite — data is fresh");
-      } else {
-        console.log("[Sync] Using localStorage cache (offline mode)");
-      }
-      // Enable auto-sync AFTER initial load completes — this prevents the subscribe block
-      // from overwriting seeded data with the initial empty state
-      setTimeout(() => enableAutoSync(), 100);
+    loadFromDatabase().catch((e) => {
+      console.error("[Sync] Load failed, using localStorage:", e);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

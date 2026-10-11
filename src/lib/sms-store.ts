@@ -335,7 +335,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "13.0-admission-fees";
+  const CURRENT_VERSION = "15.0-stable-sync";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -732,23 +732,30 @@ export const useAppStore = create<AppState>((set, get) => ({
 let sqliteSyncTimer: ReturnType<typeof setTimeout> | null = null;
 // isInitialLoadComplete is already declared at line 26 above
 
-useAppStore.subscribe((state) => {
-  // 1. Instant localStorage save (offline cache) — always do this
-  saveCollection("students", state.students);
-  saveCollection("teachers", state.teachers);
-  saveCollection("staff", state.staff);
-  saveCollection("feeCollections", state.feeCollections);
-  saveCollection("activities", state.activities);
-  saveCollection("documents", state.documents);
-  saveCollection("commLogs", state.commLogs);
-  saveCollection("transactions", state.transactions);
-  saveCollection("classes", state.classes);
-  saveCollection("subjects", state.subjects);
-  saveCollection("moduleData", state.moduleData);
-  saveCollection("attendanceRecords", state.attendanceRecords);
+// Throttle localStorage writes to avoid memory pressure
+let localStorageTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // 2. Debounced SQLite sync (source of truth) — 2 second delay after last change
-  // SKIP until initial load from SQLite has completed — prevents overwriting seeded data
+useAppStore.subscribe((state) => {
+  // 1. Throttled localStorage save (offline cache) — 500ms debounce
+  // Writing 12 collections synchronously on every state change causes memory pressure
+  if (localStorageTimer) clearTimeout(localStorageTimer);
+  localStorageTimer = setTimeout(() => {
+    saveCollection("students", state.students);
+    saveCollection("teachers", state.teachers);
+    saveCollection("staff", state.staff);
+    saveCollection("feeCollections", state.feeCollections);
+    saveCollection("activities", state.activities);
+    saveCollection("documents", state.documents);
+    saveCollection("commLogs", state.commLogs);
+    saveCollection("transactions", state.transactions);
+    saveCollection("classes", state.classes);
+    saveCollection("subjects", state.subjects);
+    saveCollection("moduleData", state.moduleData);
+    saveCollection("attendanceRecords", state.attendanceRecords);
+  }, 500);
+
+  // 2. Debounced JSON DB sync (source of truth) — 5 second delay after last change
+  // SKIP until initial load from DB has completed — prevents overwriting seeded data
   if (!isInitialLoadComplete) return;
   if (sqliteSyncTimer) clearTimeout(sqliteSyncTimer);
   sqliteSyncTimer = setTimeout(async () => {
@@ -783,7 +790,7 @@ useAppStore.subscribe((state) => {
       // Offline — data is safe in localStorage, will sync when back online
       useAppStore.setState({ syncStatus: "offline" });
     }
-  }, 2000);
+  }, 5000);
 });
 
 // ─── enableAutoSync is no longer needed ───
