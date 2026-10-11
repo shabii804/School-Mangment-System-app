@@ -1,6 +1,7 @@
 "use client";
 
-import { useAppStore } from "@/lib/sms-store";
+import { useAppStore, localDateStr } from "@/lib/sms-store";
+import { useNowTick } from "@/lib/use-now-tick";
 import { STATS, FEE_TREND, STUDENT_GROWTH, ACTIVITIES, TODAY_SCHEDULE, UPCOMING_BIRTHDAYS, PENDING_TASKS, CONCESSIONS } from "@/lib/sms-data";
 import { KpiCard } from "../KpiCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,10 +49,11 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 
 export function DashboardModule() {
+  useNowTick(); // Force re-render every 60s so date-based KPIs update at midnight
   const { setActiveModule, school, feeCollections, students, teachers, staff, transactions, attendanceRecords, classes } = useAppStore();
 
   // ─── Compute ALL KPIs from real store data ───
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = localDateStr();
   const activeStudents = students.filter(s => s.status === "Active");
   const defaulters = students.filter(s => s.outstandingAmount > 0 && s.status === "Active");
   const todayCollections = feeCollections.filter(f => f.date === todayStr);

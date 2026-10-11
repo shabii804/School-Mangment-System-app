@@ -22,6 +22,9 @@ export function localMonthStr(): string {
   return localDateStr().slice(0, 7);
 }
 
+// Auto-sync guard — prevents overwriting seeded data before loadFromDatabase() runs
+let isInitialLoadComplete = false;
+
 export type ModuleKey =
   | "dashboard" | "students" | "teachers" | "staff" | "classes" | "timetable"
   | "attendance" | "salary" | "fees" | "defaulters" | "results" | "certificates"
@@ -172,7 +175,7 @@ interface AppState {
   addStudent: (s: Student) => void;
   updateStudent: (id: string, patch: Partial<Student>) => void;
   deleteStudent: (id: string) => void;
-  promoteStudent: (id: string, newClass: string, newSection: string) => void;
+  // promoteStudent removed — use updateStudent() directly from the UI
   addTeacher: (t: Teacher) => void;
   updateTeacher: (id: string, patch: Partial<Teacher>) => void;
   deleteTeacher: (id: string) => void;
@@ -324,7 +327,7 @@ const INITIAL_NOTIFICATIONS: Notification[] = [];
 // === CRITICAL: Clear old seed data BEFORE store creation ===
 // This runs once on page load — if version changed, wipe ALL old data
 if (typeof window !== "undefined") {
-  const CURRENT_VERSION = "11.0-qa-deep";
+  const CURRENT_VERSION = "12.0-qa-complete";
   const storedVersion = window.localStorage.getItem("edudesk_version");
   if (storedVersion !== CURRENT_VERSION) {
     const keysToRemove: string[] = [];
@@ -336,6 +339,8 @@ if (typeof window !== "undefined") {
     }
     keysToRemove.forEach(k => { try { window.localStorage.removeItem(k); } catch {} });
     window.localStorage.setItem("edudesk_version", CURRENT_VERSION);
+    // Reset the auto-sync guard so the new session doesn't overwrite seed data
+    isInitialLoadComplete = false;
   }
 
   // ─── Auto-reset feePaidThisMonth on month boundary ───
@@ -579,11 +584,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     // (the student's name is still embedded in feeCollections.studentName)
   })),
 
-  promoteStudent: (id, newClass, newSection) => set((state) => ({
-    students: state.students.map(s =>
-      s.id === id ? { ...s, class: newClass, section: newSection, rollNo: String(Math.floor(Math.random() * 30) + 1).padStart(2, "0") } : s
-    ),
-  })),
+  // promoteStudent action removed — the UI uses updateStudent() directly
+  // with proper roll-number computation, fee adjustment, and academicStatus.
+  // The old action used Math.random() for roll numbers which caused collisions.
 
   addTeacher: (t) => set((state) => ({ teachers: [t, ...state.teachers] })),
 
@@ -609,7 +612,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     const student = state.students.find(s => s.id === studentId);
     if (!student) return;
-    const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
+    const receiptNo = `RCPT-${localDateStr().replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
     const newCollection: FeeCollection = {
       id: `FC-${Date.now()}`,
       receiptNo,
@@ -715,13 +718,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
 }));
 
-// Auto-persist key collections to localStorage on every change (instant)
-// + debounce-sync to SQLite (source of truth)
-// IMPORTANT: Skip SQLite auto-sync until loadFromDatabase() has run, to avoid
-// overwriting seeded data with the initial empty state
+// Auto-sync guard variables — declared early (before version-bump block uses them)
+// These prevent the subscribe block from syncing empty state to the JSON DB
+// before loadFromDatabase() has had a chance to load real data
 let sqliteSyncTimer: ReturnType<typeof setTimeout> | null = null;
-let isInitialLoadStarted = false; // set true synchronously when loadFromDatabase() is called
-let isInitialLoadComplete = false; // set true after loadFromDatabase() finishes
+// isInitialLoadComplete is already declared at line 26 above
 
 useAppStore.subscribe((state) => {
   // 1. Instant localStorage save (offline cache) — always do this

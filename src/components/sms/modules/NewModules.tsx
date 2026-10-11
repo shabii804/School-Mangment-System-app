@@ -166,7 +166,7 @@ export function LibraryModule() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><BookMarked className="w-4 h-4 text-primary" />Issue Book</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
             <div><Label>Select Book *</Label><Select value={issueForm.bookId} onValueChange={v => setIssueForm({...issueForm, bookId: v})}><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Student ID *</Label><Input value={issueForm.studentId} onChange={e => setIssueForm({...issueForm, studentId: e.target.value})} placeholder="SCH-2026-XXXX" /></div>
+            <div><Label>Student ID *</Label><Input value={issueForm.studentId} onChange={e => setIssueForm({...issueForm, studentId: e.target.value})} placeholder={`SCH-${new Date().getFullYear()}-XXXX`} /></div>
             <div className="grid grid-cols-2 gap-3"><div><Label>Issue Date</Label><Input type="date" value={issueForm.issueDate} onChange={e => setIssueForm({...issueForm, issueDate: e.target.value})} /></div><div><Label>Due Date (14 days)</Label><Input type="date" value={issueForm.dueDate} onChange={e => setIssueForm({...issueForm, dueDate: e.target.value})} /></div></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleIssue} disabled={!issueForm.bookId || !issueForm.studentId.trim()}>Issue Book</Button></DialogFooter>
@@ -396,7 +396,7 @@ export function HostelModule() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><BedDouble className="w-4 h-4 text-primary" />Allocate Room</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
             <div><Label>Select Room *</Label><Select value={allocForm.roomId} onValueChange={v => setAllocForm({...allocForm, roomId: v})}><SelectTrigger><SelectValue placeholder="Choose room..." /></SelectTrigger><SelectContent>{rooms.filter(r => r.occupied < r.capacity).map(r => <SelectItem key={r.id} value={r.id}>{r.roomNo} ({r.capacity - r.occupied} beds free)</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Student ID *</Label><Input value={allocForm.studentId} onChange={e => setAllocForm({...allocForm, studentId: e.target.value})} placeholder="SCH-2026-XXXX" /></div>
+            <div><Label>Student ID *</Label><Input value={allocForm.studentId} onChange={e => setAllocForm({...allocForm, studentId: e.target.value})} placeholder={`SCH-${new Date().getFullYear()}-XXXX`} /></div>
             <div><Label>Student Name</Label><Input value={allocForm.studentName} onChange={e => setAllocForm({...allocForm, studentName: e.target.value})} placeholder="Optional" /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setAllocOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAllocate} disabled={!allocForm.roomId || !allocForm.studentId.trim()}>Allocate</Button></DialogFooter>

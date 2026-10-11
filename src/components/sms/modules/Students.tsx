@@ -245,11 +245,46 @@ export function StudentsModule() {
     else setSelectedIds(new Set(filtered.map(s => s.id)));
   };
   const handleBulkPromote = () => {
+    const targetCls = CLASSES.find(c => c.name === bulkClass);
+    if (!targetCls) {
+      toast({ title: "Invalid class", description: "Select a valid class first.", variant: "destructive" });
+      return;
+    }
+    const newFee = targetCls.monthlyFee;
+    let promotedCount = 0;
     selectedIds.forEach(id => {
-      const newFee = CLASSES.find(c => c.name === bulkClass)?.monthlyFee;
-      updateStudent(id, { class: bulkClass, section: bulkSection, ...(newFee !== undefined ? { monthlyFee: newFee } : {}) });
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+      // Compute roll number per class+section (max+1)
+      const sameClass = students.filter(s => s.class === bulkClass && s.section === bulkSection && s.id !== id);
+      const maxRoll = sameClass.reduce((max, s) => {
+        const n = parseInt(s.rollNo) || 0;
+        return n > max ? n : max;
+      }, 0);
+      const newRollNo = String(maxRoll + 1).padStart(2, "0");
+
+      const patch: Partial<Student> = {
+        class: bulkClass,
+        section: bulkSection,
+        monthlyFee: newFee,
+        rollNo: newRollNo,
+        academicStatus: "Promoted" as any,
+        attendancePct: 100,
+      };
+
+      // Fee adjustment — same logic as single promote
+      const feeDiff = newFee - student.monthlyFee;
+      if (feeDiff > 0) {
+        patch.outstandingAmount = student.outstandingAmount + feeDiff;
+        if (student.feePaidThisMonth) patch.feePaidThisMonth = false;
+      } else if (feeDiff < 0 && student.outstandingAmount > 0) {
+        patch.outstandingAmount = Math.max(0, student.outstandingAmount + feeDiff);
+      }
+
+      updateStudent(id, patch);
+      promotedCount++;
     });
-    toast({ title: "Bulk Promote Complete ✓", description: `${selectedIds.size} students promoted to ${bulkClass}-${bulkSection}` });
+    toast({ title: "Bulk Promote Complete ✓", description: `${promotedCount} students promoted to ${bulkClass}-${bulkSection} with roll numbers, fees, and outstanding adjusted.` });
     setSelectedIds(new Set());
     setBulkPromoteOpen(false);
   };

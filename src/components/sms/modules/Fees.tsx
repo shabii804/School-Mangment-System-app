@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useAppStore } from "@/lib/sms-store";
+import { useAppStore, localDateStr } from "@/lib/sms-store";
+import { useNowTick } from "@/lib/use-now-tick";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ import { printFeeReceipt, printDefaulterList, printFeeCollectionReport } from "@
 const HOSTEL_FEE = 3500;
 
 export function FeesModule() {
+  useNowTick(); // Re-render every 60s so "today's collection" updates at midnight
   const { students, feeCollections, collectFee, searchQuery, selectedStudentId, school, feeStructure, setSelectedStudent: setStoreSelectedStudent } = useAppStore();
   const { toast } = useToast();
   const HOSTEL_FEE = feeStructure.hostelFee;
@@ -99,14 +101,14 @@ export function FeesModule() {
     }
 
     // Build the receipt object FIRST (before committing) so we can print and confirm
-    const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
+    const receiptNo = `RCPT-${localDateStr().replace(/-/g, "")}-${String(Date.now()).slice(-6)}`;
     const newCollection = {
       id: `FC-${Date.now()}`,
       receiptNo,
       studentId: selected.id,
       studentName: selected.name,
       class: selected.class,
-      date: new Date().toISOString().split("T")[0],
+      date: localDateStr(),
       amount: total,
       mode,
       tuition: useCustom ? undefined : (tuitionAmt || undefined),
@@ -166,7 +168,7 @@ export function FeesModule() {
     }
   };
 
-  const todayCollections = feeCollections.filter(f => f.date === new Date().toISOString().split("T")[0]);
+  const todayCollections = feeCollections.filter(f => f.date === localDateStr());
 
   return (
     <div className="space-y-3 fade-in">
@@ -340,7 +342,7 @@ export function FeesModule() {
                   </div>
                   <div className="hidden md:flex flex-col items-end text-right shrink-0">
                     <span className="text-[10px] uppercase tracking-wider text-white/60">Receipt #</span>
-                    <span className="text-xs font-semibold mt-0.5 font-mono">RCPT-{new Date().toISOString().slice(0, 10).replace(/-/g, "")}-{String(feeCollections.length + 1).padStart(3, "0")}</span>
+                    <span className="text-xs font-semibold mt-0.5 font-mono">RCPT-{localDateStr().replace(/-/g, "")}-XXXXXX</span>
                   </div>
                 </div>
                 {/* Quick stats */}
@@ -356,7 +358,7 @@ export function FeesModule() {
                   <div className="border-l border-white/20 pl-3">
                     <p className="text-[10px] uppercase tracking-wider text-white/60">Status</p>
                     <p className="text-base font-bold mt-0.5">
-                      {selected.feePaidThisMonth ? "Paid ✓" : "Pending"}
+                      {selected.outstandingAmount <= 0 && selected.feePaidThisMonth ? "Paid ✓" : selected.outstandingAmount > 0 ? "Pending" : "Paid ✓"}
                     </p>
                   </div>
                 </div>
@@ -638,7 +640,7 @@ export function DefaultersModule() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `defaulters_${new Date().toISOString().split("T")[0]}.csv`;
+            link.download = `defaulters_${localDateStr()}.csv`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

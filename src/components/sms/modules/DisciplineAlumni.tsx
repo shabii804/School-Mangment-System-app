@@ -336,7 +336,7 @@ function ParentPortal({ searchId, setSearchId, foundStudent, searched, onSearch 
           <h2 className="text-2xl font-bold">{school.name} — Parent Portal</h2>
           <p className="text-sm opacity-80 mt-1">Enter your child's Student ID or name to view their information.</p>
           <div className="flex gap-2 mt-4 max-w-md">
-            <Input placeholder="Enter Student ID (e.g., SCH-2026-0001) or name..." value={searchId} onChange={e => setSearchId(e.target.value)} className="bg-white/15 border-white/20 text-white placeholder:text-white/50" onKeyDown={e => e.key === "Enter" && onSearch(students)} />
+            <Input placeholder={`Enter Student ID (e.g., SCH-${new Date().getFullYear()}-0001) or name...`} value={searchId} onChange={e => setSearchId(e.target.value)} className="bg-white/15 border-white/20 text-white placeholder:text-white/50" onKeyDown={e => e.key === "Enter" && onSearch(students)} />
             <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => onSearch(students)}><Search className="w-4 h-4 mr-1" />Search</Button>
           </div>
         </div>

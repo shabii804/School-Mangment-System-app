@@ -248,16 +248,19 @@ export function predictDefaulters(students: Student[], feeCollections: any[]): D
       }
     }
 
-    // Factor 2: Payment history — count of fee collections this year
+    // Factor 2: Payment history — count of fee collections in the last 12 months
+    // (not calendar year — academic sessions span 2 calendar years)
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    const twelveMonthsAgoStr = twelveMonthsAgo.toISOString().slice(0, 10);
     const studentCollections = feeCollections.filter(
-      f => f.studentId === student.id && f.date.startsWith(String(new Date().getFullYear()))
+      f => f.studentId === student.id && f.date >= twelveMonthsAgoStr
     );
-    if (studentCollections.length === 0 && new Date().getMonth() > 2) {
-      // We're past March and no payments this year
+    if (studentCollections.length === 0) {
       risk.riskScore += 20;
-      risk.reasons.push("No fee payments recorded this year");
-    } else if (studentCollections.length < new Date().getMonth() + 1 - 2) {
-      // Fewer payments than months passed (allowing 2 month grace)
+      risk.reasons.push("No fee payments in the last 12 months");
+    } else if (studentCollections.length < 6) {
+      // Fewer than 6 payments in 12 months = irregular
       risk.riskScore += 10;
       risk.reasons.push("Irregular payment pattern");
     }

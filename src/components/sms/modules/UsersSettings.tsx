@@ -194,7 +194,7 @@ const GROUP_ORDER: ModuleMeta["group"][] = ["main", "operations", "finance", "ac
 
 export function SettingsModule() {
   const { toast } = useToast();
-  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee, enabledModules, toggleModule, setAllModulesEnabled, students, updateStudent } = useAppStore();
+  const { isDark, toggleTheme, school, updateSchool, setLogo, feeStructure, updateFeeStructure, setClassFee, enabledModules, toggleModule, setAllModulesEnabled, students, updateStudent, moduleData, setModuleData } = useAppStore();
   const [autoBackup, setAutoBackup] = useState(true);
   const [lateFine, setLateFine] = useState("500");
   const [dueDate, setDueDate] = useState("10");
@@ -269,7 +269,6 @@ export function SettingsModule() {
 
     if (sessionChanged) {
       // BATCH reset feePaidThisMonth for all active students in a single set() call
-      // This avoids N separate updateStudent() calls + N re-renders
       const paidCount = students.filter(s => s.status === "Active" && s.feePaidThisMonth).length;
       students.forEach(s => {
         if (s.status === "Active" && s.feePaidThisMonth) {
@@ -277,11 +276,19 @@ export function SettingsModule() {
         }
       });
 
-      // Write an activity log entry for audit trail
-      // (using addTransaction as a proxy since there's no addActivity action exposed)
+      // Archive current timetables before the new session starts
+      const currentTimetables = moduleData.timetables || {};
+      if (Object.keys(currentTimetables).length > 0) {
+        const archiveKey = `timetables_archive_${oldSession}`;
+        const existingArchive = moduleData[archiveKey] || {};
+        setModuleData(archiveKey, { ...existingArchive, ...currentTimetables });
+        // Clear current timetables so admin can create fresh ones for the new session
+        setModuleData("timetables", {});
+      }
+
       toast({
         title: "Academic Session Changed ✓",
-        description: `Session: "${oldSession}" → "${newSession}". ${paidCount} students' fee flags reset.`,
+        description: `"${oldSession}" → "${newSession}". ${paidCount} fee flags reset. Timetables archived.`,
       });
     } else {
       toast({ title: "School Information Saved ✓", description: "Changes are now reflected across the app." });

@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { useAppStore } from "@/lib/sms-store";
+import { useAppStore, localDateStr } from "@/lib/sms-store";
+import { useNowTick } from "@/lib/use-now-tick";
 import {
   ClipboardCheck, Save, CheckCircle2, Clock, AlertCircle, Calendar,
 } from "lucide-react";
@@ -49,12 +50,13 @@ export function AttendanceModule() {
 }
 
 function StudentAttendance() {
+  useNowTick(); // Re-render every 60s so attDate stays current
   const { students, saveAttendance, userName, classes: storeClasses } = useAppStore();
   const CLASSES = storeClasses;
   const { toast } = useToast();
   const [classFilter, setClassFilter] = useState(students[0]?.class || "all");
   const [statuses, setStatuses] = useState<Record<string, AttStatus>>({});
-  const [attDate, setAttDate] = useState(new Date().toISOString().split("T")[0]);
+  const [attDate, setAttDate] = useState(localDateStr());
 
   const filtered = classFilter === "all"
     ? students.filter(s => s.status === "Active")
@@ -212,7 +214,7 @@ function StaffAttendance({ group }: { group: "teachers" | "staff" }) {
   const { toast } = useToast();
   const people = group === "teachers" ? teachers : staff;
   const [statuses, setStatuses] = useState<Record<string, AttStatus>>({});
-  const [attDate, setAttDate] = useState(new Date().toISOString().split("T")[0]);
+  const [attDate, setAttDate] = useState(localDateStr());
 
   const save = () => {
     const marked = people.filter(p => statuses[p.id]);

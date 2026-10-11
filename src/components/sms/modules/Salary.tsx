@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useAppStore } from "@/lib/sms-store";
+import { useAppStore, localDateStr } from "@/lib/sms-store";
+import { useNowTick } from "@/lib/use-now-tick";
 import { printSalarySlip, printPayrollBatch } from "@/lib/pdf-service";
 
 const WORKING_DAYS = 26; // Configurable in Settings
@@ -36,6 +37,7 @@ interface SalaryRow {
 }
 
 export function SalaryModule() {
+  useNowTick(); // Re-render every 60s so month dropdown stays current
   const { toast } = useToast();
   const { school, teachers, staff, attendanceRecords, addTransaction } = useAppStore();
   const [month, setMonth] = useState(new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" }));
@@ -54,8 +56,6 @@ export function SalaryModule() {
 
   const computeAttendance = (empId: string) => {
     const recs = attendanceRecords.filter(r => r.studentId === empId && r.date.startsWith(monthKey));
-    // Also include teachers/staff via their id pattern (T-xxx / ST-xxx)
-    const empRecs = attendanceRecords.filter(r => r.date.startsWith(monthKey) && (r.studentId === empId || r.markedBy === empId));
     let present = 0, late = 0, absent = 0, halfDay = 0, leave = 0;
     recs.forEach(r => {
       if (r.status === "Present") present++;
@@ -141,10 +141,12 @@ export function SalaryModule() {
             {(() => {
               const now = new Date();
               const months = [];
-              for (let i = 0; i < 12; i++) {
+              // Show 12 past months + 6 future months so admin can plan ahead
+              for (let i = 12; i >= -6; i--) {
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
                 const label = d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
-                months.push(<SelectItem key={label} value={label}>{label}</SelectItem>);
+                const isFuture = d > now;
+                months.push(<SelectItem key={label} value={label}>{label}{isFuture ? " (upcoming)" : ""}</SelectItem>);
               }
               return months;
             })()}
@@ -179,7 +181,7 @@ export function SalaryModule() {
                 // Record payroll as an expense transaction in the Ledger
                 addTransaction({
                   id: `TX-${String(Date.now()).slice(-6)}`,
-                  date: new Date().toISOString().split("T")[0],
+                  date: localDateStr(),
                   type: "Expense",
                   category: "Salary",
                   description: `Payroll for ${month} — ${filteredEmployees.length} employees`,
@@ -369,7 +371,7 @@ export function SalaryModule() {
               // Record salary payment as an expense in the Ledger
               addTransaction({
                 id: `TX-${String(Date.now()).slice(-6)}`,
-                date: new Date().toISOString().split("T")[0],
+                date: localDateStr(),
                 type: "Expense",
                 category: "Salary",
                 description: `Salary — ${selected.name} (${month})`,
