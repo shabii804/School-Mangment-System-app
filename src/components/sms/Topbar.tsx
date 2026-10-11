@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAppStore, type Role } from "@/lib/sms-store";
 import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check, Calendar, Plus, LogOut, Database, Settings as SettingsIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,7 @@ export function Topbar() {
   const meta = MODULE_TITLES[activeModule] || { title: "Dashboard", subtitle: "" };
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const unread = unreadCount();
+  const [notifOpen, setNotifOpen] = useState(false);
 
   return (
     <header className="shrink-0 z-30 glass-card border-b border-border/40">
@@ -145,7 +147,7 @@ export function Topbar() {
         </Button>
 
         {/* Notifications */}
-        <DropdownMenu>
+        <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Notifications">
               <Bell className="w-4 h-4" />

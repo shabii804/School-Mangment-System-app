@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, Search, ArrowRight,
-  Receipt, BookOpen, Bus, Home, Package, Calendar, Shield, Percent, Brain,
+  Receipt, BookOpen, Bus, Home, Package, Calendar, Shield, Percent, Brain, MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -53,6 +53,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   parent: Users,
   leave: Calendar,
   concession: Percent,
+  sms: MessageSquare,
   ai: Brain,
 };
 
@@ -85,6 +86,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   parent: "Parent Portal",
   leave: "Staff Leave",
   concession: "Fee Concessions",
+  sms: "SMS / Communication",
   ai: "AI Assistant",
 };
 

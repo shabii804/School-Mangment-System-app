@@ -1,0 +1,550 @@
+     1→"use client";
+     2→
+     3→import { useState } from "react";
+     4→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     5→import { Button } from "@/components/ui/button";
+     6→import { Input } from "@/components/ui/input";
+     7→import { Label } from "@/components/ui/label";
+     8→import { Badge } from "@/components/ui/badge";
+     9→import {
+    10→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    11→} from "@/components/ui/table";
+    12→import {
+    13→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    14→} from "@/components/ui/dialog";
+    15→import {
+    16→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    17→} from "@/components/ui/select";
+    18→import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+    19→import {
+    20→  Plus, CheckCircle, XCircle, Clock, Calendar, TrendingUp, Users,
+    21→  Wallet, Award, Percent, Gift, Shield, ArrowRight,
+    22→} from "lucide-react";
+    23→import {
+    24→  LEAVE_REQUESTS, LEAVE_BALANCES, CONCESSIONS, ACADEMIC_SESSIONS,
+    25→  type LeaveRequest, type LeaveBalance, type Concession, type AcademicSession,
+    26→} from "@/lib/sms-data";
+    27→import { useAppStore } from "@/lib/sms-store";
+    28→import { useToast } from "@/hooks/use-toast";
+    29→import { cn } from "@/lib/utils";
+    30→
+    31→// ═══════════════════════════════════════════════════════════════
+    32→// STAFF LEAVE MANAGEMENT MODULE
+    33→// ═══════════════════════════════════════════════════════════════
+    34→const LEAVE_STATUS_STYLES: Record<string, string> = {
+    35→  Pending: "bg-yellow-500/10 text-yellow-600",
+    36→  Approved: "bg-emerald-500/10 text-emerald-600",
+    37→  Rejected: "bg-red-500/10 text-red-600",
+    38→  Cancelled: "bg-muted text-muted-foreground",
+    39→};
+    40→
+    41→const LEAVE_TYPE_STYLES: Record<string, string> = {
+    42→  Casual: "bg-blue-500/10 text-blue-600",
+    43→  Sick: "bg-red-500/10 text-red-600",
+    44→  Earned: "bg-primary/10 text-primary",
+    45→  Maternity: "bg-pink-500/10 text-pink-600",
+    46→  "Without Pay": "bg-orange-500/10 text-orange-600",
+    47→  Emergency: "bg-purple-500/10 text-purple-600",
+    48→};
+    49→
+    50→export function LeaveModule() {
+    51→  const { toast } = useToast();
+    52→  const { moduleData, addModuleItem, updateModuleItem } = useAppStore();
+    53→  const requests = (moduleData.leaveRequests || []) as LeaveRequest[];
+    54→  const [tab, setTab] = useState("requests");
+    55→  const [addOpen, setAddOpen] = useState(false);
+    56→  const [form, setForm] = useState({ employeeId: "", employeeName: "", type: "Casual", fromDate: "", toDate: "", days: 1, reason: "" });
+    57→
+    58→  const pending = requests.filter(r => r.status === "Pending").length;
+    59→  const approved = requests.filter(r => r.status === "Approved").length;
+    60→  const rejected = requests.filter(r => r.status === "Rejected").length;
+    61→  const totalDays = requests.filter(r => r.status === "Approved").reduce((s, r) => s + r.days, 0);
+    62→
+    63→  const handleAdd = () => {
+    64→    if (!form.employeeName || !form.fromDate) return;
+    65→    const newReq: LeaveRequest = {
+    66→      id: `LV-${String(Date.now()).slice(-6)}`,
+    67→      employeeId: form.employeeId || "—",
+    68→      employeeName: form.employeeName,
+    69→      type: form.type as any,
+    70→      fromDate: form.fromDate,
+    71→      toDate: form.toDate || form.fromDate,
+    72→      days: form.days,
+    73→      reason: form.reason,
+    74→      status: "Pending",
+    75→      appliedDate: new Date().toISOString().split("T")[0],
+    76→    };
+    77→    addModuleItem("leaveRequests", newReq);
+    78→    toast({ title: "Leave Request Submitted ✓", description: `${form.employeeName} — ${form.days} day(s) ${form.type} leave` });
+    79→    setAddOpen(false);
+    80→    setForm({ employeeId: "", employeeName: "", type: "Casual", fromDate: "", toDate: "", days: 1, reason: "" });
+    81→  };
+    82→
+    83→  const handleAction = (id: string, action: "Approved" | "Rejected") => {
+    84→    if (action === "Rejected" && !window.confirm("Reject this leave request? This cannot be undone.")) return;
+    85→    updateModuleItem("leaveRequests", id, { status: action, approvedBy: "Admin", comments: action === "Approved" ? "Approved by Admin" : "Rejected by Admin" });
+    86→    const req = requests.find(r => r.id === id);
+    87→    toast({ title: `Leave ${action} ✓`, description: `${req?.employeeName} — ${action}`, variant: action === "Rejected" ? "destructive" : "default" });
+    88→  };
+    89→
+    90→  return (
+    91→    <div className="space-y-3 fade-in">
+    92→      <div className="flex justify-between items-center flex-wrap gap-3">
+    93→        <p className="text-sm text-muted-foreground">Manage staff leave requests, balances, and approvals.</p>
+    94→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Apply Leave</Button>
+    95→      </div>
+    96→
+    97→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    98→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-yellow-500/10 p-1.5"><Clock className="w-4 h-4 text-yellow-600" /></div><div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold">{pending}</p></div></CardContent></Card>
+    99→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Approved</p><p className="text-xl font-bold">{approved}</p></div></CardContent></Card>
+   100→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><XCircle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Rejected</p><p className="text-xl font-bold">{rejected}</p></div></CardContent></Card>
+   101→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Calendar className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Leave Days</p><p className="text-xl font-bold">{totalDays}</p></div></CardContent></Card>
+   102→      </div>
+   103→
+   104→      <Tabs value={tab} onValueChange={setTab}>
+   105→        <TabsList className="grid w-full max-w-md grid-cols-2">
+   106→          <TabsTrigger value="requests">Leave Requests</TabsTrigger>
+   107→          <TabsTrigger value="balances">Leave Balances</TabsTrigger>
+   108→        </TabsList>
+   109→
+   110→        {/* Leave Requests */}
+   111→        <TabsContent value="requests" className="space-y-3">
+   112→          <div className="space-y-2">
+   113→            {requests.map(req => (
+   114→              <Card key={req.id} className="border-0 shadow-sm glass-card card-hover">
+   115→                <CardContent className="p-4">
+   116→                  <div className="flex items-start gap-4">
+   117→                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+   118→                      req.status === "Approved" ? "bg-emerald-500/15" : req.status === "Rejected" ? "bg-red-500/15" : "bg-yellow-500/15")}>
+   119→                      {req.status === "Approved" ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : req.status === "Rejected" ? <XCircle className="w-4 h-4 text-red-600" /> : <Clock className="w-4 h-4 text-yellow-600" />}
+   120→                    </div>
+   121→                    <div className="flex-1 min-w-0">
+   122→                      <div className="flex items-center gap-2 flex-wrap">
+   123→                        <p className="font-semibold text-sm">{req.employeeName}</p>
+   124→                        <Badge variant="outline" className={cn("text-[9px] border-0", LEAVE_TYPE_STYLES[req.type])}>{req.type}</Badge>
+   125→                        <Badge variant="outline" className={cn("text-[9px] border-0", LEAVE_STATUS_STYLES[req.status])}>{req.status}</Badge>
+   126→                      </div>
+   127→                      <p className="text-sm text-muted-foreground mt-1">{req.reason}</p>
+   128→                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+   129→                        <span>📅 {req.fromDate} → {req.toDate}</span>
+   130→                        <span>⏱️ {req.days} day(s)</span>
+   131→                        <span>👤 Applied: {req.appliedDate}</span>
+   132→                        {req.approvedBy && <span>✓ By: {req.approvedBy}</span>}
+   133→                      </div>
+   134→                      {req.comments && <p className="text-xs text-muted-foreground mt-1 italic">💬 {req.comments}</p>}
+   135→                    </div>
+   136→                    {req.status === "Pending" && (
+   137→                      <div className="flex gap-1.5 shrink-0">
+   138→                        <Button size="sm" className="h-7 bg-emerald-600 hover:bg-emerald-700 text-xs" onClick={() => handleAction(req.id, "Approved")}><CheckCircle className="w-3 h-3 mr-1" />Approve</Button>
+   139→                        <Button size="sm" variant="outline" className="h-7 text-red-600 text-xs" onClick={() => handleAction(req.id, "Rejected")}><XCircle className="w-3 h-3 mr-1" />Reject</Button>
+   140→                      </div>
+   141→                    )}
+   142→                  </div>
+   143→                </CardContent>
+   144→              </Card>
+   145→            ))}
+   146→          </div>
+   147→        </TabsContent>
+   148→
+   149→        {/* Leave Balances */}
+   150→        <TabsContent value="balances">
+   151→          <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   152→            <div className="overflow-x-auto">
+   153→              <Table>
+   154→                <TableHeader><TableRow className="border-border/40">
+   155→                  <TableHead>Employee</TableHead>
+   156→                  <TableHead className="text-center">Casual (10)</TableHead>
+   157→                  <TableHead className="text-center">Sick (15)</TableHead>
+   158→                  <TableHead className="text-center">Earned (20)</TableHead>
+   159→                  <TableHead className="text-center">Total Used</TableHead>
+   160→                </TableRow></TableHeader>
+   161→                <TableBody>
+   162→                  {LEAVE_BALANCES.map(b => {
+   163→                    const totalUsed = b.casual.used + b.sick.used + b.earned.used;
+   164→                    return (
+   165→                      <TableRow key={b.employeeId} className="border-border/30 hover:bg-muted/30">
+   166→                        <TableCell className="font-medium text-sm">{b.employeeName}<p className="text-[10px] text-muted-foreground">{b.employeeId}</p></TableCell>
+   167→                        <TableCell className="text-center">
+   168→                          <div className="flex items-center justify-center gap-1.5">
+   169→                            <span className={cn("font-bold text-sm", b.casual.remaining < 3 && "text-red-600")}>{b.casual.remaining}</span>
+   170→                            <span className="text-[10px] text-muted-foreground">({b.casual.used} used)</span>
+   171→                          </div>
+   172→                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-blue-500" style={{ width: `${b.casual.total > 0 ? (b.casual.used / b.casual.total) * 100 : 0}%` }} /></div>
+   173→                        </TableCell>
+   174→                        <TableCell className="text-center">
+   175→                          <div className="flex items-center justify-center gap-1.5">
+   176→                            <span className={cn("font-bold text-sm", b.sick.remaining < 3 && "text-red-600")}>{b.sick.remaining}</span>
+   177→                            <span className="text-[10px] text-muted-foreground">({b.sick.used} used)</span>
+   178→                          </div>
+   179→                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-red-500" style={{ width: `${b.sick.total > 0 ? (b.sick.used / b.sick.total) * 100 : 0}%` }} /></div>
+   180→                        </TableCell>
+   181→                        <TableCell className="text-center">
+   182→                          <div className="flex items-center justify-center gap-1.5">
+   183→                            <span className={cn("font-bold text-sm", b.earned.remaining < 3 && "text-red-600")}>{b.earned.remaining}</span>
+   184→                            <span className="text-[10px] text-muted-foreground">({b.earned.used} used)</span>
+   185→                          </div>
+   186→                          <div className="w-16 h-1 rounded-full bg-muted overflow-hidden mx-auto mt-1"><div className="h-full bg-primary" style={{ width: `${b.earned.total > 0 ? (b.earned.used / b.earned.total) * 100 : 0}%` }} /></div>
+   187→                        </TableCell>
+   188→                        <TableCell className="text-center"><span className="font-bold text-sm">{totalUsed}</span><span className="text-[10px] text-muted-foreground">/45</span></TableCell>
+   189→                      </TableRow>
+   190→                    );
+   191→                  })}
+   192→                </TableBody>
+   193→              </Table>
+   194→            </div>
+   195→          </Card>
+   196→        </TabsContent>
+   197→      </Tabs>
+   198→
+   199→      {/* Apply Leave Dialog */}
+   200→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   201→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   202→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Apply for Leave</DialogTitle></DialogHeader>
+   203→          <div className="space-y-2 py-1">
+   204→            <div className="grid grid-cols-2 gap-3">
+   205→              <div><Label>Employee Name *</Label><Input value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} /></div>
+   206→              <div><Label>Employee ID</Label><Input value={form.employeeId} onChange={e => setForm({...form, employeeId: e.target.value})} placeholder="T-001" /></div>
+   207→            </div>
+   208→            <div className="grid grid-cols-2 gap-3">
+   209→              <div><Label>Leave Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Casual", "Sick", "Earned", "Maternity", "Without Pay", "Emergency"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+   210→              <div><Label>Days</Label><Input type="number" value={form.days} onChange={e => setForm({...form, days: Number(e.target.value)})} min={1} /></div>
+   211→            </div>
+   212→            <div className="grid grid-cols-2 gap-3">
+   213→              <div><Label>From Date *</Label><Input type="date" value={form.fromDate} onChange={e => setForm({...form, fromDate: e.target.value})} /></div>
+   214→              <div><Label>To Date</Label><Input type="date" value={form.toDate} onChange={e => setForm({...form, toDate: e.target.value})} /></div>
+   215→            </div>
+   216→            <div><Label>Reason</Label><Input value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="Brief reason for leave" /></div>
+   217→          </div>
+   218→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.employeeName || !form.fromDate}>Submit Request</Button></DialogFooter>
+   219→        </DialogContent>
+   220→      </Dialog>
+   221→    </div>
+   222→  );
+   223→}
+   224→
+   225→// ═══════════════════════════════════════════════════════════════
+   226→// FEE CONCESSION / SCHOLARSHIP MODULE
+   227→// ═══════════════════════════════════════════════════════════════
+   228→const CONCESSION_TYPE_ICONS: Record<string, any> = {
+   229→  "Sibling Discount": Users, "Staff Child": Shield, "Merit Scholarship": Award,
+   230→  "Financial Aid": Gift, "Early Payment": Percent, "Full Scholarship": Award, "Custom": Wallet,
+   231→};
+   232→const CONCESSION_TYPE_COLORS: Record<string, string> = {
+   233→  "Sibling Discount": "bg-blue-500/10 text-blue-600", "Staff Child": "bg-purple-500/10 text-purple-600",
+   234→  "Merit Scholarship": "bg-emerald-500/10 text-emerald-600", "Financial Aid": "bg-accent/10 text-accent",
+   235→  "Early Payment": "bg-yellow-500/10 text-yellow-600", "Full Scholarship": "bg-primary/10 text-primary", "Custom": "bg-muted text-muted-foreground",
+   236→};
+   237→const CONCESSION_STATUS_STYLES: Record<string, string> = {
+   238→  Active: "bg-emerald-500/10 text-emerald-600", Expired: "bg-muted text-muted-foreground", Revoked: "bg-red-500/10 text-red-600",
+   239→};
+   240→
+   241→export function ConcessionModule() {
+   242→  const { toast } = useToast();
+   243→  const { students, moduleData, addModuleItem, updateModuleItem } = useAppStore();
+   244→  const concessions = (moduleData.concessions || []) as Concession[];
+   245→  const [addOpen, setAddOpen] = useState(false);
+   246→  const [form, setForm] = useState({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" });
+   247→  const [selectedClass, setSelectedClass] = useState("all");
+   248→  const [selectedStudentId, setSelectedStudentId] = useState("");
+   249→
+   250→  // Filter students by selected class
+   251→  const classOptions = Array.from(new Set(students.filter(s => s.status === "Active").map(s => s.class))).sort();
+   252→  const studentOptions = selectedClass === "all"
+   253→    ? students.filter(s => s.status === "Active")
+   254→    : students.filter(s => s.status === "Active" && s.class === selectedClass);
+   255→
+   256→  const handleStudentSelect = (id: string) => {
+   257→    setSelectedStudentId(id);
+   258→    const student = students.find(s => s.id === id);
+   259→    if (student) {
+   260→      setForm({ ...form, studentId: student.id, studentName: student.name, class: `${student.class}-${student.section}` });
+   261→    }
+   262→  };
+   263→
+   264→  const activeCount = concessions.filter(c => c.status === "Active").length;
+   265→  const expiredCount = concessions.filter(c => c.status === "Expired").length;
+   266→  const totalMonthlySaving = concessions.filter(c => c.status === "Active").reduce((s, c) => s + c.monthlySaving, 0);
+   267→  const totalStudents = new Set(concessions.filter(c => c.status === "Active").map(c => c.studentId)).size;
+   268→
+   269→  const handleAdd = () => {
+   270→    if (!form.studentName || !form.reason) return;
+   271→    // Look up the student's actual monthly fee for accurate saving calculation
+   272→    const student = students.find(s => s.id === form.studentId);
+   273→    const monthlyFee = student?.monthlyFee || 0;
+   274→    const monthlySaving = form.fixedAmount > 0 ? form.fixedAmount : Math.round((form.percentage / 100) * monthlyFee);
+   275→    const newConc: Concession = {
+   276→      id: `CON-${String(Date.now()).slice(-6)}`,
+   277→      studentId: form.studentId || "—",
+   278→      studentName: form.studentName,
+   279→      class: form.class || "—",
+   280→      type: form.type as any,
+   281→      percentage: form.percentage,
+   282→      fixedAmount: form.fixedAmount,
+   283→      reason: form.reason,
+   284→      approvedBy: "Admin",
+   285→      status: "Active",
+   286→      validFrom: form.validFrom || new Date().toISOString().split("T")[0],
+   287→      validTo: form.validTo || "2027-03-31",
+   288→      monthlySaving,
+   289→    };
+   290→    addModuleItem("concessions", newConc);
+   291→    toast({ title: "Concession Added ✓", description: `${form.studentName} — ${form.type} (${form.percentage > 0 ? form.percentage + "%" : "Rs. " + form.fixedAmount}) • Saves Rs. ${monthlySaving}/month` });
+   292→    setAddOpen(false);
+   293→    setForm({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" });
+   294→  };
+   295→
+   296→  const handleRevoke = (id: string) => {
+   297→    if (!window.confirm("Revoke this concession? The student's fee will revert to full amount.")) return;
+   298→    updateModuleItem("concessions", id, { status: "Revoked" });
+   299→    toast({ title: "Concession Revoked", description: "The concession has been revoked.", variant: "destructive" });
+   300→  };
+   301→
+   302→  return (
+   303→    <div className="space-y-3 fade-in">
+   304→      <div className="flex justify-between items-center flex-wrap gap-3">
+   305→        <p className="text-sm text-muted-foreground">Manage fee discounts, scholarships, and financial aid for students.</p>
+   306→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Concession</Button>
+   307→      </div>
+   308→
+   309→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   310→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Active Concessions</p><p className="text-xl font-bold">{activeCount}</p></div></CardContent></Card>
+   311→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Students Benefited</p><p className="text-xl font-bold">{totalStudents}</p></div></CardContent></Card>
+   312→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><Wallet className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Monthly Saving</p><p className="text-lg font-bold">Rs. {totalMonthlySaving.toLocaleString()}</p></div></CardContent></Card>
+   313→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-muted p-2"><Clock className="w-4 h-4 text-muted-foreground" /></div><div><p className="text-xs text-muted-foreground">Expired</p><p className="text-xl font-bold">{expiredCount}</p></div></CardContent></Card>
+   314→      </div>
+   315→
+   316→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   317→        {concessions.map(c => {
+   318→          const Icon = CONCESSION_TYPE_ICONS[c.type] || Gift;
+   319→          return (
+   320→            <Card key={c.id} className={cn("border-0 shadow-sm glass-card card-hover", c.status === "Revoked" && "opacity-60", c.status === "Expired" && "opacity-70")}>
+   321→              <CardContent className="p-4">
+   322→                <div className="flex items-start justify-between">
+   323→                  <div className="flex items-center gap-3">
+   324→                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", CONCESSION_TYPE_COLORS[c.type])}>
+   325→                      <Icon className="w-5 h-5" />
+   326→                    </div>
+   327→                    <div>
+   328→                      <p className="font-semibold text-sm">{c.studentName}</p>
+   329→                      <p className="text-[10px] text-muted-foreground">{c.class} • {c.studentId}</p>
+   330→                    </div>
+   331→                  </div>
+   332→                  <Badge variant="outline" className={cn("text-[9px] border-0", CONCESSION_STATUS_STYLES[c.status])}>{c.status}</Badge>
+   333→                </div>
+   334→                <div className="mt-3 flex items-center gap-2">
+   335→                  <Badge variant="outline" className={cn("text-xs border-0", CONCESSION_TYPE_COLORS[c.type])}>{c.type}</Badge>
+   336→                  {c.percentage > 0 && <Badge className="text-xs bg-primary/10 text-primary border-0">{c.percentage}% off</Badge>}
+   337→                  {c.fixedAmount > 0 && <Badge className="text-xs bg-accent/10 text-accent border-0">Rs. {c.fixedAmount} off</Badge>}
+   338→                </div>
+   339→                <p className="text-xs text-muted-foreground mt-2">{c.reason}</p>
+   340→                <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+   341→                  <span>📅 {c.validFrom} → {c.validTo}</span>
+   342→                  <span>👤 {c.approvedBy}</span>
+   343→                </div>
+   344→                <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+   345→                  <div>
+   346→                    <p className="text-[10px] text-muted-foreground uppercase">Monthly Saving</p>
+   347→                    <p className="font-bold text-sm text-emerald-600">Rs. {c.monthlySaving.toLocaleString()}</p>
+   348→                  </div>
+   349→                  {c.status === "Active" && (
+   350→                    <Button size="sm" variant="outline" className="h-7 text-xs text-red-600" onClick={() => handleRevoke(c.id)}>Revoke</Button>
+   351→                  )}
+   352→                </div>
+   353→              </CardContent>
+   354→            </Card>
+   355→          );
+   356→        })}
+   357→      </div>
+   358→
+   359→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   360→        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+   361→          {/* Gradient hero header */}
+   362→          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-accent via-accent to-primary/70 px-5 py-4 text-accent-foreground">
+   363→            <div className="absolute inset-0 opacity-10 pattern-grid" />
+   364→            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+   365→            <div className="relative flex items-center gap-4">
+   366→              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+   367→                <Percent className="w-6 h-6" />
+   368→              </div>
+   369→              <div className="flex-1">
+   370→                <h2 className="text-xl font-bold tracking-tight">Add Fee Concession</h2>
+   371→                <p className="text-xs text-white/75 mt-0.5">Apply a discount or scholarship to a student's tuition fee.</p>
+   372→              </div>
+   373→              <div className="hidden md:flex flex-col items-end text-right">
+   374→                <span className="text-[10px] uppercase tracking-wider text-white/60">Active Concessions</span>
+   375→                <span className="text-sm font-semibold mt-0.5">{concessions.filter(c => c.status === "Active").length}</span>
+   376→              </div>
+   377→            </div>
+   378→          </div>
+   379→
+   380→          {/* Form body */}
+   381→          <div className="px-5 py-4 space-y-3">
+   382→            {/* ─── Section 1: Student Selection ─── */}
+   383→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   384→              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   385→                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   386→                  <Users className="w-3.5 h-3.5 text-primary" />
+   387→                </div>
+   388→                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Student Selection</p>
+   389→                <span className="ml-auto text-[10px] text-muted-foreground">Pick class then student</span>
+   390→              </div>
+   391→              <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+   392→                <div className="space-y-1">
+   393→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class</Label>
+   394→                  <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); setForm({...form, studentId: "", studentName: "", class: ""}); }}>
+   395→                    <SelectTrigger className="h-9"><SelectValue placeholder="All Classes" /></SelectTrigger>
+   396→                    <SelectContent>
+   397→                      <SelectItem value="all">All Classes</SelectItem>
+   398→                      {classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+   399→                    </SelectContent>
+   400→                  </Select>
+   401→                </div>
+   402→                <div className="space-y-1">
+   403→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Student <span className="text-red-500">*</span></Label>
+   404→                  <Select value={selectedStudentId} onValueChange={handleStudentSelect}>
+   405→                    <SelectTrigger className="h-9"><SelectValue placeholder="Choose student..." /></SelectTrigger>
+   406→                    <SelectContent className="max-h-60">
+   407→                      {studentOptions.map(s => <SelectItem key={s.id} value={s.id}>{s.name} • {s.class}-{s.section} • Roll #{s.rollNo}</SelectItem>)}
+   408→                    </SelectContent>
+   409→                  </Select>
+   410→                </div>
+   411→              </div>
+   412→              {/* Auto-filled student info */}
+   413→              {form.studentName && (
+   414→                <div className="mx-3 mb-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-2.5">
+   415→                  <div className="flex items-center gap-2 mb-1.5">
+   416→                    <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+   417→                      <Users className="w-3.5 h-3.5 text-primary" />
+   418→                    </div>
+   419→                    <p className="text-xs font-semibold text-primary">{form.studentName}</p>
+   420→                  </div>
+   421→                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] pl-9">
+   422→                    <div><span className="text-muted-foreground">ID:</span> <span className="font-mono font-medium text-foreground">{form.studentId}</span></div>
+   423→                    <div><span className="text-muted-foreground">Class:</span> <span className="font-medium text-foreground">{form.class}</span></div>
+   424→                  </div>
+   425→                </div>
+   426→              )}
+   427→            </div>
+   428→
+   429→            {/* ─── Section 2: Concession Type ─── */}
+   430→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   431→              <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 border-b border-accent/15">
+   432→                <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+   433→                  <Gift className="w-3.5 h-3.5 text-accent" />
+   434→                </div>
+   435→                <p className="text-xs font-semibold text-accent uppercase tracking-wide">Concession Type</p>
+   436→                <span className="ml-auto text-[10px] text-muted-foreground">Choose discount category</span>
+   437→              </div>
+   438→              <div className="p-3 space-y-2">
+   439→                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Type</Label>
+   440→                <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
+   441→                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+   442→                  <SelectContent>
+   443→                    {["Sibling Discount", "Staff Child", "Merit Scholarship", "Financial Aid", "Early Payment", "Full Scholarship", "Custom"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+   444→                  </SelectContent>
+   445→                </Select>
+   446→              </div>
+   447→            </div>
+   448→
+   449→            {/* ─── Section 3: Discount Value ─── */}
+   450→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   451→              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+   452→                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+   453→                  <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+   454→                </div>
+   455→                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Discount Value</p>
+   456→                <span className="ml-auto text-[10px] text-muted-foreground">Percentage OR fixed</span>
+   457→              </div>
+   458→              <div className="p-3 grid grid-cols-2 gap-2.5">
+   459→                <div className="space-y-1">
+   460→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Percentage (%)</Label>
+   461→                  <div className="relative">
+   462→                    <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+   463→                    <Input type="number" value={form.percentage} onChange={e => setForm({...form, percentage: Number(e.target.value)})} min={0} max={100} placeholder="0-100" className="h-9 pl-8" />
+   464→                  </div>
+   465→                  {/* Quick percentage buttons */}
+   466→                  <div className="flex flex-wrap gap-1 mt-1">
+   467→                    {[10, 25, 50, 75, 100].map(p => (
+   468→                      <button
+   469→                        key={p}
+   470→                        type="button"
+   471→                        onClick={() => setForm({...form, percentage: p, fixedAmount: 0})}
+   472→                        className={cn(
+   473→                          "px-1.5 py-0.5 text-[9px] rounded border transition-colors font-medium",
+   474→                          form.percentage === p && form.fixedAmount === 0
+   475→                            ? "border-emerald-500 bg-emerald-500/15 text-emerald-700"
+   476→                            : "border-border/40 bg-background hover:bg-emerald-500/5"
+   477→                        )}
+   478→                      >
+   479→                        {p}%
+   480→                      </button>
+   481→                    ))}
+   482→                  </div>
+   483→                </div>
+   484→                <div className="space-y-1">
+   485→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Fixed Amount (Rs.)</Label>
+   486→                  <div className="relative">
+   487→                    <Wallet className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+   488→                    <Input type="number" value={form.fixedAmount} onChange={e => setForm({...form, fixedAmount: Number(e.target.value)})} min={0} placeholder="0" className="h-9 pl-8" />
+   489→                  </div>
+   490→                  <p className="text-[9px] text-muted-foreground">Use either % or fixed</p>
+   491→                </div>
+   492→              </div>
+   493→            </div>
+   494→
+   495→            {/* ─── Section 4: Reason & Validity ─── */}
+   496→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   497→              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/5 border-b border-purple-500/15">
+   498→                <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
+   499→                  <Shield className="w-3.5 h-3.5 text-purple-600" />
+   500→                </div>
+   501→                <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Reason & Validity</p>
+   502→                <span className="ml-auto text-[10px] text-muted-foreground">Justification & dates</span>
+   503→              </div>
+   504→              <div className="p-3 space-y-2.5">
+   505→                <div className="space-y-1">
+   506→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Reason <span className="text-red-500">*</span></Label>
+   507→                  <Input value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="e.g., 2 siblings in same school" className="h-9" />
+   508→                </div>
+   509→                <div className="grid grid-cols-2 gap-2.5">
+   510→                  <div className="space-y-1">
+   511→                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Valid From</Label>
+   512→                    <Input type="date" value={form.validFrom} onChange={e => setForm({...form, validFrom: e.target.value})} className="h-9" />
+   513→                  </div>
+   514→                  <div className="space-y-1">
+   515→                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Valid To</Label>
+   516→                    <Input type="date" value={form.validTo} onChange={e => setForm({...form, validTo: e.target.value})} className="h-9" />
+   517→                  </div>
+   518→                </div>
+   519→              </div>
+   520→            </div>
+   521→
+   522→            {/* Auto-generated info */}
+   523→            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+   524→              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+   525→                <Percent className="w-3 h-3 text-primary" />
+   526→              </div>
+   527→              <p className="text-[10px] text-muted-foreground leading-relaxed">
+   528→                <span className="font-semibold text-primary">How it works:</span> Use either percentage (applied to monthly tuition) OR a fixed amount (Rs.). The concession will be auto-applied to the next fee collection for this student.
+   529→              </p>
+   530→            </div>
+   531→          </div>
+   532→
+   533→          {/* Sticky footer */}
+   534→          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+   535→            <p className="text-[10px] text-muted-foreground">
+   536→              <span className="text-red-500">*</span> Required fields
+   537→            </p>
+   538→            <div className="flex gap-2">
+   539→              <Button variant="outline" onClick={() => { setAddOpen(false); setSelectedClass("all"); setSelectedStudentId(""); }} className="h-9">Cancel</Button>
+   540→              <Button className="bg-accent hover:bg-accent/90 h-9 px-5 shadow-md" onClick={handleAdd} disabled={!form.studentName || !form.reason}>
+   541→                <Plus className="w-4 h-4 mr-1.5" />Add Concession
+   542→              </Button>
+   543→            </div>
+   544→          </div>
+   545→        </DialogContent>
+   546→      </Dialog>
+   547→    </div>
+   548→  );
+   549→}
+   550→

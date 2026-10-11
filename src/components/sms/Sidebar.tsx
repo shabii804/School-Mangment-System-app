@@ -15,7 +15,7 @@ interface NavItem {
   key: ModuleKey;
   label: string;
   icon: LucideIcon;
-  group: "main" | "operations" | "finance" | "academics" | "system";
+  group: "main" | "operations" | "finance" | "academics" | "facilities" | "system";
 }
 
 const NAV_ITEMS: NavItem[] = [

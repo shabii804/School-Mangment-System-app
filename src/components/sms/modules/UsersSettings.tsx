@@ -199,7 +199,9 @@ export function SettingsModule() {
   const [lateFine, setLateFine] = useState("500");
   const [dueDate, setDueDate] = useState("10");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [classFeeDraft, setClassFeeDraft] = useState<Record<string, string>>(feeStructure.classFees);
+  const [classFeeDraft, setClassFeeDraft] = useState<Record<string, string>>(
+    () => Object.fromEntries(Object.entries(feeStructure.classFees).map(([k, v]) => [k, String(v)]))
+  );
 
   // Module control counts
   const totalModules = MODULE_CATALOG.filter(m => !m.alwaysOn).length;
@@ -277,13 +279,13 @@ export function SettingsModule() {
       });
 
       // Archive current timetables before the new session starts
-      const currentTimetables = moduleData.timetables || {};
+      const currentTimetables = (moduleData as any).timetables || {};
       if (Object.keys(currentTimetables).length > 0) {
         const archiveKey = `timetables_archive_${oldSession}`;
-        const existingArchive = moduleData[archiveKey] || {};
-        setModuleData(archiveKey, { ...existingArchive, ...currentTimetables });
+        const existingArchive = (moduleData as any)[archiveKey] || {};
+        setModuleData(archiveKey, { ...existingArchive, ...currentTimetables } as any);
         // Clear current timetables so admin can create fresh ones for the new session
-        setModuleData("timetables", {});
+        setModuleData("timetables", {} as any);
       }
 
       toast({

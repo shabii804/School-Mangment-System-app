@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +80,7 @@ export function SalaryModule() {
   ];
 
   const filteredEmployees = deptFilter === "all" ? allEmployees : allEmployees.filter(e => e.dept === deptFilter);
-  const departments = Array.from(new Set(allEmployees.map(e => e.dept)));
+  const departments = Array.from(new Set(allEmployees.map(e => e.dept).filter((d): d is string => Boolean(d))));
 
   const calculate = (emp: SalaryRow) => {
     const gross = emp.monthlySalary;
@@ -140,7 +140,7 @@ export function SalaryModule() {
           <SelectContent>
             {(() => {
               const now = new Date();
-              const months = [];
+              const months: React.ReactElement[] = [];
               // Show 12 past months + 6 future months so admin can plan ahead
               for (let i = 12; i >= -6; i--) {
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1);

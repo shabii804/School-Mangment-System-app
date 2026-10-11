@@ -63,6 +63,7 @@ export function DisciplineModule() {
       studentName: form.studentName,
       class: form.class || "—",
       date: new Date().toISOString().split("T")[0],
+      category: form.type,
       type: form.type as any,
       severity: form.severity as any,
       description: form.description,

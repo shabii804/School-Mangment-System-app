@@ -1,0 +1,832 @@
+     1→"use client";
+     2→
+     3→import { useState } from "react";
+     4→import { useAppStore } from "@/lib/sms-store";
+     5→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { Input } from "@/components/ui/input";
+     8→import { Label } from "@/components/ui/label";
+     9→import { Badge } from "@/components/ui/badge";
+    10→import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+    11→import {
+    12→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    13→} from "@/components/ui/dialog";
+    14→import {
+    15→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    16→} from "@/components/ui/select";
+    17→import {
+    18→  School, Users, BookOpen, Plus, Eye, Edit, Trash2, UserCog, Printer, Wallet,
+    19→  Sparkles, X, Wand2, AlertCircle,
+    20→} from "lucide-react";
+    21→import { type TimetableSlot } from "@/lib/sms-data";
+    22→import { cn } from "@/lib/utils";
+    23→import { useToast } from "@/hooks/use-toast";
+    24→import { printTimetablePDF } from "@/lib/pdf-service";
+    25→
+    26→export function ClassesModule() {
+    27→  const { students, teachers, classes: storeClasses, addClass: addClassAction, updateClass, subjects: storeSubjects } = useAppStore();
+    28→  const { toast } = useToast();
+    29→  const CLASSES = storeClasses;
+    30→  const SUBJECTS = storeSubjects;
+    31→  const [addOpen, setAddOpen] = useState(false);
+    32→  const [rosterClass, setRosterClass] = useState<string | null>(null);
+    33→  const [assignTeacher, setAssignTeacher] = useState<{ className: string; section: string; teacherId: string } | null>(null);
+    34→  const [subjectAssignClass, setSubjectAssignClass] = useState<string | null>(null);
+    35→  const [newClass, setNewClass] = useState({ name: "", sections: "A,B", monthlyFee: 2000 });
+    36→
+    37→  // Use store classes directly — they persist to localStorage
+    38→  const classes = CLASSES;
+    39→
+    40→  // Subject-teacher assignment: { "Grade 9": { "Mathematics": "T-001", "English": "T-003" } }
+    41→  const [subjectTeachers, setSubjectTeachers] = useState<Record<string, Record<string, string>>>({});
+    42→
+    43→  const rosterStudents = rosterClass ? students.filter(s => s.class === rosterClass && s.status === "Active") : [];
+    44→  const subjectAssignStudents = subjectAssignClass ? students.filter(s => s.class === subjectAssignClass && s.status === "Active") : [];
+    45→
+    46→  return (
+    47→    <div className="space-y-3">
+    48→      <div className="flex justify-between items-center flex-wrap gap-3">
+    49→        <p className="text-sm text-muted-foreground">Classes, sections, subjects, and class teachers.</p>
+    50→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Class</Button>
+    51→      </div>
+    52→
+    53→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    54→        {classes.length === 0 ? (
+    55→          <div className="col-span-full text-center py-16 text-sm text-muted-foreground">
+    56→            <School className="w-10 h-10 mx-auto mb-2 opacity-40" />
+    57→            <p className="font-medium">No classes added yet</p>
+    58→            <p className="text-xs mt-1">Click "Add Class" above to create your first class.</p>
+    59→          </div>
+    60→        ) : classes.map(cls => {
+    61→          const studentCount = students.filter(s => s.class === cls.name && s.status === "Active").length;
+    62→          const totalCapacity = cls.sections.length * 30;
+    63→          return (
+    64→            <Card key={cls.name} className="border-0 shadow-sm glass-card card-hover">
+    65→              <CardContent className="p-4">
+    66→                <div className="flex items-start justify-between">
+    67→                  <div className="flex items-center gap-3">
+    68→                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
+    69→                      <School className="w-4 h-4 text-primary" />
+    70→                    </div>
+    71→                    <div>
+    72→                      <p className="font-bold text-sm">{cls.name}</p>
+    73→                      <p className="text-xs text-muted-foreground">{cls.sections.length} section{cls.sections.length > 1 ? "s" : ""}</p>
+    74→                    </div>
+    75→                  </div>
+    76→                  <Badge variant="outline" className="text-[10px]">{cls.sections.join(", ")}</Badge>
+    77→                </div>
+    78→
+    79→                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+    80→                  <div className="rounded-lg bg-muted/30 p-2"><Users className="w-3.5 h-3.5 mx-auto text-muted-foreground" /><p className="text-sm font-bold mt-1">{studentCount}</p><p className="text-[9px] text-muted-foreground uppercase">Students</p></div>
+    81→                  <div className="rounded-lg bg-muted/30 p-2"><BookOpen className="w-3.5 h-3.5 mx-auto text-muted-foreground" /><p className="text-sm font-bold mt-1">{SUBJECTS.length}</p><p className="text-[9px] text-muted-foreground uppercase">Subjects</p></div>
+    82→                  <div className="rounded-lg bg-muted/30 p-2"><School className="w-3.5 h-3.5 mx-auto text-muted-foreground" /><p className="text-sm font-bold mt-1">{totalCapacity}</p><p className="text-[9px] text-muted-foreground uppercase">Capacity</p></div>
+    83→                </div>
+    84→
+    85→                {/* Class Teacher */}
+    86→                <div className="mt-3 pt-3 border-t border-border/30">
+    87→                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Class Teacher</p>
+    88→                  <div className="flex items-center gap-2">
+    89→                    <Avatar className="w-6 h-6"><AvatarFallback className="text-[10px] font-semibold bg-primary/15 text-primary">{(cls.classTeacher || "NA").split(" ").map(w => w[0]).join("").slice(0, 2)}</AvatarFallback></Avatar>
+    90→                    <p className="text-xs font-medium truncate flex-1">{cls.classTeacher || "Unassigned"}</p>
+    91→                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Assign Teacher" onClick={() => setAssignTeacher({ className: cls.name, section: cls.sections[0] || "", teacherId: "" })}>
+    92→                      <UserCog className="w-3 h-3" />
+    93→                    </Button>
+    94→                  </div>
+    95→                </div>
+    96→
+    97→                <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+    98→                  <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Fee</p><p className="font-bold text-sm">Rs. {cls.monthlyFee.toLocaleString()}</p></div>
+    99→                  <div className="flex gap-1">
+   100→                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setRosterClass(cls.name)}>
+   101→                      <Eye className="w-3 h-3 mr-1" />Roster
+   102→                    </Button>
+   103→                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSubjectAssignClass(cls.name)}>
+   104→                      <BookOpen className="w-3 h-3 mr-1" />Subjects
+   105→                    </Button>
+   106→                  </div>
+   107→                </div>
+   108→              </CardContent>
+   109→            </Card>
+   110→          );
+   111→        })}
+   112→      </div>
+   113→
+   114→      {/* Subjects list */}
+   115→      <Card className="border-0 shadow-sm glass-card">
+   116→        <CardHeader><CardTitle className="text-base">Subjects Offered</CardTitle></CardHeader>
+   117→        <CardContent>
+   118→          <div className="flex flex-wrap gap-2">
+   119→            {SUBJECTS.map(s => (
+   120→              <Badge key={s} variant="outline" className="px-3 py-1.5 text-xs bg-primary/5"><BookOpen className="w-3 h-3 mr-1.5" />{s}</Badge>
+   121→            ))}
+   122→          </div>
+   123→        </CardContent>
+   124→      </Card>
+   125→
+   126→      {/* Add Class Dialog */}
+   127→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   128→        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
+   129→          {/* Gradient hero header */}
+   130→          <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-primary to-accent/70 px-5 py-4 text-primary-foreground">
+   131→            <div className="absolute inset-0 opacity-10 pattern-grid" />
+   132→            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+   133→            <div className="relative flex items-center gap-4">
+   134→              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-2 ring-white/30 shadow-lg shrink-0">
+   135→                <School className="w-6 h-6" />
+   136→              </div>
+   137→              <div className="flex-1">
+   138→                <h2 className="text-xl font-bold tracking-tight">Add New Class</h2>
+   139→                <p className="text-xs text-white/75 mt-0.5">Create a new class with sections and a monthly tuition fee.</p>
+   140→              </div>
+   141→              <div className="hidden md:flex flex-col items-end text-right">
+   142→                <span className="text-[10px] uppercase tracking-wider text-white/60">Total Classes</span>
+   143→                <span className="text-sm font-semibold mt-0.5">{classes.length}</span>
+   144→              </div>
+   145→            </div>
+   146→          </div>
+   147→
+   148→          {/* Form body */}
+   149→          <div className="px-5 py-4 space-y-3">
+   150→            {/* ─── Section: Basic Information ─── */}
+   151→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   152→              <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/15">
+   153→                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+   154→                  <School className="w-3.5 h-3.5 text-primary" />
+   155→                </div>
+   156→                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Class Details</p>
+   157→                <span className="ml-auto text-[10px] text-muted-foreground">Name & sections</span>
+   158→              </div>
+   159→              <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-2.5">
+   160→                <div className="md:col-span-2 space-y-1">
+   161→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class Name <span className="text-red-500">*</span></Label>
+   162→                  <Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" className="h-9" />
+   163→                </div>
+   164→                <div className="space-y-1">
+   165→                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Sections</Label>
+   166→                  <Input value={newClass.sections} onChange={e => setNewClass({...newClass, sections: e.target.value})} placeholder="A, B, C" className="h-9" />
+   167→                  <p className="text-[9px] text-muted-foreground">Comma-separated</p>
+   168→                </div>
+   169→              </div>
+   170→            </div>
+   171→
+   172→            {/* ─── Section: Fee ─── */}
+   173→            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
+   174→              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/5 border-b border-emerald-500/15">
+   175→                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+   176→                  <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+   177→                </div>
+   178→                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Monthly Tuition Fee</p>
+   179→                <span className="ml-auto text-[10px] text-muted-foreground">Per student, per month</span>
+   180→              </div>
+   181→              <div className="p-3 space-y-2">
+   182→                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount (Rs.)</Label>
+   183→                <div className="relative">
+   184→                  <Wallet className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+   185→                  <Input type="number" value={newClass.monthlyFee} onChange={e => setNewClass({...newClass, monthlyFee: Number(e.target.value)})} placeholder="e.g., 3000" className="h-10 pl-8 text-lg font-semibold" />
+   186→                </div>
+   187→                {/* Quick amounts */}
+   188→                <div className="flex flex-wrap gap-1.5">
+   189→                  {[1000, 2000, 3000, 5000, 8000, 10000].map(amt => (
+   190→                    <button
+   191→                      key={amt}
+   192→                      type="button"
+   193→                      onClick={() => setNewClass({...newClass, monthlyFee: amt})}
+   194→                      className={cn(
+   195→                        "px-2 py-1 text-[10px] rounded-md border transition-colors font-medium",
+   196→                        newClass.monthlyFee === amt
+   197→                          ? "border-emerald-500 bg-emerald-500/15 text-emerald-700"
+   198→                          : "border-border/40 bg-background hover:bg-emerald-500/5 hover:border-emerald-500/30"
+   199→                      )}
+   200→                    >
+   201→                      Rs. {amt.toLocaleString()}
+   202→                    </button>
+   203→                  ))}
+   204→                </div>
+   205→              </div>
+   206→            </div>
+   207→
+   208→            {/* Auto-generated info */}
+   209→            <div className="rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 p-2.5 flex items-start gap-2">
+   210→              <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+   211→                <BookOpen className="w-3 h-3 text-primary" />
+   212→              </div>
+   213→              <p className="text-[10px] text-muted-foreground leading-relaxed">
+   214→                <span className="font-semibold text-primary">Auto on save:</span> Class appears in Students, Teachers, Fees, Reports, and Timetable modules. Tuition fee is used for fee calculation & defaulters tracking.
+   215→              </p>
+   216→            </div>
+   217→          </div>
+   218→
+   219→          {/* Sticky footer */}
+   220→          <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border/60 px-5 py-3 flex items-center justify-between gap-3">
+   221→            <p className="text-[10px] text-muted-foreground">
+   222→              <span className="text-red-500">*</span> Required fields
+   223→            </p>
+   224→            <div className="flex gap-2">
+   225→              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+   226→              <Button
+   227→                className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md"
+   228→                disabled={!newClass.name}
+   229→                onClick={() => {
+   230→                  if (newClass.name) {
+   231→                    addClassAction({
+   232→                      name: newClass.name,
+   233→                      sections: newClass.sections.split(",").map(s => s.trim()).filter(Boolean),
+   234→                      monthlyFee: newClass.monthlyFee,
+   235→                    });
+   236→                    toast({ title: "Class Added ✓", description: `${newClass.name} created with monthly fee Rs. ${newClass.monthlyFee.toLocaleString()}.` });
+   237→                    setAddOpen(false);
+   238→                    setNewClass({ name: "", sections: "A,B", monthlyFee: 2000 });
+   239→                  }
+   240→                }}
+   241→              >
+   242→                <Plus className="w-4 h-4 mr-1.5" />Add Class
+   243→              </Button>
+   244→            </div>
+   245→          </div>
+   246→        </DialogContent>
+   247→      </Dialog>
+   248→
+   249→      {/* Roster Dialog */}
+   250→      <Dialog open={!!rosterClass} onOpenChange={(o) => !o && setRosterClass(null)}>
+   251→        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+   252→          <DialogHeader>
+   253→            <DialogTitle className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" />{rosterClass} — Student Roster</DialogTitle>
+   254→          </DialogHeader>
+   255→          <div className="py-2">
+   256→            <p className="text-xs text-muted-foreground mb-3">{rosterStudents.length} active students enrolled</p>
+   257→            <div className="space-y-1.5 max-h-96 overflow-y-auto">
+   258→              {rosterStudents.length === 0 ? (
+   259→                <p className="text-center text-sm text-muted-foreground py-8">No students enrolled in this class.</p>
+   260→              ) : (
+   261→                rosterStudents.map((s, i) => (
+   262→                  <div key={s.id} className="flex items-center gap-3 p-2 rounded-lg border border-border/30 hover:bg-muted/30">
+   263→                    <span className="text-xs font-mono text-muted-foreground w-6">{i + 1}</span>
+   264→                    <Avatar className="w-8 h-8">
+   265→                      {s.photo ? <img src={s.photo} alt={s.name} className="w-full h-full object-cover rounded-full" /> :
+   266→                      <AvatarFallback className={cn("text-xs font-semibold", s.gender === "Male" ? "bg-primary/15 text-primary" : "bg-purple-500/15 text-purple-600")}>{s.name.split(" ").map(w => w[0]).join("").slice(0, 2)}</AvatarFallback>}
+   267→                    </Avatar>
+   268→                    <div className="flex-1 min-w-0">
+   269→                      <p className="text-sm font-medium truncate">{s.name}</p>
+   270→                      <p className="text-[10px] text-muted-foreground">{s.id} • Roll #{s.rollNo} • {s.section}</p>
+   271→                    </div>
+   272→                    <Badge variant="outline" className="text-[10px]">{s.gender}</Badge>
+   273→                    {s.isHosteller && <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-0">Hostel</Badge>}
+   274→                    {s.outstandingAmount > 0 && <Badge variant="destructive" className="text-[10px]">Rs. {s.outstandingAmount.toLocaleString()}</Badge>}
+   275→                  </div>
+   276→                ))
+   277→              )}
+   278→            </div>
+   279→          </div>
+   280→        </DialogContent>
+   281→      </Dialog>
+   282→
+   283→      {/* Assign Class Teacher Dialog */}
+   284→      <Dialog open={!!assignTeacher} onOpenChange={(o) => !o && setAssignTeacher(null)}>
+   285→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   286→          <DialogHeader><DialogTitle className="flex items-center gap-2"><UserCog className="w-4 h-4 text-primary" />Assign Class Teacher</DialogTitle></DialogHeader>
+   287→          {assignTeacher && (
+   288→            <div className="space-y-2 py-1">
+   289→              <div className="p-3 rounded-lg bg-muted/30">
+   290→                <p className="text-sm font-medium">{assignTeacher.className} — Section {assignTeacher.section}</p>
+   291→              </div>
+   292→              <div>
+   293→                <Label>Select Teacher</Label>
+   294→                <Select value={assignTeacher.teacherId} onValueChange={v => setAssignTeacher({...assignTeacher, teacherId: v})}>
+   295→                  <SelectTrigger><SelectValue placeholder="Choose a teacher..." /></SelectTrigger>
+   296→                  <SelectContent>
+   297→                    {teachers.map(t => <SelectItem key={t.id} value={t.id}>{t.name} • {t.designation}</SelectItem>)}
+   298→                  </SelectContent>
+   299→                </Select>
+   300→              </div>
+   301→            </div>
+   302→          )}
+   303→          <DialogFooter>
+   304→            <Button variant="outline" onClick={() => setAssignTeacher(null)}>Cancel</Button>
+   305→            <Button className="bg-primary hover:bg-primary/90" disabled={!assignTeacher?.teacherId} onClick={() => {
+   306→              if (assignTeacher && assignTeacher.teacherId) {
+   307→                const teacher = teachers.find(t => t.id === assignTeacher.teacherId);
+   308→                if (teacher) {
+   309→                  updateClass(assignTeacher.className, { classTeacher: teacher.name });
+   310→                  toast({ title: "Class Teacher Assigned ✓", description: `${teacher.name} assigned to ${assignTeacher.className}-${assignTeacher.section}.` });
+   311→                  setAssignTeacher(null);
+   312→                }
+   313→              }
+   314→            }}>Assign Teacher</Button>
+   315→          </DialogFooter>
+   316→        </DialogContent>
+   317→      </Dialog>
+   318→
+   319→      {/* Subject-Teacher Assignment Dialog */}
+   320→      <Dialog open={!!subjectAssignClass} onOpenChange={(o) => !o && setSubjectAssignClass(null)}>
+   321→        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+   322→          <DialogHeader>
+   323→            <DialogTitle className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-primary" />Subject-Teacher Assignment — {subjectAssignClass}</DialogTitle>
+   324→          </DialogHeader>
+   325→          {subjectAssignClass && (
+   326→            <div className="space-y-2 py-2">
+   327→              <p className="text-xs text-muted-foreground">Assign a teacher for each subject taught in this class. Click the dropdown to select or change the teacher.</p>
+   328→              <div className="rounded-lg border border-border/40 overflow-hidden">
+   329→                <table className="w-full text-sm">
+   330→                  <thead className="bg-muted/40 border-b border-border/30">
+   331→                    <tr>
+   332→                      <th className="text-left p-2.5 text-xs font-semibold text-muted-foreground uppercase">Subject</th>
+   333→                      <th className="text-left p-2.5 text-xs font-semibold text-muted-foreground uppercase">Assigned Teacher</th>
+   334→                      <th className="text-center p-2.5 text-xs font-semibold text-muted-foreground uppercase">Status</th>
+   335→                    </tr>
+   336→                  </thead>
+   337→                  <tbody>
+   338→                    {SUBJECTS.map(subj => {
+   339→                      const assignedId = subjectTeachers[subjectAssignClass]?.[subj] || "";
+   340→                      const teacher = teachers.find(t => t.id === assignedId);
+   341→                      return (
+   342→                        <tr key={subj} className="border-b border-border/20 hover:bg-muted/20 last:border-0">
+   343→                          <td className="p-2.5">
+   344→                            <div className="flex items-center gap-2">
+   345→                              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center"><BookOpen className="w-3.5 h-3.5 text-primary" /></div>
+   346→                              <span className="font-medium text-sm">{subj}</span>
+   347→                            </div>
+   348→                          </td>
+   349→                          <td className="p-2.5">
+   350→                            <Select
+   351→                              value={assignedId}
+   352→                              onValueChange={(teacherId) => {
+   353→                                setSubjectTeachers(prev => ({
+   354→                                  ...prev,
+   355→                                  [subjectAssignClass]: { ...(prev[subjectAssignClass] || {}), [subj]: teacherId },
+   356→                                }));
+   357→                              }}
+   358→                            >
+   359→                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select teacher..." /></SelectTrigger>
+   360→                              <SelectContent>
+   361→                                {teachers.map(t => <SelectItem key={t.id} value={t.id}>{t.name} • {t.designation}</SelectItem>)}
+   362→                              </SelectContent>
+   363→                            </Select>
+   364→                          </td>
+   365→                          <td className="p-2.5 text-center">
+   366→                            {teacher ? (
+   367→                              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-0">✓ Assigned</Badge>
+   368→                            ) : (
+   369→                              <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-0">Unassigned</Badge>
+   370→                            )}
+   371→                          </td>
+   372→                        </tr>
+   373→                      );
+   374→                    })}
+   375→                  </tbody>
+   376→                </table>
+   377→              </div>
+   378→              <div className="flex items-center justify-between mt-2">
+   379→                <p className="text-xs text-muted-foreground">
+   380→                  {SUBJECTS.filter(s => subjectTeachers[subjectAssignClass]?.[s]).length} of {SUBJECTS.length} subjects assigned
+   381→                </p>
+   382→                <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => setSubjectAssignClass(null)}>
+   383→                  Done
+   384→                </Button>
+   385→              </div>
+   386→            </div>
+   387→          )}
+   388→        </DialogContent>
+   389→      </Dialog>
+   390→    </div>
+   391→  );
+   392→}
+   393→
+   394→// ─────────────────────────────────────────────────────────────
+   395→// TIMETABLE MODULE
+   396→// ─────────────────────────────────────────────────────────────
+   397→const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+   398→const PERIOD_TIMES = [
+   399→  "08:00 - 08:45", "08:45 - 09:30", "09:30 - 10:15",
+   400→  "10:30 - 11:15", "11:15 - 12:00", "12:00 - 12:45",
+   401→];
+   402→
+   403→// Subject color palette for visual variety
+   404→const SUBJECT_COLORS: Record<string, string> = {
+   405→  Mathematics: "bg-blue-500/10 border-blue-500/30 text-blue-700",
+   406→  English: "bg-purple-500/10 border-purple-500/30 text-purple-700",
+   407→  Urdu: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700",
+   408→  Islamiat: "bg-teal-500/10 border-teal-500/30 text-teal-700",
+   409→  "Social Studies": "bg-amber-500/10 border-amber-500/30 text-amber-700",
+   410→  Physics: "bg-cyan-500/10 border-cyan-500/30 text-cyan-700",
+   411→  Chemistry: "bg-orange-500/10 border-orange-500/30 text-orange-700",
+   412→  Biology: "bg-green-500/10 border-green-500/30 text-green-700",
+   413→  "Computer Science": "bg-indigo-500/10 border-indigo-500/30 text-indigo-700",
+   414→  History: "bg-rose-500/10 border-rose-500/30 text-rose-700",
+   415→  Geography: "bg-lime-500/10 border-lime-500/30 text-lime-700",
+   416→};
+   417→const defaultColor = "bg-primary/5 border-primary/20 text-primary";
+   418→
+   419→export function TimetableModule() {
+   420→  const { school, classes: storeClasses, subjects: storeSubjects, teachers, moduleData, setModuleData } = useAppStore();
+   421→  const { toast } = useToast();
+   422→  const CLASSES = storeClasses;
+   423→  const SUBJECTS = storeSubjects;
+   424→  const classOptions = CLASSES.length > 0
+   425→    ? CLASSES.flatMap(c => (c.sections.length > 0 ? c.sections : ["A"]).map(s => `${c.name}-${s}`))
+   426→    : [];
+   427→
+   428→  const [selectedClass, setSelectedClass] = useState(classOptions[0] || "");
+   429→  const [editSlot, setEditSlot] = useState<{ day: string; period: number; slot?: TimetableSlot } | null>(null);
+   430→  const [aiOpen, setAiOpen] = useState(false);
+   431→  const [aiGenerating, setAiGenerating] = useState(false);
+   432→
+   433→  // Read timetable from store moduleData.timetables (keyed by class-section)
+   434→  const timetables = (moduleData.timetables || {}) as Record<string, TimetableSlot[]>;
+   435→  const slots: TimetableSlot[] = timetables[selectedClass] || [];
+   436→
+   437→  const getSlot = (day: string, period: number) => slots.find(s => s.day === day && s.period === period);
+   438→
+   439→  // Save a slot (add or update) — persists to store
+   440→  const saveSlot = (day: string, period: number, data: { subject: string; teacher: string; room: string }) => {
+   441→    const existing = slots.filter(s => !(s.day === day && s.period === period));
+   442→    const updated = [...existing, { day, period, ...data }];
+   443→    setModuleData("timetables", { ...timetables, [selectedClass]: updated });
+   444→  };
+   445→
+   446→  // Delete a slot
+   447→  const deleteSlot = (day: string, period: number) => {
+   448→    const updated = slots.filter(s => !(s.day === day && s.period === period));
+   449→    setModuleData("timetables", { ...timetables, [selectedClass]: updated });
+   450→  };
+   451→
+   452→  // ─── AI Auto-Generate Timetable ───
+   453→  // Smart algorithm:
+   454→  // 1. Distributes subjects evenly across the week (no subject twice on same day if avoidable)
+   455→  // 2. Respects teacher assignments (from teachers' subjects list)
+   456→  // 3. Avoids double-booking a teacher in the same period
+   457→  // 4. Assigns rooms (defaults to "Room 1" etc., or uses class section)
+   458→  const autoGenerate = () => {
+   459→    if (!selectedClass) {
+   460→      toast({ title: "Select a class", description: "Please select a class first.", variant: "destructive" });
+   461→      return;
+   462→    }
+   463→    if (SUBJECTS.length === 0) {
+   464→      toast({ title: "No subjects", description: "Add subjects in the Classes module first.", variant: "destructive" });
+   465→      setAiOpen(false);
+   466→      return;
+   467→    }
+   468→    setAiGenerating(true);
+   469→
+   470→    // Build subject→teacher map from store teachers
+   471→    const subjectTeachers: Record<string, string[]> = {};
+   472→    SUBJECTS.forEach(subj => {
+   473→      const eligible = teachers.filter(t => t.subjects.includes(subj));
+   474→      subjectTeachers[subj] = eligible.length > 0 ? eligible.map(t => t.name) : [];
+   475→    });
+   476→
+   477→    // Track teacher bookings: { teacherName: Set of "day-period" }
+   478→    const teacherBookings: Record<string, Set<string>> = {};
+   479→    teachers.forEach(t => { teacherBookings[t.name] = new Set(); });
+   480→
+   481→    // Generate schedule
+   482→    const newSlots: TimetableSlot[] = [];
+   483→    const usedToday: Record<string, Set<string>> = {}; // day → subjects used that day
+   484→    DAYS.forEach(d => { usedToday[d] = new Set(); });
+   485→
+   486→    // Subject quota: each subject should appear roughly (6 periods × 6 days) / numSubjects times
+   487→    const totalPeriods = PERIOD_TIMES.length * DAYS.length; // 36
+   488→    const subjectQuota = Math.max(1, Math.floor(totalPeriods / SUBJECTS.length));
+   489→
+   490→    // Count how many times each subject has been scheduled
+   491→    const subjectCount: Record<string, number> = {};
+   492→    SUBJECTS.forEach(s => { subjectCount[s] = 0; });
+   493→
+   494→    // Determine the base room from the selected class
+   495→    const baseRoom = selectedClass ? `Room ${selectedClass.split("-").pop() || "1"}` : "Room 1";
+   496→
+   497→    let generated = 0;
+   498→    for (const day of DAYS) {
+   499→      for (let period = 1; period <= PERIOD_TIMES.length; period++) {
+   500→        // Pick a subject: prefer ones that haven't met quota and weren't used today
+   501→        const candidates = SUBJECTS
+   502→          .filter(s => !usedToday[day].has(s))
+   503→          .sort((a, b) => (subjectCount[a] - subjectCount[b]));
+   504→
+   505→        if (candidates.length === 0) {
+   506→          // All subjects used today; pick the least-used overall
+   507→          const fallback = SUBJECTS.sort((a, b) => subjectCount[a] - subjectCount[b])[0];
+   508→          if (fallback) {
+   509→            const teacher = subjectTeachers[fallback]?.[0] || "—";
+   510→            newSlots.push({ day, period, subject: fallback, teacher, room: baseRoom });
+   511→            if (teacher !== "—") teacherBookings[teacher]?.add(`${day}-${period}`);
+   512→            subjectCount[fallback]++;
+   513→            generated++;
+   514→          }
+   515→          continue;
+   516→        }
+   517→
+   518→        const subject = candidates[0];
+   519→        // Find a teacher who teaches this subject and isn't booked in this period
+   520→        const eligibleTeachers = subjectTeachers[subject] || [];
+   521→        let assignedTeacher = "—";
+   522→        for (const tName of eligibleTeachers) {
+   523→          if (!teacherBookings[tName]?.has(`${day}-${period}`)) {
+   524→            assignedTeacher = tName;
+   525→            teacherBookings[tName]?.add(`${day}-${period}`);
+   526→            break;
+   527→          }
+   528→        }
+   529→        // If all eligible teachers are booked, assign the first one anyway (or "TBD")
+   530→        if (assignedTeacher === "—" && eligibleTeachers.length > 0) {
+   531→          assignedTeacher = `${eligibleTeachers[0]} (busy)`;
+   532→        }
+   533→
+   534→        newSlots.push({ day, period, subject, teacher: assignedTeacher, room: baseRoom });
+   535→        usedToday[day].add(subject);
+   536→        subjectCount[subject]++;
+   537→        generated++;
+   538→      }
+   539→    }
+   540→
+   541→    // Save the generated timetable
+   542→    setModuleData("timetables", { ...timetables, [selectedClass]: newSlots });
+   543→    setAiGenerating(false);
+   544→    setAiOpen(false);
+   545→    toast({
+   546→      title: "Timetable Auto-Generated ✓",
+   547→      description: `${generated} slots created for ${selectedClass} • ${SUBJECTS.length} subjects distributed • ${teachers.length} teachers assigned.`,
+   548→    });
+   549→  };
+   550→
+   551→  return (
+   552→    <div className="space-y-3">
+   553→      <div className="flex justify-between items-center flex-wrap gap-3">
+   554→        <div className="flex items-center gap-3">
+   555→          <p className="text-sm text-muted-foreground">Weekly class timetable</p>
+   556→          <Select value={selectedClass} onValueChange={setSelectedClass}>
+   557→            <SelectTrigger className="w-40 bg-background/60"><SelectValue placeholder="Select class..." /></SelectTrigger>
+   558→            <SelectContent>
+   559→              {classOptions.length === 0 ? (
+   560→                <div className="px-3 py-2 text-xs text-muted-foreground text-center">No classes yet. Add in Classes module.</div>
+   561→              ) : classOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+   562→            </SelectContent>
+   563→          </Select>
+   564→        </div>
+   565→        <div className="flex gap-2">
+   566→          <Button variant="outline" size="sm" onClick={() => printTimetablePDF(selectedClass, slots, school)} disabled={!selectedClass || slots.length === 0}>
+   567→            <Printer className="w-4 h-4 mr-1.5" />Print
+   568→          </Button>
+   569→          <Button variant="outline" size="sm" className="border-accent/30 text-accent hover:bg-accent/10" onClick={() => setAiOpen(true)} disabled={!selectedClass || SUBJECTS.length === 0}>
+   570→            <Wand2 className="w-4 h-4 mr-1.5" />AI Auto-Generate
+   571→          </Button>
+   572→        </div>
+   573→      </div>
+   574→
+   575→      {/* Info bar */}
+   576→      <div className="flex flex-wrap items-center gap-3 text-xs">
+   577→        <span className="text-muted-foreground">{slots.length} of {DAYS.length * PERIOD_TIMES.length} slots filled</span>
+   578→        {SUBJECTS.length === 0 && (
+   579→          <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-0">
+   580→            <AlertCircle className="w-3 h-3 mr-1" />Add subjects first
+   581→          </Badge>
+   582→        )}
+   583→        {teachers.length === 0 && (
+   584→          <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-0">
+   585→            <AlertCircle className="w-3 h-3 mr-1" />Add teachers for auto-assignment
+   586→          </Badge>
+   587→        )}
+   588→      </div>
+   589→
+   590→      {!selectedClass ? (
+   591→        <Card className="border-0 shadow-sm glass-card">
+   592→          <CardContent className="p-12 text-center">
+   593→            <School className="w-10 h-10 mx-auto mb-2 text-muted-foreground/40" />
+   594→            <p className="font-medium text-sm">No class selected</p>
+   595→            <p className="text-xs text-muted-foreground mt-1">Select a class above to view or edit its timetable.</p>
+   596→          </CardContent>
+   597→        </Card>
+   598→      ) : (
+   599→        <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   600→          <div className="overflow-x-auto">
+   601→            <table className="w-full text-sm">
+   602→              <thead>
+   603→                <tr className="border-b border-border/40">
+   604→                  <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide min-w-32">Day / Period</th>
+   605→                  {PERIOD_TIMES.map((t, i) => (
+   606→                    <th key={i} className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase min-w-32">
+   607→                      <div>P{i + 1}</div>
+   608→                      <div className="text-[10px] font-normal text-muted-foreground/70 normal-case">{t}</div>
+   609→                    </th>
+   610→                  ))}
+   611→                </tr>
+   612→              </thead>
+   613→              <tbody>
+   614→                {DAYS.map(day => (
+   615→                  <tr key={day} className="border-b border-border/30 hover:bg-muted/10">
+   616→                    <td className="p-3 font-semibold text-sm">{day}</td>
+   617→                    {PERIOD_TIMES.map((_, i) => {
+   618→                      const slot = getSlot(day, i + 1);
+   619→                      const colorClass = slot ? (SUBJECT_COLORS[slot.subject] || defaultColor) : "";
+   620→                      return (
+   621→                        <td key={i} className="p-2">
+   622→                          <button
+   623→                            onClick={() => setEditSlot({ day, period: i + 1, slot })}
+   624→                            className={cn(
+   625→                              "w-full h-16 rounded-lg p-2 border text-xs flex flex-col justify-center text-left transition-all hover:scale-[1.02] hover:shadow-sm",
+   626→                              slot ? colorClass : "bg-muted/20 border-dashed border-border/40 hover:border-primary/40 hover:bg-primary/5"
+   627→                            )}
+   628→                          >
+   629→                            {slot ? (
+   630→                              <>
+   631→                                <p className="font-semibold truncate">{slot.subject}</p>
+   632→                                <p className="text-[10px] text-muted-foreground truncate">{slot.teacher}</p>
+   633→                                <p className="text-[10px] text-muted-foreground/70 truncate">{slot.room}</p>
+   634→                              </>
+   635→                            ) : (
+   636→                              <div className="flex items-center justify-center text-muted-foreground/40">
+   637→                                <Plus className="w-3.5 h-3.5" />
+   638→                              </div>
+   639→                            )}
+   640→                          </button>
+   641→                        </td>
+   642→                      );
+   643→                    })}
+   644→                  </tr>
+   645→                ))}
+   646→              </tbody>
+   647→            </table>
+   648→          </div>
+   649→        </Card>
+   650→      )}
+   651→
+   652→      {/* Slot Editor Dialog */}
+   653→      {editSlot && (
+   654→        <Dialog open={!!editSlot} onOpenChange={(o) => !o && setEditSlot(null)}>
+   655→          <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   656→            <DialogHeader>
+   657→              <DialogTitle className="flex items-center gap-2">
+   658→                <Edit className="w-4 h-4 text-primary" />
+   659→                {editSlot.slot ? "Edit Slot" : "Add Slot"} — {editSlot.day}, Period {editSlot.period}
+   660→              </DialogTitle>
+   661→            </DialogHeader>
+   662→            <SlotEditor
+   663→              slot={editSlot.slot}
+   664→              subjects={SUBJECTS}
+   665→              teachers={teachers.map(t => ({ name: t.name, subjects: t.subjects }))}
+   666→              onSave={(data) => {
+   667→                saveSlot(editSlot.day, editSlot.period, data);
+   668→                toast({ title: "Slot Saved ✓", description: `${data.subject} • ${data.teacher} • ${editSlot.day} P${editSlot.period}` });
+   669→                setEditSlot(null);
+   670→              }}
+   671→              onDelete={editSlot.slot ? () => {
+   672→                deleteSlot(editSlot.day, editSlot.period);
+   673→                toast({ title: "Slot Cleared", description: `${editSlot.day} Period ${editSlot.period} is now empty.` });
+   674→                setEditSlot(null);
+   675→              } : undefined}
+   676→              onCancel={() => setEditSlot(null)}
+   677→            />
+   678→          </DialogContent>
+   679→        </Dialog>
+   680→      )}
+   681→
+   682→      {/* AI Auto-Generate Dialog */}
+   683→      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+   684→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   685→          <DialogHeader>
+   686→            <DialogTitle className="flex items-center gap-2">
+   687→              <Wand2 className="w-4 h-4 text-accent" />
+   688→              AI Auto-Generate Timetable
+   689→            </DialogTitle>
+   690→          </DialogHeader>
+   691→          <div className="space-y-3 py-2">
+   692→            <div className="rounded-lg bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 p-3">
+   693→              <p className="text-xs text-muted-foreground leading-relaxed">
+   694→                <span className="font-semibold text-accent">Smart Scheduling Engine</span> will create a complete weekly timetable for <span className="font-semibold text-foreground">{selectedClass}</span> using:
+   695→              </p>
+   696→              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+   697→                <li className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-accent" />{SUBJECTS.length} subjects from your curriculum</li>
+   698→                <li className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-accent" />{teachers.length} teachers with their subject assignments</li>
+   699→                <li className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-accent" />{DAYS.length} days × {PERIOD_TIMES.length} periods = {DAYS.length * PERIOD_TIMES.length} slots</li>
+   700→              </ul>
+   701→            </div>
+   702→
+   703→            <div className="rounded-lg border border-border/40 bg-muted/20 p-3 space-y-1.5 text-xs">
+   704→              <p className="font-semibold text-foreground">The algorithm:</p>
+   705→              <p>1. Distributes subjects evenly across all days (no subject repeated on the same day unless necessary)</p>
+   706→              <p>2. Assigns teachers based on their subject expertise</p>
+   707→              <p>3. Prevents teacher double-booking (same teacher can't be in 2 classes at the same period)</p>
+   708→              <p>4. Fills all {DAYS.length * PERIOD_TIMES.length} slots optimally</p>
+   709→            </div>
+   710→
+   711→            {SUBJECTS.length === 0 && (
+   712→              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-600">
+   713→                <AlertCircle className="w-4 h-4 inline mr-1" />
+   714→                No subjects found. Go to Classes module → Subjects tab to add subjects first.
+   715→              </div>
+   716→            )}
+   717→            {teachers.length === 0 && (
+   718→              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-600">
+   719→                <AlertCircle className="w-4 h-4 inline mr-1" />
+   720→                No teachers found. Slots will be created with "—" as teacher. Add teachers in Teachers module for better results.
+   721→              </div>
+   722→            )}
+   723→
+   724→            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs text-amber-700">
+   725→              <strong>⚠️ Note:</strong> This will replace the current timetable for {selectedClass} if one exists.
+   726→            </div>
+   727→          </div>
+   728→          <DialogFooter>
+   729→            <Button variant="outline" onClick={() => setAiOpen(false)}>Cancel</Button>
+   730→            <Button
+   731→              className="bg-accent hover:bg-accent/90"
+   732→              onClick={autoGenerate}
+   733→              disabled={aiGenerating || SUBJECTS.length === 0}
+   734→            >
+   735→              {aiGenerating ? (
+   736→                <><Sparkles className="w-4 h-4 mr-1.5 animate-pulse" />Generating...</>
+   737→              ) : (
+   738→                <><Wand2 className="w-4 h-4 mr-1.5" />Generate Now</>
+   739→              )}
+   740→            </Button>
+   741→          </DialogFooter>
+   742→        </DialogContent>
+   743→      </Dialog>
+   744→
+   745→      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+   746→        <p className="text-xs text-foreground">
+   747→          <strong className="text-primary">Click any slot</strong> to edit it — set subject, teacher, and room.
+   748→          Or click <strong className="text-accent">AI Auto-Generate</strong> to create a complete smart schedule in one click.
+   749→          Changes save automatically and persist across sessions.
+   750→        </p>
+   751→      </div>
+   752→    </div>
+   753→  );
+   754→}
+   755→
+   756→// ─── Slot Editor sub-component ───
+   757→function SlotEditor({ slot, subjects, teachers, onSave, onDelete, onCancel }: {
+   758→  slot?: TimetableSlot;
+   759→  subjects: string[];
+   760→  teachers: { name: string; subjects: string[] }[];
+   761→  onSave: (data: { subject: string; teacher: string; room: string }) => void;
+   762→  onDelete?: () => void;
+   763→  onCancel: () => void;
+   764→}) {
+   765→  const [subject, setSubject] = useState(slot?.subject || "");
+   766→  const [teacher, setTeacher] = useState(slot?.teacher || "");
+   767→  const [room, setRoom] = useState(slot?.room || "");
+   768→
+   769→  // When subject changes, auto-suggest a teacher who teaches that subject
+   770→  const handleSubjectChange = (subj: string) => {
+   771→    setSubject(subj);
+   772→    const eligible = teachers.filter(t => t.subjects.includes(subj));
+   773→    if (eligible.length > 0 && !eligible.some(t => t.name === teacher)) {
+   774→      setTeacher(eligible[0].name);
+   775→    }
+   776→  };
+   777→
+   778→  return (
+   779→    <div className="space-y-3">
+   780→      <div className="space-y-1">
+   781→        <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Subject *</Label>
+   782→        <Select value={subject} onValueChange={handleSubjectChange}>
+   783→          <SelectTrigger className="h-9"><SelectValue placeholder="Select subject..." /></SelectTrigger>
+   784→          <SelectContent>
+   785→            {subjects.length === 0 ? (
+   786→              <div className="px-3 py-2 text-xs text-muted-foreground text-center">No subjects. Add in Classes module.</div>
+   787→            ) : subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+   788→          </SelectContent>
+   789→        </Select>
+   790→      </div>
+   791→
+   792→      <div className="space-y-1">
+   793→        <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Teacher</Label>
+   794→        <Select value={teacher} onValueChange={setTeacher}>
+   795→          <SelectTrigger className="h-9"><SelectValue placeholder="Select teacher..." /></SelectTrigger>
+   796→          <SelectContent>
+   797→            <SelectItem value="—">— (Unassigned) —</SelectItem>
+   798→            {subject
+   799→              ? teachers.filter(t => t.subjects.includes(subject)).map(t => <SelectItem key={t.name} value={t.name}>{t.name} ✓</SelectItem>)
+   800→              : teachers.map(t => <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>)
+   801→            }
+   802→            {subject && teachers.filter(t => t.subjects.includes(subject)).length === 0 && (
+   803→              <div className="px-3 py-2 text-xs text-muted-foreground text-center">No teacher assigned to {subject} yet.</div>
+   804→            )}
+   805→          </SelectContent>
+   806→        </Select>
+   807→      </div>
+   808→
+   809→      <div className="space-y-1">
+   810→        <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Room</Label>
+   811→        <Input value={room} onChange={e => setRoom(e.target.value)} placeholder="e.g., Room 101" className="h-9" />
+   812→      </div>
+   813→
+   814→      <DialogFooter className="flex !justify-between gap-2">
+   815→        <div>
+   816→          {onDelete && (
+   817→            <Button variant="outline" className="text-red-600 hover:text-red-700" onClick={onDelete}>
+   818→              <Trash2 className="w-3.5 h-3.5 mr-1" />Clear Slot
+   819→            </Button>
+   820→          )}
+   821→        </div>
+   822→        <div className="flex gap-2">
+   823→          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+   824→          <Button className="bg-primary hover:bg-primary/90" onClick={() => onSave({ subject, teacher, room })} disabled={!subject}>
+   825→            Save Slot
+   826→          </Button>
+   827→        </div>
+   828→      </DialogFooter>
+   829→    </div>
+   830→  );
+   831→}
+   832→

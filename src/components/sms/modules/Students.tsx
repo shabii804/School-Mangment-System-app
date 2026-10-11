@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search, Plus, Phone, Eye, Filter, UserCheck, Users, UserPlus,
   QrCode, Printer, GraduationCap, Mail, Upload, Trash2, MapPin, Heart,
-  AlertCircle, Bus, Siblings, Home, Calendar, Droplet, Globe, Briefcase,
+  AlertCircle, Bus, Home, Calendar, Droplet, Globe, Briefcase,
   User, UserCircle, Stethoscope, FileText, X, DollarSign, Edit, ArrowUpCircle,
 } from "lucide-react";
 import { type Student } from "@/lib/sms-data";

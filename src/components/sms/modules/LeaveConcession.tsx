@@ -72,6 +72,7 @@ export function LeaveModule() {
       days: form.days,
       reason: form.reason,
       status: "Pending",
+      appliedOn: new Date().toISOString().split("T")[0],
       appliedDate: new Date().toISOString().split("T")[0],
     };
     addModuleItem("leaveRequests", newReq);

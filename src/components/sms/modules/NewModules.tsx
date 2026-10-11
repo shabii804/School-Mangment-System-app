@@ -25,6 +25,7 @@ import {
   SCHOOL_EVENTS, type Book, type BookIssue, type BusRoute, type HostelRoom,
   type InventoryItem, type SchoolEvent,
 } from "@/lib/sms-data";
+import { useAppStore } from "@/lib/sms-store";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -134,7 +135,7 @@ export function LibraryModule() {
                   <TableCell className="text-sm">{i.studentName}<p className="text-[10px] text-muted-foreground">{i.class}</p></TableCell>
                   <TableCell className="text-xs text-muted-foreground">{i.issueDate}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{i.dueDate}</TableCell>
-                  <TableCell className="text-sm">{i.fine > 0 ? <span className="text-red-600 font-bold">Rs. {i.fine}</span> : "—"}</TableCell>
+                  <TableCell className="text-sm">{(i.fine ?? 0) > 0 ? <span className="text-red-600 font-bold">Rs. {i.fine}</span> : "—"}</TableCell>
                   <TableCell><Badge variant="outline" className={cn("text-xs border-0", i.status === "Returned" ? "bg-emerald-500/10 text-emerald-600" : i.status === "Overdue" ? "bg-red-500/10 text-red-600" : "bg-primary/10 text-primary")}>{i.status}</Badge></TableCell>
                 </TableRow>
               ))}
@@ -368,7 +369,7 @@ export function HostelModule() {
                   <div className="rounded bg-accent/10 p-2"><p className="font-bold text-accent">{r.capacity - r.occupied}</p><p className="text-[9px] text-muted-foreground uppercase">Free</p></div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
-                  <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Rent</p><p className="font-bold text-sm">Rs. {r.monthlyRent.toLocaleString()}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground uppercase">Monthly Rent</p><p className="font-bold text-sm">Rs. {(r.monthlyRent ?? 0).toLocaleString()}</p></div>
                   <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden"><div className={cn("h-full", pct === 100 ? "bg-red-500" : "bg-primary")} style={{ width: `${pct}%` }} /></div>
                 </div>
               </CardContent>

@@ -5,6 +5,14 @@ import {
   type Student, type Teacher, type Staff, type FeeCollection, type Activity, type Role,
 } from "./sms-data";
 
+// Re-export types so consumers can import them from sms-store if desired
+export type {
+  Role, Student, Teacher, Staff, FeeCollection, Activity,
+  TimetableSlot, Book, BookIssue, BusRoute, HostelRoom,
+  InventoryItem, SchoolEvent, Incident, Alumnus,
+  LeaveRequest, LeaveBalance, Concession, AcademicSession, Exam,
+} from "./sms-data";
+
 // ─── Local date helper ───
 // Returns YYYY-MM-DD in LOCAL time (not UTC).
 // Using toISOString().split("T")[0] returns UTC date which can be off by 1 day
@@ -216,7 +224,7 @@ export interface AttendanceRecord {
   id: string;
   studentId: string;
   date: string; // ISO date YYYY-MM-DD
-  status: "Present" | "Absent" | "Late" | "Leave";
+  status: "Present" | "Absent" | "Late" | "Leave" | "Half-Day";
   markedBy: string;
   markedAt: string;
 }
@@ -501,7 +509,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Set the flag IMMEDIATELY (synchronously, before any async work)
     // This prevents the subscribe block from syncing empty state to SQLite
     // before we've had a chance to load the real data
-    isInitialLoadStarted = true;
+    isInitialLoadComplete = false;
     set({ syncStatus: "syncing" });
     try {
       const res = await fetch("/api/state", { method: "GET" });

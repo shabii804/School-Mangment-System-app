@@ -361,8 +361,9 @@ export function CertificatesModule() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[
-              ].map(c => (
+              {([
+                // Placeholder rows — populated when certificate issuance is wired up
+              ] as { no: string; type: string; recipient: string; date: string }[]).map(c => (
                 <TableRow key={c.no} className="border-border/30 hover:bg-muted/30">
                   <TableCell className="font-mono text-xs">{c.no}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{c.type}</Badge></TableCell>

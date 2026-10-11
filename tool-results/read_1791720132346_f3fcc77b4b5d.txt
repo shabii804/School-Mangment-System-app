@@ -1,0 +1,418 @@
+     1→"use client";
+     2→
+     3→import { useState } from "react";
+     4→import { useAppStore } from "@/lib/sms-store";
+     5→import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+     6→import { Button } from "@/components/ui/button";
+     7→import { Input } from "@/components/ui/input";
+     8→import { Label } from "@/components/ui/label";
+     9→import { Badge } from "@/components/ui/badge";
+    10→import {
+    11→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    12→} from "@/components/ui/table";
+    13→import {
+    14→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    15→} from "@/components/ui/dialog";
+    16→import {
+    17→  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    18→} from "@/components/ui/select";
+    19→import {
+    20→  Plus, AlertTriangle, Shield, CheckCircle, Bell, Phone, Mail,
+    21→  Users, TrendingUp, GraduationCap, Award, Briefcase, Search,
+    22→  Calendar, User, Zap,
+    23→} from "lucide-react";
+    24→import { INCIDENTS, ALUMNI, type Incident, type Alumnus } from "@/lib/sms-data";
+    25→import { useToast } from "@/hooks/use-toast";
+    26→import { cn } from "@/lib/utils";
+    27→
+    28→// ═══════════════════════════════════════════════════════════════
+    29→// DISCIPLINE MODULE
+    30→// ═══════════════════════════════════════════════════════════════
+    31→const SEVERITY_STYLES: Record<string, string> = {
+    32→  Low: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
+    33→  Medium: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+    34→  High: "bg-red-500/10 text-red-600 border-red-500/20",
+    35→};
+    36→
+    37→const STATUS_STYLES: Record<string, string> = {
+    38→  Open: "bg-red-500/10 text-red-600",
+    39→  Resolved: "bg-emerald-500/10 text-emerald-600",
+    40→  Escalated: "bg-purple-500/10 text-purple-600",
+    41→};
+    42→
+    43→const INCIDENT_TYPES = ["Late Arrival", "Absence", "Misbehavior", "Bullying", "Academic", "Uniform Violation", "Other"];
+    44→
+    45→export function DisciplineModule() {
+    46→  const [addOpen, setAddOpen] = useState(false);
+    47→  const { moduleData, addModuleItem, updateModuleItem, students } = useAppStore();
+    48→  const incidents = (moduleData.incidents || []) as Incident[];
+    49→  const [filter, setFilter] = useState<string>("all");
+    50→  const [form, setForm] = useState({ studentId: "", studentName: "", class: "", type: "Late Arrival", severity: "Low", description: "", action: "", reportedBy: "" });
+    51→
+    52→  const filtered = filter === "all" ? incidents : incidents.filter(i => i.status === filter);
+    53→  const openCount = incidents.filter(i => i.status === "Open").length;
+    54→  const escalatedCount = incidents.filter(i => i.status === "Escalated").length;
+    55→  const resolvedCount = incidents.filter(i => i.status === "Resolved").length;
+    56→  const highSeverity = incidents.filter(i => i.severity === "High").length;
+    57→
+    58→  const handleAdd = () => {
+    59→    if (!form.studentName || !form.description) return;
+    60→    const newIncident: Incident = {
+    61→      id: `INC-${String(Date.now()).slice(-6)}`,
+    62→      studentId: form.studentId || "—",
+    63→      studentName: form.studentName,
+    64→      class: form.class || "—",
+    65→      date: new Date().toISOString().split("T")[0],
+    66→      type: form.type as any,
+    67→      severity: form.severity as any,
+    68→      description: form.description,
+    69→      action: form.action || "Pending review",
+    70→      reportedBy: form.reportedBy || "Admin",
+    71→      status: "Open",
+    72→      parentNotified: false,
+    73→    };
+    74→    addModuleItem("incidents", newIncident);
+    75→    setAddOpen(false);
+    76→    setForm({ studentId: "", studentName: "", class: "", type: "Late Arrival", severity: "Low", description: "", action: "", reportedBy: "" });
+    77→  };
+    78→
+    79→  return (
+    80→    <div className="space-y-3 fade-in">
+    81→      <div className="flex justify-between items-center flex-wrap gap-3">
+    82→        <p className="text-sm text-muted-foreground">Track behavioral incidents, warnings, and parent notifications.</p>
+    83→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Log Incident</Button>
+    84→      </div>
+    85→
+    86→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    87→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-red-500/10 p-1.5"><AlertTriangle className="w-4 h-4 text-red-600" /></div><div><p className="text-xs text-muted-foreground">Open Cases</p><p className="text-xl font-bold">{openCount}</p></div></CardContent></Card>
+    88→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><Shield className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Escalated</p><p className="text-xl font-bold">{escalatedCount}</p></div></CardContent></Card>
+    89→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><CheckCircle className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Resolved</p><p className="text-xl font-bold">{resolvedCount}</p></div></CardContent></Card>
+    90→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-orange-500/10 p-1.5"><AlertTriangle className="w-5 h-5 text-orange-600" /></div><div><p className="text-xs text-muted-foreground">High Severity</p><p className="text-xl font-bold">{highSeverity}</p></div></CardContent></Card>
+    91→      </div>
+    92→
+    93→      <div className="flex items-center gap-2 flex-wrap">
+    94→        {["all", "Open", "Escalated", "Resolved"].map(t => (
+    95→          <button key={t} onClick={() => setFilter(t)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", filter === t ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:bg-muted")}>
+    96→            {t === "all" ? "All Incidents" : t}
+    97→          </button>
+    98→        ))}
+    99→      </div>
+   100→
+   101→      <div className="space-y-3">
+   102→        {filtered.map(inc => (
+   103→          <Card key={inc.id} className="border-0 shadow-sm glass-card card-hover">
+   104→            <CardContent className="p-4">
+   105→              <div className="flex items-start gap-4">
+   106→                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+   107→                  inc.severity === "High" ? "bg-red-500/15" : inc.severity === "Medium" ? "bg-orange-500/15" : "bg-yellow-500/15")}>
+   108→                  <AlertTriangle className={cn("w-5 h-5", inc.severity === "High" ? "text-red-600" : inc.severity === "Medium" ? "text-orange-600" : "text-yellow-600")} />
+   109→                </div>
+   110→                <div className="flex-1 min-w-0">
+   111→                  <div className="flex items-center gap-2 flex-wrap">
+   112→                    <p className="font-semibold text-sm">{inc.studentName}</p>
+   113→                    <span className="text-[10px] text-muted-foreground">{inc.class}</span>
+   114→                    <Badge variant="outline" className={cn("text-[9px] border", SEVERITY_STYLES[inc.severity])}>{inc.severity}</Badge>
+   115→                    <Badge variant="outline" className="text-[9px]">{inc.type}</Badge>
+   116→                    <Badge variant="outline" className={cn("text-[9px] border-0", STATUS_STYLES[inc.status])}>{inc.status}</Badge>
+   117→                    {inc.parentNotified && <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-0"><Bell className="w-2 h-2 mr-0.5 inline" />Parent Notified</Badge>}
+   118→                  </div>
+   119→                  <p className="text-sm text-muted-foreground mt-1">{inc.description}</p>
+   120→                  <div className="flex items-center gap-4 mt-2 text-xs">
+   121→                    <span className="text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{inc.date}</span>
+   122→                    <span className="text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" />Reported by {inc.reportedBy}</span>
+   123→                    <span className="text-primary font-medium flex items-center gap-1"><Zap className="w-3 h-3" />{inc.action}</span>
+   124→                  </div>
+   125→                  {/* Action buttons */}
+   126→                  {inc.status !== "Resolved" && (
+   127→                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
+   128→                      {inc.status === "Open" && (
+   129→                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateModuleItem("incidents", inc.id, { status: "Escalated" })}>
+   130→                          <AlertTriangle className="w-3 h-3 mr-1" />Escalate
+   131→                        </Button>
+   132→                      )}
+   133→                      <Button size="sm" variant="outline" className="h-7 text-xs text-emerald-600" onClick={() => updateModuleItem("incidents", inc.id, { status: "Resolved" })}>
+   134→                        <CheckCircle className="w-3 h-3 mr-1" />Resolve
+   135→                      </Button>
+   136→                      {!inc.parentNotified && (
+   137→                        <Button size="sm" variant="outline" className="h-7 text-xs text-primary ml-auto" onClick={() => updateModuleItem("incidents", inc.id, { parentNotified: true })}>
+   138→                          <Bell className="w-3 h-3 mr-1" />Notify Parent
+   139→                        </Button>
+   140→                      )}
+   141→                    </div>
+   142→                  )}
+   143→                </div>
+   144→              </div>
+   145→            </CardContent>
+   146→          </Card>
+   147→        ))}
+   148→      </div>
+   149→
+   150→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   151→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   152→          <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-600" />Log Discipline Incident</DialogTitle></DialogHeader>
+   153→          <div className="space-y-2 py-1">
+   154→            <div className="grid grid-cols-2 gap-3">
+   155→              <div><Label>Student Name *</Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} /></div>
+   156→              <div><Label>Class</Label><Input value={form.class} onChange={e => setForm({...form, class: e.target.value})} placeholder="Grade 9-A" /></div>
+   157→            </div>
+   158→            <div className="grid grid-cols-2 gap-3">
+   159→              <div><Label>Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{INCIDENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+   160→              <div><Label>Severity</Label><Select value={form.severity} onValueChange={v => setForm({...form, severity: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem><SelectItem value="High">High</SelectItem></SelectContent></Select></div>
+   161→            </div>
+   162→            <div><Label>Description *</Label><Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="What happened?" /></div>
+   163→            <div><Label>Action Taken</Label><Input value={form.action} onChange={e => setForm({...form, action: e.target.value})} placeholder="e.g., Verbal warning, Detention" /></div>
+   164→            <div><Label>Reported By</Label><Input value={form.reportedBy} onChange={e => setForm({...form, reportedBy: e.target.value})} placeholder="Teacher name" /></div>
+   165→          </div>
+   166→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.studentName || !form.description}>Log Incident</Button></DialogFooter>
+   167→        </DialogContent>
+   168→      </Dialog>
+   169→    </div>
+   170→  );
+   171→}
+   172→
+   173→// ═══════════════════════════════════════════════════════════════
+   174→// ALUMNI MODULE
+   175→// ═══════════════════════════════════════════════════════════════
+   176→const STATUS_ICONS: Record<string, any> = {
+   177→  Studying: GraduationCap, Employed: Briefcase, Business: TrendingUp, Unknown: Users,
+   178→};
+   179→const STATUS_COLORS: Record<string, string> = {
+   180→  Studying: "bg-primary/10 text-primary", Employed: "bg-emerald-500/10 text-emerald-600", Business: "bg-accent/10 text-accent", Unknown: "bg-muted text-muted-foreground",
+   181→};
+   182→
+   183→export function AlumniModule() {
+   184→  const [addOpen, setAddOpen] = useState(false);
+   185→  const { moduleData, addModuleItem } = useAppStore();
+   186→  const alumni = (moduleData.alumni || []) as Alumnus[];
+   187→  const [search, setSearch] = useState("");
+   188→  const [yearFilter, setYearFilter] = useState("all");
+   189→  const [form, setForm] = useState({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying" as Alumnus["currentStatus"], institution: "", profession: "", email: "", phone: "", donationAmount: 0 });
+   190→  const { toast } = useToast();
+   191→
+   192→  const years = Array.from(new Set(alumni.map(a => a.graduationYear))).sort((a, b) => b.localeCompare(a));
+   193→  const filtered = alumni
+   194→    .filter(a => yearFilter === "all" || a.graduationYear === yearFilter)
+   195→    .filter(a => !search || `${a.name} ${a.profession} ${a.institution}`.toLowerCase().includes(search.toLowerCase()));
+   196→
+   197→  const totalDonations = alumni.reduce((s, a) => s + a.donationAmount, 0);
+   198→  const employedCount = alumni.filter(a => a.currentStatus === "Employed").length;
+   199→  const studyingCount = alumni.filter(a => a.currentStatus === "Studying").length;
+   200→
+   201→  const handleAdd = () => {
+   202→    if (!form.name.trim()) {
+   203→      toast({ title: "Name required", description: "Please enter the alumnus name.", variant: "destructive" });
+   204→      return;
+   205→    }
+   206→    const newAlumnus: Alumnus = {
+   207→      id: `ALU-${String(Date.now()).slice(-6)}`,
+   208→      name: form.name,
+   209→      graduationYear: form.graduationYear,
+   210→      lastClass: form.lastClass,
+   211→      currentStatus: form.currentStatus,
+   212→      institution: form.institution || "—",
+   213→      profession: form.profession || "—",
+   214→      email: form.email || "—",
+   215→      phone: form.phone || "—",
+   216→      donationAmount: Number(form.donationAmount) || 0,
+   217→    };
+   218→    addModuleItem("alumni", newAlumnus);
+   219→    toast({ title: "Alumnus Added ✓", description: `${newAlumnus.name} (Class of ${newAlumnus.graduationYear}) added.` });
+   220→    setAddOpen(false);
+   221→    setForm({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying", institution: "", profession: "", email: "", phone: "", donationAmount: 0 });
+   222→  };
+   223→
+   224→  return (
+   225→    <div className="space-y-3 fade-in">
+   226→      <div className="flex justify-between items-center flex-wrap gap-3">
+   227→        <p className="text-sm text-muted-foreground">Track graduated students, their careers, and donations.</p>
+   228→        <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4 mr-1.5" />Add Alumnus</Button>
+   229→      </div>
+   230→
+   231→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   232→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-primary/10 p-1.5"><Users className="w-4 h-4 text-primary" /></div><div><p className="text-xs text-muted-foreground">Total Alumni</p><p className="text-xl font-bold">{alumni.length}</p></div></CardContent></Card>
+   233→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-emerald-500/10 p-1.5"><Briefcase className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-muted-foreground">Employed</p><p className="text-xl font-bold">{employedCount}</p></div></CardContent></Card>
+   234→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-purple-500/10 p-1.5"><GraduationCap className="w-4 h-4 text-purple-600" /></div><div><p className="text-xs text-muted-foreground">Studying</p><p className="text-xl font-bold">{studyingCount}</p></div></CardContent></Card>
+   235→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-3 flex items-center gap-2"><div className="rounded-lg bg-accent/10 p-1.5"><Award className="w-4 h-4 text-accent" /></div><div><p className="text-xs text-muted-foreground">Donations</p><p className="text-lg font-bold">Rs. {totalDonations.toLocaleString()}</p></div></CardContent></Card>
+   236→      </div>
+   237→
+   238→      <div className="flex items-center gap-3 flex-wrap">
+   239→        <div className="relative flex-1 min-w-48">
+   240→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+   241→          <Input placeholder="Search alumni by name, profession, institution..." className="pl-9 bg-background/60" value={search} onChange={e => setSearch(e.target.value)} />
+   242→        </div>
+   243→        <Select value={yearFilter} onValueChange={setYearFilter}>
+   244→          <SelectTrigger className="w-32 bg-background/60"><SelectValue /></SelectTrigger>
+   245→          <SelectContent><SelectItem value="all">All Years</SelectItem>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+   246→        </Select>
+   247→      </div>
+   248→
+   249→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   250→        {filtered.map(a => {
+   251→          const Icon = STATUS_ICONS[a.currentStatus] || Users;
+   252→          return (
+   253→            <Card key={a.id} className="border-0 shadow-sm glass-card card-hover">
+   254→              <CardContent className="p-4">
+   255→                <div className="flex items-start gap-3">
+   256→                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0">
+   257→                    <span className="text-sm font-bold text-primary">{a.name.split(" ").map(w => w[0]).join("").slice(0, 2)}</span>
+   258→                  </div>
+   259→                  <div className="flex-1 min-w-0">
+   260→                    <p className="font-semibold text-sm truncate">{a.name}</p>
+   261→                    <p className="text-xs text-muted-foreground">Class of {a.graduationYear} • {a.lastClass}</p>
+   262→                    <div className="flex items-center gap-1.5 mt-1">
+   263→                      <Icon className={cn("w-3 h-3", STATUS_COLORS[a.currentStatus].split(" ")[1])} />
+   264→                      <Badge variant="outline" className={cn("text-[9px] border-0", STATUS_COLORS[a.currentStatus])}>{a.currentStatus}</Badge>
+   265→                    </div>
+   266→                  </div>
+   267→                </div>
+   268→                <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+   269→                  <p className="flex items-center gap-1.5"><Briefcase className="w-3 h-3" /> {a.profession}</p>
+   270→                  <p className="flex items-center gap-1.5"><GraduationCap className="w-3 h-3" /> {a.institution}</p>
+   271→                  <p className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> {a.email}</p>
+   272→                  <p className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {a.phone}</p>
+   273→                </div>
+   274→                {a.donationAmount > 0 && (
+   275→                  <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
+   276→                    <div className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5 text-accent" /><span className="text-xs font-medium text-accent">Donated</span></div>
+   277→                    <span className="font-bold text-sm text-accent">Rs. {a.donationAmount.toLocaleString()}</span>
+   278→                  </div>
+   279→                )}
+   280→              </CardContent>
+   281→            </Card>
+   282→          );
+   283→        })}
+   284→      </div>
+   285→
+   286→      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+   287→        <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
+   288→          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Alumnus</DialogTitle></DialogHeader>
+   289→          <div className="space-y-2 py-1">
+   290→            <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
+   291→            <div className="grid grid-cols-2 gap-3">
+   292→              <div><Label>Graduation Year</Label><Input type="number" value={form.graduationYear} onChange={e => setForm({...form, graduationYear: e.target.value})} placeholder="2024" /></div>
+   293→              <div><Label>Last Class</Label><Input value={form.lastClass} onChange={e => setForm({...form, lastClass: e.target.value})} placeholder="Grade 10" /></div>
+   294→            </div>
+   295→            <div><Label>Current Status</Label><Select value={form.currentStatus} onValueChange={v => setForm({...form, currentStatus: v as Alumnus["currentStatus"]})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Studying">Studying</SelectItem><SelectItem value="Employed">Employed</SelectItem><SelectItem value="Business">Business</SelectItem><SelectItem value="Unknown">Unknown</SelectItem></SelectContent></Select></div>
+   296→            <div><Label>Institution / Company</Label><Input value={form.institution} onChange={e => setForm({...form, institution: e.target.value})} placeholder="University or company name" /></div>
+   297→            <div><Label>Profession</Label><Input value={form.profession} onChange={e => setForm({...form, profession: e.target.value})} placeholder="e.g., Software Developer" /></div>
+   298→            <div className="grid grid-cols-2 gap-3"><div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div><div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+92 3xx" /></div></div>
+   299→            <div><Label>Donation Amount (Rs.)</Label><Input type="number" value={form.donationAmount} onChange={e => setForm({...form, donationAmount: Number(e.target.value)})} /></div>
+   300→          </div>
+   301→          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAdd} disabled={!form.name.trim()}>Add Alumnus</Button></DialogFooter>
+   302→        </DialogContent>
+   303→      </Dialog>
+   304→    </div>
+   305→  );
+   306→}
+   307→
+   308→// ═══════════════════════════════════════════════════════════════
+   309→// PARENT PORTAL MODULE (Read-only view)
+   310→// ═══════════════════════════════════════════════════════════════
+   311→export function ParentModule() {
+   312→  const [searchId, setSearchId] = useState("");
+   313→  const [foundStudent, setFoundStudent] = useState<any>(null);
+   314→  const [searched, setSearched] = useState(false);
+   315→
+   316→  const handleSearch = (students: any[]) => {
+   317→    const s = students.find(st => st.id.toLowerCase() === searchId.toLowerCase() || st.name.toLowerCase().includes(searchId.toLowerCase()));
+   318→    setFoundStudent(s || null);
+   319→    setSearched(true);
+   320→  };
+   321→
+   322→  return (
+   323→    <ParentPortal searchId={searchId} setSearchId={setSearchId} foundStudent={foundStudent} searched={searched} onSearch={handleSearch} />
+   324→  );
+   325→}
+   326→
+   327→function ParentPortal({ searchId, setSearchId, foundStudent, searched, onSearch }: any) {
+   328→  const { students, feeCollections, school } = useAppStore();
+   329→
+   330→  return (
+   331→    <div className="space-y-3 fade-in">
+   332→      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 p-6 text-primary-foreground shadow-lg">
+   333→        <div className="absolute inset-0 opacity-10 pattern-grid" />
+   334→        <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+   335→        <div className="relative">
+   336→          <h2 className="text-2xl font-bold">{school.name} — Parent Portal</h2>
+   337→          <p className="text-sm opacity-80 mt-1">Enter your child's Student ID or name to view their information.</p>
+   338→          <div className="flex gap-2 mt-4 max-w-md">
+   339→            <Input placeholder={`Enter Student ID (e.g., SCH-${new Date().getFullYear()}-0001) or name...`} value={searchId} onChange={e => setSearchId(e.target.value)} className="bg-white/15 border-white/20 text-white placeholder:text-white/50" onKeyDown={e => e.key === "Enter" && onSearch(students)} />
+   340→            <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" onClick={() => onSearch(students)}><Search className="w-4 h-4 mr-1" />Search</Button>
+   341→          </div>
+   342→        </div>
+   343→      </div>
+   344→
+   345→      {searched && !foundStudent && (
+   346→        <Card className="border-0 shadow-sm glass-card"><CardContent className="p-12 text-center">
+   347→          <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+   348→          <p className="font-medium text-sm">No student found</p>
+   349→          <p className="text-xs text-muted-foreground mt-1">Please check the Student ID and try again.</p>
+   350→        </CardContent></Card>
+   351→      )}
+   352→
+   353→      {foundStudent && (
+   354→        <div className="space-y-3">
+   355→          {/* Student header */}
+   356→          <Card className="border-0 shadow-sm glass-card overflow-hidden">
+   357→            <div className="bg-gradient-to-r from-primary/10 to-accent/5 p-4 flex items-center gap-4">
+   358→              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/20">
+   359→                <span className="text-xl font-bold text-primary">{foundStudent.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}</span>
+   360→              </div>
+   361→              <div className="flex-1">
+   362→                <h3 className="font-bold text-lg">{foundStudent.name}</h3>
+   363→                <p className="text-sm text-muted-foreground">{foundStudent.id} • {foundStudent.class}-{foundStudent.section} • Roll #{foundStudent.rollNo}</p>
+   364→                <div className="flex gap-2 mt-1">
+   365→                  <Badge variant="outline" className="text-xs">🩸 {foundStudent.bloodGroup}</Badge>
+   366→                  <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-600 border-0">Attendance: {foundStudent.attendancePct}%</Badge>
+   367→                  {foundStudent.isHosteller && <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-0">🏠 Hosteller</Badge>}
+   368→                </div>
+   369→              </div>
+   370→            </div>
+   371→          </Card>
+   372→
+   373→          {/* Info grid */}
+   374→          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   375→            <Card className="border-0 shadow-sm glass-card">
+   376→              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Users className="w-4 h-4 text-primary" />Parent Information</CardTitle></CardHeader>
+   377→              <CardContent className="space-y-2 text-sm">
+   378→                <div className="flex justify-between"><span className="text-muted-foreground">Father:</span><span className="font-medium">{foundStudent.fatherName}</span></div>
+   379→                <div className="flex justify-between"><span className="text-muted-foreground">Father's Phone:</span><span className="font-medium">{foundStudent.fatherPhone}</span></div>
+   380→                <div className="flex justify-between"><span className="text-muted-foreground">Father's Occupation:</span><span className="font-medium">{foundStudent.fatherOccupation}</span></div>
+   381→                <div className="flex justify-between"><span className="text-muted-foreground">Mother:</span><span className="font-medium">{foundStudent.motherName}</span></div>
+   382→              </CardContent>
+   383→            </Card>
+   384→            <Card className="border-0 shadow-sm glass-card">
+   385→              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" />Fee Status</CardTitle></CardHeader>
+   386→              <CardContent className="space-y-2 text-sm">
+   387→                <div className="flex justify-between"><span className="text-muted-foreground">Monthly Fee:</span><span className="font-medium">Rs. {foundStudent.monthlyFee.toLocaleString()}</span></div>
+   388→                <div className="flex justify-between"><span className="text-muted-foreground">Outstanding:</span><span className={cn("font-bold", foundStudent.outstandingAmount > 0 ? "text-red-600" : "text-emerald-600")}>{foundStudent.outstandingAmount > 0 ? `Rs. ${foundStudent.outstandingAmount.toLocaleString()}` : "✓ Clear"}</span></div>
+   389→                <div className="flex justify-between"><span className="text-muted-foreground">This Month:</span><Badge variant="outline" className={cn("text-xs border-0", foundStudent.feePaidThisMonth ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600")}>{foundStudent.feePaidThisMonth ? "Paid ✓" : "Pending"}</Badge></div>
+   390→              </CardContent>
+   391→            </Card>
+   392→          </div>
+   393→
+   394→          {/* Recent fee receipts */}
+   395→          <Card className="border-0 shadow-sm glass-card">
+   396→            <CardHeader className="pb-2"><CardTitle className="text-sm">Recent Fee Payments</CardTitle></CardHeader>
+   397→            <CardContent>
+   398→              {feeCollections.filter((f: any) => f.studentId === foundStudent.id).length === 0 ? (
+   399→                <p className="text-sm text-muted-foreground text-center py-4">No fee payments recorded.</p>
+   400→              ) : (
+   401→                <div className="space-y-1.5">
+   402→                  {feeCollections.filter((f: any) => f.studentId === foundStudent.id).slice(0, 5).map((f: any) => (
+   403→                    <div key={f.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 text-sm">
+   404→                      <span className="font-mono text-xs text-muted-foreground">{f.receiptNo}</span>
+   405→                      <span className="flex-1 text-muted-foreground">{f.date} • {f.feeType}</span>
+   406→                      <span className="font-bold text-emerald-600">Rs. {f.amount.toLocaleString()}</span>
+   407→                    </div>
+   408→                  ))}
+   409→                </div>
+   410→              )}
+   411→            </CardContent>
+   412→          </Card>
+   413→        </div>
+   414→      )}
+   415→    </div>
+   416→  );
+   417→}
+   418→

@@ -431,7 +431,9 @@ export function TimetableModule() {
   const [aiGenerating, setAiGenerating] = useState(false);
 
   // Read timetable from store moduleData.timetables (keyed by class-section)
-  const timetables = (moduleData.timetables || {}) as Record<string, TimetableSlot[]>;
+  // moduleData is typed as Record<string, any[]> but the "timetables" entry is itself
+  // a Record<string, TimetableSlot[]> (object keyed by class-section), so cast through any.
+  const timetables = ((moduleData as any).timetables || {}) as Record<string, TimetableSlot[]>;
   const slots: TimetableSlot[] = timetables[selectedClass] || [];
 
   const getSlot = (day: string, period: number) => slots.find(s => s.day === day && s.period === period);
@@ -440,13 +442,13 @@ export function TimetableModule() {
   const saveSlot = (day: string, period: number, data: { subject: string; teacher: string; room: string }) => {
     const existing = slots.filter(s => !(s.day === day && s.period === period));
     const updated = [...existing, { day, period, ...data }];
-    setModuleData("timetables", { ...timetables, [selectedClass]: updated });
+    setModuleData("timetables", { ...timetables, [selectedClass]: updated } as any);
   };
 
   // Delete a slot
   const deleteSlot = (day: string, period: number) => {
     const updated = slots.filter(s => !(s.day === day && s.period === period));
-    setModuleData("timetables", { ...timetables, [selectedClass]: updated });
+    setModuleData("timetables", { ...timetables, [selectedClass]: updated } as any);
   };
 
   // ─── AI Auto-Generate Timetable ───
@@ -539,7 +541,7 @@ export function TimetableModule() {
     }
 
     // Save the generated timetable
-    setModuleData("timetables", { ...timetables, [selectedClass]: newSlots });
+    setModuleData("timetables", { ...timetables, [selectedClass]: newSlots } as any);
     setAiGenerating(false);
     setAiOpen(false);
     toast({

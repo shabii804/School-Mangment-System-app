@@ -136,9 +136,15 @@ export interface BookIssue {
   bookId: string;
   bookTitle: string;
   studentId: string;
+  // Denormalised student display fields (so issue lists can show
+  // name/class without an extra join).
+  studentName?: string;
+  class?: string;
   issueDate: string;
   dueDate: string;
   status: "Issued" | "Returned" | "Overdue";
+  // Late-return fine (Rs.) — populated when the book is returned overdue.
+  fine?: number;
 }
 
 export interface BusRoute {
@@ -161,6 +167,10 @@ export interface HostelRoom {
   occupied: number;
   type: "Single" | "Double" | "Triple" | "Dorm";
   floor: number;
+  // Hostel block / wing name (e.g. "Block A", "Wing 2").
+  block?: string;
+  // Monthly rent for this room (per occupant, in Rs.).
+  monthlyRent?: number;
 }
 
 export interface InventoryItem {
@@ -190,6 +200,10 @@ export interface Incident {
   class: string;
   date: string;
   category: string;
+  // `type` is the human-readable category of the incident (e.g. "Late Arrival",
+  // "Uniform Violation", "Fighting"). It mirrors the legacy `category` field but
+  // is used by the Discipline UI as the primary discriminator.
+  type?: string;
   description: string;
   severity: "Low" | "Medium" | "High" | "Critical";
   action: string;
@@ -222,6 +236,12 @@ export interface LeaveRequest {
   reason: string;
   status: "Pending" | "Approved" | "Rejected";
   appliedOn: string;
+  // `appliedDate` mirrors `appliedOn` (YYYY-MM-DD) and is used by the Leave UI.
+  appliedDate?: string;
+  // Who approved/rejected the request (populated after action is taken).
+  approvedBy?: string;
+  // Optional reviewer comments (e.g. approval / rejection reason).
+  comments?: string;
 }
 
 export interface LeaveBalance {
@@ -245,6 +265,8 @@ export interface Concession {
   validTo: string;
   monthlySaving: number;
   status: "Active" | "Expired" | "Revoked";
+  // Who approved this concession (typically the admin or principal).
+  approvedBy?: string;
 }
 
 export interface AcademicSession {
