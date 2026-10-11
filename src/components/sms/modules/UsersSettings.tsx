@@ -596,19 +596,6 @@ export function SettingsModule() {
                   </div>
                 </div>
                 <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
-                  <Label className="text-[10px] uppercase text-muted-foreground">Admission Multiplier</Label>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-sm text-muted-foreground">×</span>
-                    <Input
-                      type="number"
-                      value={feeStructure.admissionMultiplier}
-                      onChange={e => updateFeeStructure({ admissionMultiplier: Number(e.target.value) })}
-                      className="h-8 font-bold"
-                    />
-                  </div>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">× monthly tuition</p>
-                </div>
-                <div className="rounded-lg border border-border/40 p-3 bg-muted/20">
                   <Label className="text-[10px] uppercase text-muted-foreground">Late Fee</Label>
                   <div className="flex items-center gap-1 mt-1">
                     <span className="text-sm text-muted-foreground">Rs.</span>
@@ -633,6 +620,92 @@ export function SettingsModule() {
                 </div>
               </div>
 
+              {/* Dynamic Fee Items — admin controls each fee type */}
+              <div>
+                <p className="text-sm font-semibold mb-2">Fee Types & Charges</p>
+                <p className="text-xs text-muted-foreground mb-3">Control which fees are charged, their amounts, and frequency. Changes apply to new admissions and session changes.</p>
+                <div className="rounded-lg border border-border/40 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border/40">
+                        <TableHead>Fee Name</TableHead>
+                        <TableHead className="text-right">Amount (Rs.)</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-center">Enabled</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {((feeStructure as any).feeItems || []).map((item: any, idx: number) => (
+                        <TableRow key={idx} className="border-border/30">
+                          <TableCell>
+                            <Input
+                              value={item.name}
+                              onChange={e => {
+                                const items = [...((feeStructure as any).feeItems || [])];
+                                items[idx] = { ...items[idx], name: e.target.value };
+                                updateFeeStructure({ feeItems: items } as any);
+                              }}
+                              className="h-8 text-sm"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Input
+                              type="number"
+                              value={item.amount}
+                              onChange={e => {
+                                const items = [...((feeStructure as any).feeItems || [])];
+                                items[idx] = { ...items[idx], amount: Number(e.target.value) };
+                                updateFeeStructure({ feeItems: items } as any);
+                              }}
+                              className="h-8 w-24 text-right ml-auto font-bold"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={item.type}
+                              onValueChange={v => {
+                                const items = [...((feeStructure as any).feeItems || [])];
+                                items[idx] = { ...items[idx], type: v };
+                                updateFeeStructure({ feeItems: items } as any);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="one-time">One-time</SelectItem>
+                                <SelectItem value="annual">Annual (yearly)</SelectItem>
+                                <SelectItem value="monthly">Monthly</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={item.enabled}
+                              onCheckedChange={v => {
+                                const items = [...((feeStructure as any).feeItems || [])];
+                                items[idx] = { ...items[idx], enabled: v };
+                                updateFeeStructure({ feeItems: items } as any);
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 h-8 text-xs"
+                  onClick={() => {
+                    const items = [...((feeStructure as any).feeItems || [])];
+                    items.push({ name: "New Fee", amount: 0, type: "monthly", enabled: false, description: "Custom fee" });
+                    updateFeeStructure({ feeItems: items } as any);
+                  }}
+                >
+                  + Add Custom Fee
+                </Button>
+              </div>
+
               {/* Per-class tuition fees table */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -645,7 +718,7 @@ export function SettingsModule() {
                       <TableRow className="border-border/40">
                         <TableHead>Class</TableHead>
                         <TableHead className="text-right">Monthly Tuition (Rs.)</TableHead>
-                        <TableHead className="text-right">Admission Fee (Rs.)</TableHead>
+                        <TableHead className="text-right">Admission + Annual (Rs.)</TableHead>
                         <TableHead className="text-right">Hosteller Total (Rs.)</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -668,8 +741,13 @@ export function SettingsModule() {
                               className="h-7 w-28 text-right ml-auto"
                             />
                           </TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">Rs. {(fee * feeStructure.admissionMultiplier).toLocaleString()}</TableCell>
-                          <TableCell className="text-right text-sm text-accent">Rs. {(fee + feeStructure.hostelFee).toLocaleString()}</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">Rs. {(() => {
+                            const items = (feeStructure as any).feeItems || [];
+                            const oneTime = items.filter((f: any) => f.enabled && f.type === "one-time").reduce((s: number, f: any) => s + f.amount, 0);
+                            const annual = items.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount, 0);
+                            return (oneTime + annual).toLocaleString();
+                          })()}</TableCell>
+                          <TableCell className="text-right text-sm text-accent">Rs. {(Number(fee) + (feeStructure.hostelFee || 0)).toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -678,12 +756,19 @@ export function SettingsModule() {
               </div>
 
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs">
-                <p className="font-medium text-primary">How fees are calculated:</p>
+                <p className="font-medium text-primary">How fees work:</p>
                 <p className="text-muted-foreground mt-1">
-                  • <strong>Tuition</strong> = per-class amount shown above<br/>
-                  • <strong>Hostel</strong> = Rs. {feeStructure.hostelFee.toLocaleString()}/month (only for hostellers)<br/>
-                  • <strong>Admission</strong> = Tuition × {feeStructure.admissionMultiplier} (one-time)<br/>
-                  • <strong>Late Fee</strong> = Rs. {feeStructure.lateFee.toLocaleString()} (after day {feeStructure.dueDate} of each month)
+                  • <strong>One-time fees</strong> (Admission Rs. {(() => {
+                    const items = (feeStructure as any).feeItems || [];
+                    return items.filter((f: any) => f.enabled && f.type === "one-time").reduce((s: number, f: any) => s + f.amount, 0);
+                  })().toLocaleString()}) — charged ONCE at admission, same for all classes<br/>
+                  • <strong>Annual fees</strong> (Rs. {(() => {
+                    const items = (feeStructure as any).feeItems || [];
+                    return items.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount, 0);
+                  })().toLocaleString()}) — charged once per academic year on session change<br/>
+                  • <strong>Monthly tuition</strong> = per-class amount shown above<br/>
+                  • <strong>Hostel</strong> = Rs. {(feeStructure.hostelFee || 0).toLocaleString()}/month (only for hostellers)<br/>
+                  • <strong>Late Fee</strong> = Rs. {(feeStructure.lateFee || 0).toLocaleString()} (after day {feeStructure.dueDate || 10})
                 </p>
               </div>
 

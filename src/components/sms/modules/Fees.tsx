@@ -33,8 +33,10 @@ export function FeesModule() {
   useNowTick(); // Re-render every 60s so "today's collection" updates at midnight
   const { students, feeCollections, collectFee, searchQuery, selectedStudentId, school, feeStructure, setSelectedStudent: setStoreSelectedStudent } = useAppStore();
   const { toast } = useToast();
-  const HOSTEL_FEE = feeStructure.hostelFee;
-  const ADMISSION_MULTIPLIER = feeStructure.admissionMultiplier;
+  const HOSTEL_FEE = feeStructure.hostelFee || 0;
+  // Get admission fee from dynamic feeItems (flat amount, same for all classes)
+  const ADMISSION_FEE = (feeStructure as any).feeItems?.find((f: any) => f.name === "Admission Fee" && f.enabled)?.amount || 0;
+  const ANNUAL_FEE = (feeStructure as any).feeItems?.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount, 0) || 0;
   const [search, setSearch] = useState("");
   const [feeClassFilter, setFeeClassFilter] = useState("all");
   const [selected, setSelected] = useState<typeof students[0] | null>(null);
@@ -80,8 +82,10 @@ export function FeesModule() {
 
   const tuitionAmt = includeTuition ? selected?.monthlyFee || 0 : 0;
   const hostelAmt = includeHostel && selected?.isHosteller ? HOSTEL_FEE : 0;
-  const admissionAmt = includeAdmission ? (selected?.monthlyFee || 0) * ADMISSION_MULTIPLIER : 0;
-  const checkboxTotal = tuitionAmt + hostelAmt + admissionAmt;
+  // Admission fee is now a FLAT amount (not multiplied by monthly fee)
+  const admissionAmt = includeAdmission ? ADMISSION_FEE : 0;
+  const annualAmt = includeAdmission ? ANNUAL_FEE : 0; // annual fees collected with admission
+  const checkboxTotal = tuitionAmt + hostelAmt + admissionAmt + annualAmt;
   const customAmt = useCustom && customAmount ? parseInt(customAmount) || 0 : 0;
   const total = useCustom ? customAmt : checkboxTotal;
 
@@ -90,7 +94,7 @@ export function FeesModule() {
     : [
         includeTuition && "Tuition",
         includeHostel && "Hostel",
-        includeAdmission && "Admission",
+        includeAdmission && "Admission+Annual",
       ].filter(Boolean).join(" + ") || "Tuition";
 
   const submit = async () => {
@@ -137,7 +141,7 @@ export function FeesModule() {
       feeTypeLabel,
       useCustom
         ? undefined
-        : { tuition: tuitionAmt || undefined, hostel: hostelAmt || undefined, admission: admissionAmt || undefined }
+        : { tuition: tuitionAmt || undefined, hostel: hostelAmt || undefined, admission: (admissionAmt + annualAmt) || undefined }
     );
 
     toast({
@@ -459,11 +463,11 @@ export function FeesModule() {
                               <GraduationCap className={cn("w-3.5 h-3.5", includeAdmission ? "text-purple-600" : "text-muted-foreground")} />
                             </div>
                             <div className="text-left min-w-0">
-                              <p className="text-sm font-medium truncate">Admission Fee</p>
-                              <p className="text-[10px] text-muted-foreground">One-time (3 × monthly)</p>
+                              <p className="text-sm font-medium truncate">Admission + Annual Fees</p>
+                              <p className="text-[10px] text-muted-foreground">One-time + annual (flat for all classes)</p>
                             </div>
                           </div>
-                          <p className="font-bold text-sm shrink-0">Rs. {(selected.monthlyFee * ADMISSION_MULTIPLIER).toLocaleString()}</p>
+                          <p className="font-bold text-sm shrink-0">Rs. {(ADMISSION_FEE + ANNUAL_FEE).toLocaleString()}</p>
                         </button>
                       </div>
                     )}
@@ -527,7 +531,7 @@ export function FeesModule() {
                         <>
                           {tuitionAmt > 0 && <div className="flex justify-between"><span>Tuition:</span><span className="font-medium text-foreground">Rs. {tuitionAmt.toLocaleString()}</span></div>}
                           {hostelAmt > 0 && <div className="flex justify-between"><span>Hostel:</span><span className="font-medium text-foreground">Rs. {hostelAmt.toLocaleString()}</span></div>}
-                          {admissionAmt > 0 && <div className="flex justify-between"><span>Admission:</span><span className="font-medium text-foreground">Rs. {admissionAmt.toLocaleString()}</span></div>}
+                          {admissionAmt > 0 && <div className="flex justify-between"><span>Admission + Annual:</span><span className="font-medium text-foreground">Rs. {(admissionAmt + annualAmt).toLocaleString()}</span></div>}
                         </>
                       )}
                     </div>
