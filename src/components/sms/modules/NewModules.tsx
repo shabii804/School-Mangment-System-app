@@ -161,7 +161,7 @@ export function LibraryModule() {
       </Card>
 
       {/* Add Book Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm({ title: "", author: "", category: "Mathematics", isbn: "", copies: 1, shelf: "" }); }}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Book</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
