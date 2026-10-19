@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore, type Role } from "@/lib/sms-store";
-import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check, Calendar, Plus, LogOut, Database, Settings as SettingsIcon } from "lucide-react";
+import { Bell, Search, Moon, Sun, ChevronDown, Command, X, Check, Calendar, Plus, LogOut, Database, Settings as SettingsIcon, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +63,7 @@ export function Topbar() {
   const {
     role, setRole, userName, activeModule, setActiveModule, isDark, toggleTheme,
     setCommandOpen, notifications, markNotificationRead, markAllNotificationsRead, unreadCount,
-    school,
+    school, setMobileSidebarOpen,
   } = useAppStore();
 
   const roleInfo = ROLE_LABELS[role];
@@ -76,6 +76,17 @@ export function Topbar() {
   return (
     <header className="shrink-0 z-30 glass-card border-b border-border/40">
       <div className="px-4 md:px-5 py-2 flex items-center gap-2 md:gap-3">
+        {/* Mobile hamburger — opens the Sidebar drawer. Hidden on md+ because the desktop sidebar is always visible there. */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-9 w-9 shrink-0"
+          onClick={() => setMobileSidebarOpen(true)}
+          aria-label="Open navigation menu"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+
         {/* Title block */}
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-bold text-foreground leading-tight">{meta.title}</h2>

@@ -180,6 +180,10 @@ interface AppState {
   commandOpen: boolean;
   setCommandOpen: (open: boolean) => void;
 
+  // Mobile sidebar drawer (so Topbar can open it and Sidebar can read/close it)
+  mobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
+
   // Notifications
   notifications: Notification[];
   markNotificationRead: (id: string) => void;
@@ -597,6 +601,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   commandOpen: false,
   setCommandOpen: (open) => set({ commandOpen: open }),
+
+  mobileSidebarOpen: false,
+  setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
 
   notifications: INITIAL_NOTIFICATIONS,
   markNotificationRead: (id) => set((s) => ({

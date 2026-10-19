@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { useAppStore, type ModuleKey } from "@/lib/sms-store";
 import { cn } from "@/lib/utils";
 import {
+  Sheet, SheetContent, SheetHeader,
+} from "@/components/ui/sheet";
+import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
   ClipboardCheck, Wallet, DollarSign, AlertTriangle, FileText, Award,
   BarChart3, LineChart, UserPlus, Settings, GraduationCap as Logo,
@@ -60,11 +63,14 @@ const GROUP_LABELS: Record<NavItem["group"], string> = {
 };
 
 export function Sidebar() {
-  const { activeModule, setActiveModule, role, school, enabledModules, syncStatus, dbStats, lastSyncAt } = useAppStore();
+  const {
+    activeModule, setActiveModule, role, school, enabledModules,
+    syncStatus, dbStats, lastSyncAt,
+    mobileSidebarOpen, setMobileSidebarOpen,
+  } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Auto-collapse on small screens
+  // Auto-collapse on small screens (desktop-only behavior; mobile uses drawer)
   useEffect(() => {
     const checkWidth = () => {
       if (window.innerWidth < 768) {
@@ -88,125 +94,166 @@ export function Sidebar() {
 
   const groups: NavItem["group"][] = ["main", "operations", "finance", "academics", "facilities", "system"];
 
-  return (
-    <aside className={cn(
-      "h-screen overflow-y-auto overflow-x-hidden flex flex-col transition-all duration-200 shrink-0 z-40",
-      "bg-[oklch(0.18_0.02_200)] text-white border-r border-white/5",
-      collapsed ? "w-14" : "w-56"
-    )}>
-      {/* Brand header */}
-      <div className="px-3 py-3 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          {/* Logo */}
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md shrink-0 overflow-hidden ring-1 ring-white/10">
-            {school.logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
-            ) : (
-              <Logo className="w-5 h-5 text-white" />
-            )}
-          </div>
-          {!collapsed && (
-            <div className="flex-1 min-w-0 fade-in">
-              <h1 className="font-bold text-xs leading-tight text-white truncate">{school.name || "School Management"}</h1>
-              <p className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">SMS v1.0</p>
-            </div>
-          )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="text-white/70 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!collapsed}
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
+  // Shared click handler — navigates AND closes the mobile drawer so the user
+  // sees the destination module immediately after tapping a nav item on phone.
+  const handleNavigate = (key: ModuleKey) => {
+    setActiveModule(key);
+    setMobileSidebarOpen(false);
+  };
 
-      {/* Nav */}
-      <nav className="flex-1 px-1.5 py-2 space-y-3">
-        {groups.map(group => {
-          const items = visibleItems.filter(i => i.group === group);
-          if (items.length === 0) return null;
-          return (
-            <div key={group}>
-              {!collapsed && (
-                <p className="px-2.5 mb-1 text-[10px] font-bold text-white/60 uppercase tracking-wider">
-                  {GROUP_LABELS[group]}
-                </p>
+  // Reusable sidebar body — rendered both in the desktop <aside> and in the
+  // mobile Sheet drawer so we don't duplicate the nav tree by hand.
+  // `isMobile` controls whether the collapse toggle is shown (desktop only)
+  // and whether labels are always visible (mobile is always full-width).
+  const renderSidebarBody = (isMobile: boolean) => {
+    // On mobile drawer, labels are always shown. On desktop, they hide when collapsed.
+    const showLabels = isMobile || !collapsed;
+    return (
+      <>
+        {/* Brand header */}
+        <div className="px-3 py-3 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            {/* Logo */}
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md shrink-0 overflow-hidden ring-1 ring-white/10">
+              {school.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
+              ) : (
+                <Logo className="w-5 h-5 text-white" />
               )}
-              <div className="space-y-0.5">
-                {items.map(item => {
-                  const Icon = item.icon;
-                  const isActive = activeModule === item.key;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => setActiveModule(item.key)}
-                      title={collapsed ? item.label : undefined}
-                      aria-current={isActive ? "page" : undefined}
-                      className={cn(
-                        "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold text-left transition-all",
-                        isActive
-                          ? "bg-primary text-white shadow-sm shadow-primary/20"
-                          : "text-white/70 hover:bg-white/10 hover:text-white",
-                        collapsed && "justify-center px-1.5"
-                      )}
-                    >
-                      <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-white" : "text-white/60")} strokeWidth={2} />
-                      {!collapsed && <span className="truncate">{item.label}</span>}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
-          );
-        })}
-      </nav>
-
-      {/* Footer status — SQLite sync indicator */}
-      <div className="px-3 py-2 border-t border-white/10 mt-auto">
-        {!collapsed ? (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-[11px]">
-              <div className="relative">
-                <div className={cn(
-                  "w-2 h-2 rounded-full",
-                  syncStatus === "online" ? "bg-emerald-400" :
-                  syncStatus === "syncing" ? "bg-yellow-400 animate-pulse" :
-                  syncStatus === "offline" ? "bg-amber-500" :
-                  syncStatus === "error" ? "bg-red-500" :
-                  "bg-muted-foreground"
-                )} />
-                {syncStatus === "online" && (
-                  <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
-                )}
-              </div>
-              <span className="text-white/70 font-medium">
-                {syncStatus === "online" ? "Database Synced" :
-                 syncStatus === "syncing" ? "Syncing..." :
-                 syncStatus === "offline" ? "Offline Mode" :
-                 syncStatus === "error" ? "Sync Error" :
-                 "Connecting..."}
-              </span>
-            </div>
-            {dbStats && dbStats.collections > 0 && (
-              <div className="text-[9px] text-white/40 leading-tight pl-4">
-                {dbStats.collections} collections • {(dbStats.size / 1024).toFixed(1)}KB
-                {lastSyncAt && <div>Last: {new Date(lastSyncAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>}
+            {showLabels && (
+              <div className="flex-1 min-w-0 fade-in">
+                <h1 className="font-bold text-xs leading-tight text-white truncate">{school.name || "School Management"}</h1>
+                <p className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">SMS v1.0</p>
               </div>
             )}
+            {!isMobile && (
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="text-white/70 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-expanded={!collapsed}
+              >
+                {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              </button>
+            )}
           </div>
-        ) : (
-          <div className={cn(
-            "w-2 h-2 rounded-full mx-auto",
-            syncStatus === "online" ? "bg-emerald-400" :
-            syncStatus === "syncing" ? "bg-yellow-400 animate-pulse" :
-            syncStatus === "offline" ? "bg-amber-500" :
-            "bg-muted-foreground"
-          )} />
-        )}
-      </div>
-    </aside>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-1.5 py-2 space-y-3">
+          {groups.map(group => {
+            const items = visibleItems.filter(i => i.group === group);
+            if (items.length === 0) return null;
+            return (
+              <div key={group}>
+                {showLabels && (
+                  <p className="px-2.5 mb-1 text-[10px] font-bold text-white/60 uppercase tracking-wider">
+                    {GROUP_LABELS[group]}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {items.map(item => {
+                    const Icon = item.icon;
+                    const isActive = activeModule === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => handleNavigate(item.key)}
+                        title={(!isMobile && collapsed) ? item.label : undefined}
+                        aria-current={isActive ? "page" : undefined}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold text-left transition-all",
+                          isActive
+                            ? "bg-primary text-white shadow-sm shadow-primary/20"
+                            : "text-white/70 hover:bg-white/10 hover:text-white",
+                          !isMobile && collapsed && "justify-center px-1.5"
+                        )}
+                      >
+                        <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-white" : "text-white/60")} strokeWidth={2} />
+                        {showLabels && <span className="truncate">{item.label}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Footer status — SQLite sync indicator */}
+        <div className="px-3 py-2 border-t border-white/10 mt-auto">
+          {showLabels ? (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-[11px]">
+                <div className="relative">
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    syncStatus === "online" ? "bg-emerald-400" :
+                    syncStatus === "syncing" ? "bg-yellow-400 animate-pulse" :
+                    syncStatus === "offline" ? "bg-amber-500" :
+                    "bg-muted-foreground"
+                  )} />
+                  {syncStatus === "online" && (
+                    <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                  )}
+                </div>
+                <span className="text-white/70 font-medium">
+                  {syncStatus === "online" ? "Database Synced" :
+                   syncStatus === "syncing" ? "Syncing..." :
+                   syncStatus === "offline" ? "Offline Mode" :
+                   syncStatus === "error" ? "Sync Error" :
+                   "Connecting..."}
+                </span>
+              </div>
+              {dbStats && dbStats.collections > 0 && (
+                <div className="text-[9px] text-white/40 leading-tight pl-4">
+                  {dbStats.collections} collections • {(dbStats.size / 1024).toFixed(1)}KB
+                  {lastSyncAt && <div>Last: {new Date(lastSyncAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={cn(
+              "w-2 h-2 rounded-full mx-auto",
+              syncStatus === "online" ? "bg-emerald-400" :
+              syncStatus === "syncing" ? "bg-yellow-400 animate-pulse" :
+              syncStatus === "offline" ? "bg-amber-500" :
+              "bg-muted-foreground"
+            )} />
+          )}
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <>
+      {/* Desktop sidebar — hidden below md (768px).
+          Previously this <aside> was always rendered, eating ~56px of the
+          390px mobile viewport and squeezing the main content into a thin
+          strip. Mobile users now navigate via the Sheet drawer below. */}
+      <aside className={cn(
+        "hidden md:flex md:h-screen md:overflow-y-auto md:overflow-x-hidden md:flex-col md:transition-all md:duration-200 md:shrink-0 md:z-40",
+        "bg-[oklch(0.18_0.02_200)] text-white border-r border-white/5",
+        collapsed ? "md:w-14" : "md:w-56"
+      )}>
+        {renderSidebarBody(false)}
+      </aside>
+
+      {/* Mobile drawer — opened via hamburger button in Topbar (setMobileSidebarOpen).
+          Renders the same nav content at full width so labels are readable on
+          touch screens. Tapping any nav item calls handleNavigate() which
+          closes the drawer automatically. */}
+      <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="w-64 p-0 bg-[oklch(0.18_0.02_200)] text-white border-r border-white/5 flex flex-col">
+          <SheetHeader className="sr-only">
+            <h2>Navigation</h2>
+          </SheetHeader>
+          {renderSidebarBody(true)}
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
