@@ -329,7 +329,13 @@ export function ConcessionModule() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {concessions.map(c => {
+        {concessions.length === 0 ? (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            <Gift className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="font-medium text-sm">No concessions granted</p>
+            <p className="text-xs mt-1">Click "Add Concession" above to create the first fee concession or scholarship.</p>
+          </div>
+        ) : concessions.map(c => {
           const Icon = CONCESSION_TYPE_ICONS[c.type] || Gift;
           return (
             <Card key={c.id} className={cn("border-0 shadow-sm glass-card card-hover", c.status === "Revoked" && "opacity-60", c.status === "Expired" && "opacity-70")}>
