@@ -373,7 +373,13 @@ export function HostelModule() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {rooms.map(r => {
+        {rooms.length === 0 ? (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            <Home className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="font-medium text-sm">No hostel rooms added yet</p>
+            <p className="text-xs mt-1">Click "Add Room" above to register the first room.</p>
+          </div>
+        ) : rooms.map(r => {
           const pct = r.capacity > 0 ? Math.round((r.occupied / r.capacity) * 100) : 0;
           return (
             <Card key={r.id} className={cn("border-0 shadow-sm glass-card card-hover", r.occupied === r.capacity && "ring-1 ring-red-500/20")}>
