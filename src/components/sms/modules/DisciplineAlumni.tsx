@@ -100,7 +100,19 @@ export function DisciplineModule() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map(inc => (
+        {filtered.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Shield className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="font-medium text-sm">
+              {filter === "all" ? "No incidents recorded yet" : `No ${filter.toLowerCase()} incidents`}
+            </p>
+            <p className="text-xs mt-1">
+              {filter === "all"
+                ? "Click \"Log Incident\" above to record the first discipline incident."
+                : "Try changing the filter above."}
+            </p>
+          </div>
+        ) : filtered.map(inc => (
           <Card key={inc.id} className="border-0 shadow-sm glass-card card-hover">
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
