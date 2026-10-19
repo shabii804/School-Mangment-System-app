@@ -166,7 +166,15 @@ export function LeaveModule() {
                   <TableHead className="text-center">Total Used</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {LEAVE_BALANCES.map(b => {
+                  {LEAVE_BALANCES.length === 0 ? (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                        <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                        <p className="font-medium text-sm">No leave balances configured</p>
+                        <p className="text-xs mt-1">Balances are derived from teachers and staff — add employees to populate.</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : LEAVE_BALANCES.map(b => {
                     const totalUsed = b.casual.used + b.sick.used + b.earned.used;
                     return (
                       <TableRow key={b.employeeId} className="border-border/30 hover:bg-muted/30">
