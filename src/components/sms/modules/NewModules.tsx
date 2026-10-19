@@ -165,7 +165,7 @@ export function LibraryModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Book</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Book Title <span className="text-red-500">*</span></Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
+            <div><Label>Book Title <span className="text-red-500">*</span></Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} autoFocus /></div>
             <div><Label>Author</Label><Input value={form.author} onChange={e => setForm({...form, author: e.target.value})} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Category</Label><Select value={form.category} onValueChange={v => setForm({...form, category: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Mathematics", "English", "Science", "Urdu", "Social Studies", "Islamiat", "Computer", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
