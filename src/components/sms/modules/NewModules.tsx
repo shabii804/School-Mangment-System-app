@@ -136,7 +136,15 @@ export function LibraryModule() {
               <TableHead>Issue ID</TableHead><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issue Date</TableHead><TableHead>Due Date</TableHead><TableHead>Fine</TableHead><TableHead>Status</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {issues.map(i => (
+              {issues.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <BookMarked className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="font-medium text-sm">No issues recorded yet</p>
+                    <p className="text-xs mt-1">Use "Issue Book" above to lend a book to a student.</p>
+                  </TableCell>
+                </TableRow>
+              ) : issues.map(i => (
                 <TableRow key={i.id} className="border-border/30 hover:bg-muted/30">
                   <TableCell className="font-mono text-xs">{i.id}</TableCell>
                   <TableCell className="text-sm font-medium">{i.bookTitle}</TableCell>
