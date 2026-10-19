@@ -199,7 +199,7 @@ export function DashboardModule() {
 
       {/* ═══ KPI Row 1 — Primary Stats ═══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <button onClick={kpiClick("students")} className="text-left">
+        <button onClick={kpiClick("students")} aria-label="View Students module" className="text-left">
           <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
@@ -223,7 +223,7 @@ export function DashboardModule() {
           </div>
         </button>
 
-        <button onClick={kpiClick("attendance")} className="text-left group">
+        <button onClick={kpiClick("attendance")} aria-label="View Attendance module" className="text-left group">
           <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
@@ -244,7 +244,7 @@ export function DashboardModule() {
           </div>
         </button>
 
-        <button onClick={kpiClick("fees")} className="text-left group">
+        <button onClick={kpiClick("fees")} aria-label="View Fee Collection module" className="text-left group">
           <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>
@@ -265,7 +265,7 @@ export function DashboardModule() {
           </div>
         </button>
 
-        <button onClick={kpiClick("defaulters")} className="text-left group">
+        <button onClick={kpiClick("defaulters")} aria-label="View Defaulters module" className="text-left group">
           <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
             <div className="flex items-start justify-between">
               <div>

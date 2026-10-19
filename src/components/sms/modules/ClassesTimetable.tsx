@@ -88,7 +88,7 @@ export function ClassesModule() {
                   <div className="flex items-center gap-2">
                     <Avatar className="w-6 h-6"><AvatarFallback className="text-[10px] font-semibold bg-primary/15 text-primary">{(cls.classTeacher || "NA").split(" ").map(w => w[0]).join("").slice(0, 2)}</AvatarFallback></Avatar>
                     <p className="text-xs font-medium truncate flex-1">{cls.classTeacher || "Unassigned"}</p>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Assign Teacher" onClick={() => setAssignTeacher({ className: cls.name, section: cls.sections[0] || "", teacherId: "" })}>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Assign Teacher" aria-label={`Assign class teacher to ${cls.name}`} onClick={() => setAssignTeacher({ className: cls.name, section: cls.sections[0] || "", teacherId: "" })}>
                       <UserCog className="w-3 h-3" />
                     </Button>
                   </div>
