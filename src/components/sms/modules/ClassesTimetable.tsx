@@ -159,7 +159,7 @@ export function ClassesModule() {
               <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-2.5">
                 <div className="md:col-span-2 space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Class Name <span className="text-red-500">*</span></Label>
-                  <Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" className="h-9" />
+                  <Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" className="h-9" autoFocus />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Sections <span className="text-red-500">*</span></Label>
