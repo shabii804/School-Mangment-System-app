@@ -102,7 +102,15 @@ export function LibraryModule() {
               <TableHead>Book ID</TableHead><TableHead>Title</TableHead><TableHead>Author</TableHead><TableHead>Category</TableHead><TableHead className="text-center">Available</TableHead><TableHead>Shelf</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {books.map(b => (
+              {books.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="font-medium text-sm">No books in catalog</p>
+                    <p className="text-xs mt-1">Click "Add Book" above to add the first book.</p>
+                  </TableCell>
+                </TableRow>
+              ) : books.map(b => (
                 <TableRow key={b.id} className="border-border/30 hover:bg-muted/30">
                   <TableCell className="font-mono text-xs text-muted-foreground">{b.id}</TableCell>
                   <TableCell className="font-medium text-sm">{b.title}</TableCell>
