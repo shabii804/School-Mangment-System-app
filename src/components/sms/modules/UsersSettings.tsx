@@ -45,6 +45,14 @@ const ROLE_COLORS: Record<string, string> = {
 export function UsersModule() {
   const [addOpen, setAddOpen] = useState(false);
   const { toast } = useToast();
+  // Controlled form state — previously the inputs were UNCONTROLLED (no
+  // value/onChange), so the dialog could be submitted with empty fields and
+  // no data was ever captured. Now we track all four mandatory fields and
+  // validate them before allowing "Create User".
+  const [userForm, setUserForm] = useState({ name: "", username: "", email: "", role: "Teacher" });
+  const canSubmit = userForm.name.trim() && userForm.username.trim() && userForm.email.trim();
+
+  const resetUserForm = () => setUserForm({ name: "", username: "", email: "", role: "Teacher" });
 
   return (
     <div className="space-y-3">
@@ -116,15 +124,43 @@ export function UsersModule() {
       </Card>
 
       {/* Add user dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) resetUserForm(); }}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Add New User</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Full Name</Label><Input placeholder="e.g., Mr. Ali Khan" /></div>
-            <div><Label>Username</Label><Input placeholder="e.g., ali.khan" /></div>
-            <div><Label>Email</Label><Input type="email" placeholder="user@greenwood.edu" /></div>
-            <div><Label>Role</Label>
-              <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+            <div>
+              <Label>Full Name <span className="text-red-500">*</span></Label>
+              <Input
+                value={userForm.name}
+                onChange={e => setUserForm({ ...userForm, name: e.target.value })}
+                placeholder="e.g., Mr. Ali Khan"
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label>Username <span className="text-red-500">*</span></Label>
+              <Input
+                value={userForm.username}
+                onChange={e => setUserForm({ ...userForm, username: e.target.value })}
+                placeholder="e.g., ali.khan"
+              />
+            </div>
+            <div>
+              <Label>Email <span className="text-red-500">*</span></Label>
+              <Input
+                type="email"
+                value={userForm.email}
+                onChange={e => setUserForm({ ...userForm, email: e.target.value })}
+                placeholder="user@greenwood.edu"
+              />
+            </div>
+            <div>
+              <Label>Role <span className="text-red-500">*</span></Label>
+              <select
+                value={userForm.role}
+                onChange={e => setUserForm({ ...userForm, role: e.target.value })}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
                 <option>Admin</option><option>Accountant</option><option>Teacher</option>
               </select>
             </div>
@@ -133,8 +169,17 @@ export function UsersModule() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={() => { setAddOpen(false); toast({ title: "User Created", description: "Temporary password sent." }); }}>Create User</Button>
+            <Button variant="outline" onClick={() => { setAddOpen(false); resetUserForm(); }}>Cancel</Button>
+            <Button
+              disabled={!canSubmit}
+              onClick={() => {
+                setAddOpen(false);
+                toast({ title: "User Created ✓", description: `${userForm.name} (${userForm.role}) — temporary password sent to ${userForm.email}.` });
+                resetUserForm();
+              }}
+            >
+              Create User
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
