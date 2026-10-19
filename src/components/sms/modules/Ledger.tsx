@@ -337,7 +337,7 @@ export function LedgerModule() {
               </div>
               <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Category</Label>
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Category <span className="text-red-500">*</span></Label>
                   <Select value={form.category} onValueChange={v => setForm({...form, category: v})}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -346,7 +346,7 @@ export function LedgerModule() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date</Label>
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Date <span className="text-red-500">*</span></Label>
                   <Input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="h-9" />
                 </div>
                 <div className="md:col-span-2 space-y-1">
@@ -361,7 +361,7 @@ export function LedgerModule() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Payment Mode</Label>
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Payment Mode <span className="text-red-500">*</span></Label>
                   <Select value={form.mode} onValueChange={(v: any) => setForm({...form, mode: v})}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>

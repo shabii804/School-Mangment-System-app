@@ -162,7 +162,7 @@ export function ClassesModule() {
                   <Input value={newClass.name} onChange={e => setNewClass({...newClass, name: e.target.value})} placeholder="e.g., Grade 11" className="h-9" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Sections</Label>
+                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Sections <span className="text-red-500">*</span></Label>
                   <Input value={newClass.sections} onChange={e => setNewClass({...newClass, sections: e.target.value})} placeholder="A, B, C" className="h-9" />
                   <p className="text-[9px] text-muted-foreground">Comma-separated</p>
                 </div>
@@ -179,7 +179,7 @@ export function ClassesModule() {
                 <span className="ml-auto text-[10px] text-muted-foreground">Per student, per month</span>
               </div>
               <div className="p-3 space-y-2">
-                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount (Rs.)</Label>
+                <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount (Rs.) <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <Wallet className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
                   <Input type="number" value={newClass.monthlyFee} onChange={e => setNewClass({...newClass, monthlyFee: Number(e.target.value)})} placeholder="e.g., 3000" className="h-10 pl-8 text-lg font-semibold" />
