@@ -491,7 +491,15 @@ export function InventoryModule() {
               <TableHead>Item ID</TableHead><TableHead>Name</TableHead><TableHead>Category</TableHead><TableHead className="text-center">Quantity</TableHead><TableHead className="text-center">Min Stock</TableHead><TableHead>Location</TableHead><TableHead>Condition</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {items.map(i => {
+              {items.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="font-medium text-sm">No inventory items recorded</p>
+                    <p className="text-xs mt-1">Click "Add Item" above to register the first asset.</p>
+                  </TableCell>
+                </TableRow>
+              ) : items.map(i => {
                 const isLow = i.quantity <= i.minStock;
                 return (
                   <TableRow key={i.id} className="border-border/30 hover:bg-muted/30">
