@@ -241,7 +241,13 @@ export function TransportModule() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {routes.map(r => {
+        {routes.length === 0 ? (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            <Bus className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="font-medium text-sm">No bus routes configured</p>
+            <p className="text-xs mt-1">Click "Add Route" above to create the first transport route.</p>
+          </div>
+        ) : routes.map(r => {
           const pct = r.capacity > 0 ? Math.round((r.occupied / r.capacity) * 100) : 0;
           return (
             <Card key={r.id} className="border-0 shadow-sm glass-card card-hover">
