@@ -48,10 +48,12 @@ A comprehensive, offline-first school/college management desktop application bui
 - Flat amounts (not multiplied by tuition) — same fee for all classes
 
 ### Data Persistence
-- **File-based JSON database** (`school-data.json`) — source of truth
-- **localStorage cache** — offline-first, instant load
-- **Auto-sync** — changes saved to JSON database automatically (5-second debounce)
+- **SQLite** (default, via `better-sqlite3`) — synchronous, fast, transactional
+- **File-based JSON store** (`school-data.json`) — automatic fallback if `better-sqlite3` fails to load
+- **localStorage cache** — offline-first, instant load on the client
+- **Auto-sync** — changes saved to the backend automatically (5-second debounce)
 - **Backup & Restore** — download JSON backup, reset all data
+- **Health check** — `GET /api/state/health` returns `{backend: "sqlite" | "file", ok, dbPath, responseTimeMs}`
 - Data survives server restarts and page reloads
 
 ## 🚀 Getting Started
@@ -80,13 +82,60 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```bash
 node scripts/seed-data.js
 ```
-This populates the database with:
+This writes seed data directly to `school-data.json` (the file-based fallback store). With SQLite as the active backend, you have two options to load the seed:
+
+**Option A — Auto-import the file-based seed into SQLite** (recommended):
+```bash
+node scripts/seed-data.js   # writes school-data.json
+# Then start the server and POST the JSON to /api/state:
+npm run dev
+# In another terminal:
+node -e "const fs=require('fs'); const state=JSON.parse(fs.readFileSync('school-data.json','utf8')); fetch('http://localhost:3000/api/state', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({state})}).then(r=>r.json()).then(d=>console.log('Seeded SQLite:', d));"
+```
+
+**Option B — Inspect/seed SQLite directly**:
+```bash
+sqlite3 school-data.db < schema.sql   # optional — adapter auto-creates on first run
+sqlite3 school-data.db "SELECT key, LENGTH(value) AS bytes FROM app_state;"
+```
+
+The seed populates:
 - 20 students (4 per class, Grade 6-10)
 - 5 teachers with subjects
 - 5 classes with sections and fees
 - 5 subjects
 - School info (Greenwood Public School)
 - Dynamic fee structure (8 fee items)
+
+### SQLite Configuration
+
+The app uses SQLite by default — no setup required. The database
+file is auto-created at `./school-data.db` on first run.
+
+**Customize the database file location** via env var:
+```env
+# In .env (absolute or relative to project root)
+SQLITE_DB_PATH=/var/lib/school-management/data.db
+```
+
+**Verify the backend is active**:
+```bash
+curl http://localhost:3000/api/state/health
+# Expected: {"success":true,"backend":"sqlite","dbPath":"...","responseTimeMs":1}
+```
+
+**Inspect the database directly** (the schema is documented in `schema.sql`):
+```bash
+sqlite3 school-data.db "SELECT key, LENGTH(value) AS bytes, updated_at FROM app_state;"
+sqlite3 school-data.db "SELECT * FROM app_meta;"
+```
+
+**Why SQLite?**
+- Synchronous API (via `better-sqlite3`) matches the existing `db.ts` contract — no async changes needed in API routes
+- 3-10x faster than the async `sqlite3` driver
+- WAL journal mode enables concurrent reads during writes
+- Single-file deployment — no separate database server
+- Prebuilt native binaries for Linux/macOS/Windows (no node-gyp required)
 
 ## 🛠️ Tech Stack
 
@@ -97,7 +146,7 @@ This populates the database with:
 | Styling | Tailwind CSS 4 |
 | UI Components | shadcn/ui |
 | State Management | Zustand + localStorage |
-| Database | File-based JSON (server-side) |
+| Database | SQLite (better-sqlite3) with file-based JSON fallback |
 | PDF Generation | jsPDF |
 | Charts | Recharts |
 | Icons | Lucide React |
