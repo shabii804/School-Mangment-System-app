@@ -260,7 +260,19 @@ export function AlumniModule() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(a => {
+        {filtered.length === 0 ? (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            <Award className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="font-medium text-sm">
+              {alumni.length === 0 ? "No alumni registered" : "No alumni match your filters"}
+            </p>
+            <p className="text-xs mt-1">
+              {alumni.length === 0
+                ? "Add alumni records via the API or seed data to populate this list."
+                : "Try clearing the search box or selecting 'All Years'."}
+            </p>
+          </div>
+        ) : filtered.map(a => {
           const Icon = STATUS_ICONS[a.currentStatus] || Users;
           return (
             <Card key={a.id} className="border-0 shadow-sm glass-card card-hover">
