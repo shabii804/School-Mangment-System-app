@@ -217,7 +217,19 @@ export function SalaryModule() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEmployees.map(emp => {
+              {filteredEmployees.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    <Wallet className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="font-medium text-sm">No employees found</p>
+                    <p className="text-xs mt-1">
+                      {allEmployees.length === 0
+                        ? "Add teachers or staff in their respective modules to populate payroll."
+                        : "Try changing the department filter or month."}
+                    </p>
+                  </TableCell>
+                </TableRow>
+              ) : filteredEmployees.map(emp => {
                 const calc = calculate(emp);
                 const totalDays = emp.attendance.present + emp.attendance.late + emp.attendance.halfDay + emp.attendance.absent + emp.attendance.leave;
                 return (

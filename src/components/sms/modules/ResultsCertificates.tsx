@@ -157,7 +157,15 @@ export function ResultsModule() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {marksData.map((row, i) => (
+              {marksData.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                    <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    <p className="font-medium text-sm">No students in this class</p>
+                    <p className="text-xs mt-1">Select a different class above, or admit students to this class first.</p>
+                  </TableCell>
+                </TableRow>
+              ) : marksData.map((row, i) => (
                 <TableRow key={row.student.id} className="border-border/30 hover:bg-muted/30">
                   <TableCell><Badge variant="outline" className="text-xs">{i + 1}</Badge></TableCell>
                   <TableCell>
