@@ -430,7 +430,7 @@ export function CertificatesModule() {
                   <div className="flex items-center justify-center gap-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center overflow-hidden">
                       {school.logo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
+                         
                         <img src={school.logo} alt="logo" className="w-full h-full object-cover" />
                       ) : (
                         <GraduationCap className="w-4 h-4 text-primary-foreground" />

@@ -332,7 +332,7 @@ export function SettingsModule() {
                 <div className="flex items-center gap-5">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shadow-lg shrink-0">
                     {school.logo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+                       
                       <img src={school.logo} alt="School logo" className="w-full h-full object-cover" />
                     ) : (
                       <Building2 className="w-10 h-10 text-primary-foreground" />
@@ -993,7 +993,7 @@ export function SettingsModule() {
             <CardContent className="p-6 text-center">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mx-auto overflow-hidden ring-2 ring-primary/20 shadow-lg">
                 {school.logo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+                   
                   <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
                 ) : (
                   <Building2 className="w-10 h-10 text-primary-foreground" />

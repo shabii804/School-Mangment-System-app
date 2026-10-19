@@ -323,7 +323,7 @@ export function FeesModule() {
                 <div className="relative flex items-center gap-4">
                   <Avatar className="w-14 h-14 ring-4 ring-white/30 shadow-xl shrink-0">
                     {selected.photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+                       
                       <img src={selected.photo} alt={selected.name} className="w-full h-full object-cover" />
                     ) : (
                       <AvatarFallback className="text-base font-bold bg-white/20 text-white border-0">

@@ -116,7 +116,7 @@ export function Sidebar() {
             {/* Logo */}
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md shrink-0 overflow-hidden ring-1 ring-white/10">
               {school.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                 
                 <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
               ) : (
                 <Logo className="w-5 h-5 text-white" />

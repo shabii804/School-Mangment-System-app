@@ -41,7 +41,7 @@ export default function Home() {
     loadFromDatabase().catch((e) => {
       console.error("[Sync] Load failed:", e);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   // ─── Listen for online/offline events ───
   useEffect(() => {
