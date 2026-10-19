@@ -153,14 +153,14 @@ export function DisciplineModule() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-600" />Log Discipline Incident</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Student Name *</Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} /></div>
+              <div><Label>Student Name <span className="text-red-500">*</span></Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} /></div>
               <div><Label>Class</Label><Input value={form.class} onChange={e => setForm({...form, class: e.target.value})} placeholder="Grade 9-A" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{INCIDENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
               <div><Label>Severity</Label><Select value={form.severity} onValueChange={v => setForm({...form, severity: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Low">Low</SelectItem><SelectItem value="Medium">Medium</SelectItem><SelectItem value="High">High</SelectItem></SelectContent></Select></div>
             </div>
-            <div><Label>Description *</Label><Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="What happened?" /></div>
+            <div><Label>Description <span className="text-red-500">*</span></Label><Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="What happened?" /></div>
             <div><Label>Action Taken</Label><Input value={form.action} onChange={e => setForm({...form, action: e.target.value})} placeholder="e.g., Verbal warning, Detention" /></div>
             <div><Label>Reported By</Label><Input value={form.reportedBy} onChange={e => setForm({...form, reportedBy: e.target.value})} placeholder="Teacher name" /></div>
           </div>
@@ -288,7 +288,7 @@ export function AlumniModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Alumnus</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
+            <div><Label>Name <span className="text-red-500">*</span></Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Graduation Year</Label><Input type="number" value={form.graduationYear} onChange={e => setForm({...form, graduationYear: e.target.value})} placeholder="2024" /></div>
               <div><Label>Last Class</Label><Input value={form.lastClass} onChange={e => setForm({...form, lastClass: e.target.value})} placeholder="Grade 10" /></div>

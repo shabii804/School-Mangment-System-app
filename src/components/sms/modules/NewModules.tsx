@@ -149,7 +149,7 @@ export function LibraryModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add New Book</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Book Title *</Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
+            <div><Label>Book Title <span className="text-red-500">*</span></Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
             <div><Label>Author</Label><Input value={form.author} onChange={e => setForm({...form, author: e.target.value})} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Category</Label><Select value={form.category} onValueChange={v => setForm({...form, category: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Mathematics", "English", "Science", "Urdu", "Social Studies", "Islamiat", "Computer", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
@@ -166,8 +166,8 @@ export function LibraryModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><BookMarked className="w-4 h-4 text-primary" />Issue Book</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Select Book *</Label><Select value={issueForm.bookId} onValueChange={v => setIssueForm({...issueForm, bookId: v})}><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Student ID *</Label><Input value={issueForm.studentId} onChange={e => setIssueForm({...issueForm, studentId: e.target.value})} placeholder={`SCH-${new Date().getFullYear()}-XXXX`} /></div>
+            <div><Label>Select Book <span className="text-red-500">*</span></Label><Select value={issueForm.bookId} onValueChange={v => setIssueForm({...issueForm, bookId: v})}><SelectTrigger><SelectValue placeholder="Choose book..." /></SelectTrigger><SelectContent>{books.filter(b => b.availableCopies > 0).map(b => <SelectItem key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Student ID <span className="text-red-500">*</span></Label><Input value={issueForm.studentId} onChange={e => setIssueForm({...issueForm, studentId: e.target.value})} placeholder={`SCH-${new Date().getFullYear()}-XXXX`} /></div>
             <div className="grid grid-cols-2 gap-3"><div><Label>Issue Date</Label><Input type="date" value={issueForm.issueDate} onChange={e => setIssueForm({...issueForm, issueDate: e.target.value})} /></div><div><Label>Due Date (14 days)</Label><Input type="date" value={issueForm.dueDate} onChange={e => setIssueForm({...issueForm, dueDate: e.target.value})} /></div></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setIssueOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleIssue} disabled={!issueForm.bookId || !issueForm.studentId.trim()}>Issue Book</Button></DialogFooter>
@@ -256,7 +256,7 @@ export function TransportModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Bus Route</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Route Name *</Label><Input value={form.routeName} onChange={e => setForm({...form, routeName: e.target.value})} placeholder="Route F — Clifton" /></div>
+            <div><Label>Route Name <span className="text-red-500">*</span></Label><Input value={form.routeName} onChange={e => setForm({...form, routeName: e.target.value})} placeholder="Route F — Clifton" /></div>
             <div className="grid grid-cols-2 gap-3"><div><Label>Vehicle No.</Label><Input value={form.vehicleNo} onChange={e => setForm({...form, vehicleNo: e.target.value})} placeholder="KHI-XXXX" /></div><div><Label>Capacity</Label><Input type="number" value={form.capacity} onChange={e => setForm({...form, capacity: Number(e.target.value)})} /></div></div>
             <div className="grid grid-cols-2 gap-3"><div><Label>Driver Name</Label><Input value={form.driverName} onChange={e => setForm({...form, driverName: e.target.value})} /></div><div><Label>Driver Phone</Label><Input value={form.driverPhone} onChange={e => setForm({...form, driverPhone: e.target.value})} placeholder="+92 3xx" /></div></div>
             <div><Label>Stops (comma-separated)</Label><Input value={form.stops} onChange={e => setForm({...form, stops: e.target.value})} placeholder="Stop 1, Stop 2, Stop 3" /></div>
@@ -396,8 +396,8 @@ export function HostelModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><BedDouble className="w-4 h-4 text-primary" />Allocate Room</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Select Room *</Label><Select value={allocForm.roomId} onValueChange={v => setAllocForm({...allocForm, roomId: v})}><SelectTrigger><SelectValue placeholder="Choose room..." /></SelectTrigger><SelectContent>{rooms.filter(r => r.occupied < r.capacity).map(r => <SelectItem key={r.id} value={r.id}>{r.roomNo} ({r.capacity - r.occupied} beds free)</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Student ID *</Label><Input value={allocForm.studentId} onChange={e => setAllocForm({...allocForm, studentId: e.target.value})} placeholder={`SCH-${new Date().getFullYear()}-XXXX`} /></div>
+            <div><Label>Select Room <span className="text-red-500">*</span></Label><Select value={allocForm.roomId} onValueChange={v => setAllocForm({...allocForm, roomId: v})}><SelectTrigger><SelectValue placeholder="Choose room..." /></SelectTrigger><SelectContent>{rooms.filter(r => r.occupied < r.capacity).map(r => <SelectItem key={r.id} value={r.id}>{r.roomNo} ({r.capacity - r.occupied} beds free)</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Student ID <span className="text-red-500">*</span></Label><Input value={allocForm.studentId} onChange={e => setAllocForm({...allocForm, studentId: e.target.value})} placeholder={`SCH-${new Date().getFullYear()}-XXXX`} /></div>
             <div><Label>Student Name</Label><Input value={allocForm.studentName} onChange={e => setAllocForm({...allocForm, studentName: e.target.value})} placeholder="Optional" /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setAllocOpen(false)}>Cancel</Button><Button className="bg-primary hover:bg-primary/90" onClick={handleAllocate} disabled={!allocForm.roomId || !allocForm.studentId.trim()}>Allocate</Button></DialogFooter>
@@ -409,7 +409,7 @@ export function HostelModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Home className="w-4 h-4 text-primary" />Add Hostel Room</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Room Number *</Label><Input value={roomForm.roomNo} onChange={e => setRoomForm({...roomForm, roomNo: e.target.value})} placeholder="e.g., H-101" /></div>
+            <div><Label>Room Number <span className="text-red-500">*</span></Label><Input value={roomForm.roomNo} onChange={e => setRoomForm({...roomForm, roomNo: e.target.value})} placeholder="e.g., H-101" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Capacity</Label><Input type="number" value={roomForm.capacity} onChange={e => setRoomForm({...roomForm, capacity: Number(e.target.value)})} /></div>
               <div><Label>Floor</Label><Input type="number" value={roomForm.floor} onChange={e => setRoomForm({...roomForm, floor: Number(e.target.value)})} /></div>
@@ -498,7 +498,7 @@ export function InventoryModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Inventory Item</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Item Name *</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Lab Beakers" /></div>
+            <div><Label>Item Name <span className="text-red-500">*</span></Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Lab Beakers" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Category</Label><Select value={form.category} onValueChange={v => setForm({...form, category: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Furniture", "Electronics", "Lab Equipment", "Stationery", "Sports", "Medical", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
               <div><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm({...form, quantity: Number(e.target.value)})} /></div>
@@ -616,10 +616,10 @@ export function EventsModule() {
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Event</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Event Title *</Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g., Science Exhibition" /></div>
+            <div><Label>Event Title <span className="text-red-500">*</span></Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g., Science Exhibition" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Type</Label><Select value={form.type} onValueChange={v => setForm({...form, type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Exam", "Holiday", "PTM", "Sports", "Cultural", "Meeting", "Deadline"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
-              <div><Label>Date *</Label><Input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
+              <div><Label>Date <span className="text-red-500">*</span></Label><Input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} /></div>
             </div>
             <div><Label>Description</Label><Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Brief description..." /></div>
           </div>

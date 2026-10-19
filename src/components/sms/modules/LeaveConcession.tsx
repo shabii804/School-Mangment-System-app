@@ -203,7 +203,7 @@ export function LeaveModule() {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Apply for Leave</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Employee Name *</Label><Input value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} /></div>
+              <div><Label>Employee Name <span className="text-red-500">*</span></Label><Input value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} /></div>
               <div><Label>Employee ID</Label><Input value={form.employeeId} onChange={e => setForm({...form, employeeId: e.target.value})} placeholder="T-001" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -211,7 +211,7 @@ export function LeaveModule() {
               <div><Label>Days</Label><Input type="number" value={form.days} onChange={e => setForm({...form, days: Number(e.target.value)})} min={1} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>From Date *</Label><Input type="date" value={form.fromDate} onChange={e => setForm({...form, fromDate: e.target.value})} /></div>
+              <div><Label>From Date <span className="text-red-500">*</span></Label><Input type="date" value={form.fromDate} onChange={e => setForm({...form, fromDate: e.target.value})} /></div>
               <div><Label>To Date</Label><Input type="date" value={form.toDate} onChange={e => setForm({...form, toDate: e.target.value})} /></div>
             </div>
             <div><Label>Reason</Label><Input value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder="Brief reason for leave" /></div>
