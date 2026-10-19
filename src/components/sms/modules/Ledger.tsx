@@ -351,7 +351,7 @@ export function LedgerModule() {
                 </div>
                 <div className="md:col-span-2 space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Description <span className="text-red-500">*</span></Label>
-                  <Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="e.g., Monthly tuition fees — July" className="h-9" />
+                  <Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="e.g., Monthly tuition fees — July" className="h-9" autoFocus />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Amount (Rs.) <span className="text-red-500">*</span></Label>
