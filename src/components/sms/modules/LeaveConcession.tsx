@@ -111,7 +111,13 @@ export function LeaveModule() {
         {/* Leave Requests */}
         <TabsContent value="requests" className="space-y-3">
           <div className="space-y-2">
-            {requests.map(req => (
+            {requests.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Calendar className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="font-medium text-sm">No leave requests</p>
+                <p className="text-xs mt-1">Click "Apply Leave" above to submit the first request.</p>
+              </div>
+            ) : requests.map(req => (
               <Card key={req.id} className="border-0 shadow-sm glass-card card-hover">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
