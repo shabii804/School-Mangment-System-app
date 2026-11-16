@@ -160,12 +160,12 @@ export function DisciplineModule() {
         ))}
       </div>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm({ studentId: "", studentName: "", class: "", type: "Late Arrival", severity: "Low", description: "", action: "", reportedBy: "" }); }}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-600" />Log Discipline Incident</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Student Name <span className="text-red-500">*</span></Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} /></div>
+              <div><Label>Student Name <span className="text-red-500">*</span></Label><Input value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} autoFocus /></div>
               <div><Label>Class</Label><Input value={form.class} onChange={e => setForm({...form, class: e.target.value})} placeholder="Grade 9-A" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -308,11 +308,11 @@ export function AlumniModule() {
         })}
       </div>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm({ name: "", graduationYear: new Date().getFullYear().toString(), lastClass: "Grade 10", currentStatus: "Studying" as Alumnus["currentStatus"], institution: "", profession: "", email: "", phone: "", donationAmount: 0 }); }}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Add Alumnus</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
-            <div><Label>Name <span className="text-red-500">*</span></Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
+            <div><Label>Name <span className="text-red-500">*</span></Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" autoFocus /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Graduation Year</Label><Input type="number" value={form.graduationYear} onChange={e => setForm({...form, graduationYear: e.target.value})} placeholder="2024" /></div>
               <div><Label>Last Class</Label><Input value={form.lastClass} onChange={e => setForm({...form, lastClass: e.target.value})} placeholder="Grade 10" /></div>
