@@ -704,7 +704,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         return {
           ...s,
           feePaidThisMonth: fullyPaid,
-          lastPaidMonth: fullyPaid ? new Date().toISOString().slice(0, 7) : s.lastPaidMonth,
+          lastPaidMonth: fullyPaid ? localMonthStr() : s.lastPaidMonth,
           outstandingAmount: newOutstanding,
         };
       }),

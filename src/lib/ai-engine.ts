@@ -250,9 +250,13 @@ export function predictDefaulters(students: Student[], feeCollections: any[]): D
 
     // Factor 2: Payment history — count of fee collections in the last 12 months
     // (not calendar year — academic sessions span 2 calendar years)
+    // Use LOCAL date for comparison (not UTC) so the 12-month window aligns
+    // with the LOCAL dates stored in feeCollections (which use localDateStr).
+    // Using toISOString().slice(0,10) would be UTC, off by 1 day east of GMT.
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-    const twelveMonthsAgoStr = twelveMonthsAgo.toISOString().slice(0, 10);
+    // Build LOCAL YYYY-MM-DD to match feeCollections[].date format
+    const twelveMonthsAgoStr = `${twelveMonthsAgo.getFullYear()}-${String(twelveMonthsAgo.getMonth() + 1).padStart(2, "0")}-${String(twelveMonthsAgo.getDate()).padStart(2, "0")}`;
     const studentCollections = feeCollections.filter(
       f => f.studentId === student.id && f.date >= twelveMonthsAgoStr
     );
