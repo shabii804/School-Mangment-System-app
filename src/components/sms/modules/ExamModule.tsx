@@ -224,7 +224,7 @@ export function ExamModule() {
       </Tabs>
 
       {/* Add Exam Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setForm({ name: "", type: "Monthly", startDate: "", endDate: "", classes: "Grade 6, Grade 7, Grade 8, Grade 9, Grade 10" }); setSelectedClasses([]); } }}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
           {/* Gradient hero header */}
           <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-purple-600 to-accent/70 px-5 py-4 text-primary-foreground">
@@ -259,7 +259,7 @@ export function ExamModule() {
               <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-2.5">
                 <div className="md:col-span-2 space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Exam Name <span className="text-red-500">*</span></Label>
-                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Monthly Test - August 2026" className="h-9" />
+                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Monthly Test - August 2026" className="h-9" autoFocus />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Type</Label>
