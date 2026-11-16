@@ -146,7 +146,7 @@ export function TeachersModule() {
       </div>
 
       {/* Add Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm({ ...EMPTY_TEACHER, id: `T-${String(Date.now()).slice(-4)}` }); }}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 gap-0">
           {/* Gradient hero header */}
           <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-primary via-primary to-purple-600/80 px-5 py-4 text-primary-foreground">
@@ -181,7 +181,7 @@ export function TeachersModule() {
               <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2.5">
                 <div className="col-span-2 space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
-                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Ahmed Khan" className="h-9" />
+                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Ahmed Khan" className="h-9" autoFocus />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Gender</Label>
@@ -638,7 +638,7 @@ export function StaffModule() {
       </Card>
 
       {/* Add Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm({ ...EMPTY_STAFF, id: `ST-${String(Date.now()).slice(-4)}` }); }}>
         <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
           {/* Gradient hero header */}
           <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-accent via-accent to-primary/80 px-5 py-4 text-accent-foreground">
@@ -673,7 +673,7 @@ export function StaffModule() {
               <div className="p-3 grid grid-cols-2 gap-2.5">
                 <div className="col-span-2 space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-red-500">*</span></Label>
-                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Imran Sheikh" className="h-9" />
+                  <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., Mr. Imran Sheikh" className="h-9" autoFocus />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNIC</Label>
