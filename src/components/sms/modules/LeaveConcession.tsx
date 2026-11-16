@@ -212,12 +212,12 @@ export function LeaveModule() {
       </Tabs>
 
       {/* Apply Leave Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) setForm({ employeeId: "", employeeName: "", type: "Casual", fromDate: "", toDate: "", days: 1, reason: "" }); }}>
         <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-primary" />Apply for Leave</DialogTitle></DialogHeader>
           <div className="space-y-2 py-1">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Employee Name <span className="text-red-500">*</span></Label><Input value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} /></div>
+              <div><Label>Employee Name <span className="text-red-500">*</span></Label><Input value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} autoFocus /></div>
               <div><Label>Employee ID</Label><Input value={form.employeeId} onChange={e => setForm({...form, employeeId: e.target.value})} placeholder="T-001" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -377,7 +377,7 @@ export function ConcessionModule() {
         })}
       </div>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setForm({ studentId: "", studentName: "", class: "", type: "Sibling Discount", percentage: 0, fixedAmount: 0, reason: "", validFrom: "", validTo: "" }); setSelectedClass("all"); setSelectedStudentId(""); } }}>
         <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0">
           {/* Gradient hero header */}
           <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-br from-accent via-accent to-primary/70 px-5 py-4 text-accent-foreground">
