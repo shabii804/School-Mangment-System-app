@@ -60,9 +60,16 @@ export function DashboardModule() {
   const todayFeeCollection = todayCollections.reduce((s, f) => s + f.amount, 0);
 
   // Today's attendance: from attendanceRecords for today
+  // Leave students are EXCLUDED from both numerator and denominator — they
+  // were on approved leave, not absent. Half-Day counts as 0.5 present.
   const todayAtt = attendanceRecords.filter(r => r.date === todayStr);
-  const presentToday = todayAtt.filter(r => r.status === "Present" || r.status === "Late").length;
-  const todayAttendancePct = todayAtt.length > 0 ? Math.round((presentToday / todayAtt.length) * 100) : 0;
+  const presentToday = todayAtt.reduce((sum, r) => {
+    if (r.status === "Present" || r.status === "Late") return sum + 1;
+    if (r.status === "Half-Day") return sum + 0.5;
+    return sum; // Absent, Leave — 0
+  }, 0);
+  const todayAttEligible = todayAtt.filter(r => r.status !== "Leave").length;
+  const todayAttendancePct = todayAttEligible > 0 ? Math.round((presentToday / todayAttEligible) * 100) : 0;
 
   // Monthly income: sum of this month's fee collections + income transactions
   const monthStr = todayStr.slice(0, 7); // YYYY-MM
