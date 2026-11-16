@@ -2,7 +2,7 @@
 
 import { useAppStore, localDateStr } from "@/lib/sms-store";
 import { useNowTick } from "@/lib/use-now-tick";
-import { STATS, FEE_TREND, STUDENT_GROWTH, ACTIVITIES, TODAY_SCHEDULE, UPCOMING_BIRTHDAYS, PENDING_TASKS, CONCESSIONS } from "@/lib/sms-data";
+import { STATS, FEE_TREND, STUDENT_GROWTH, TODAY_SCHEDULE, UPCOMING_BIRTHDAYS, PENDING_TASKS, CONCESSIONS } from "@/lib/sms-data";
 import { KpiCard } from "../KpiCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 
 export function DashboardModule() {
   useNowTick(); // Force re-render every 60s so date-based KPIs update at midnight
-  const { setActiveModule, school, feeCollections, students, teachers, staff, transactions, attendanceRecords, classes, feeStructure } = useAppStore();
+  const { setActiveModule, school, feeCollections, students, teachers, staff, transactions, attendanceRecords, classes, feeStructure, activities } = useAppStore();
 
   // ─── Compute ALL KPIs from real store data ───
   const todayStr = localDateStr();
@@ -544,12 +544,12 @@ export function DashboardModule() {
             <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground" onClick={() => setActiveModule("reports")}>View all</Button>
           </CardHeader>
           <CardContent className="space-y-1 max-h-[220px] overflow-y-auto">
-            {ACTIVITIES.length === 0 ? (
+            {activities.length === 0 ? (
               <div className="text-center py-8 text-xs text-muted-foreground">
                 <ActivityIcon className="w-6 h-6 mx-auto mb-1.5 opacity-40" />
                 No recent activity yet. Actions you take will appear here.
               </div>
-            ) : ACTIVITIES.map(act => {
+            ) : activities.slice(0, 7).map(act => {
               const Icon = ACTIVITY_ICONS[act.type] || ActivityIcon;
               return (
                 <div key={act.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors group">
