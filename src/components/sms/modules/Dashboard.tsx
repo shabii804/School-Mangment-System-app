@@ -134,17 +134,6 @@ export function DashboardModule() {
 
   const kpiClick = (module: "defaulters" | "fees" | "students" | "attendance") => () => setActiveModule(module);
 
-  // Mini data for sparkline
-  const attendanceSpark = [
-    { day: "M", val: 92 }, { day: "T", val: 88 }, { day: "W", val: 95 },
-    { day: "T", val: 90 }, { day: "F", val: 93 }, { day: "S", val: 87 },
-  ];
-
-  const feeSpark = [
-    { day: "M", val: 12 }, { day: "T", val: 18 }, { day: "W", val: 8 },
-    { day: "T", val: 15 }, { day: "F", val: 22 }, { day: "S", val: 18 },
-  ];
-
   return (
     <div className="space-y-3 fade-in">
       {/* ═══ Hero Banner — simplified, clean ═══ */}
@@ -170,94 +159,59 @@ export function DashboardModule() {
         </div>
       </div>
 
-      {/* ═══ KPI Row 1 — Primary Stats ═══ */}
+      {/* ═══ KPI Row 1 — Primary Stats (clean cards, no sparklines) ═══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <button onClick={kpiClick("students")} aria-label="View Students module" className="text-left">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
+        <button onClick={kpiClick("students")} aria-label="View Students module" className="text-left group">
+          <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Students</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums">{KPI.totalStudents}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Active enrollment</p>
+                <p className="text-2xl font-bold tabular-nums">{KPI.totalStudents}</p>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <Users className="w-4 h-4 text-primary" />
-              </div>
-            </div>
-            {/* Mini sparkline */}
-            <div className="mt-2 h-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={studentGrowth}>
-                  <defs><linearGradient id="sparkStudents" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#15857A" stopOpacity={0.4} /><stop offset="95%" stopColor="#15857A" stopOpacity={0} /></linearGradient></defs>
-                  <Area type="monotone" dataKey="students" stroke="#15857A" strokeWidth={1.5} fill="url(#sparkStudents)" />
-                </AreaChart>
-              </ResponsiveContainer>
             </div>
           </div>
         </button>
 
         <button onClick={kpiClick("attendance")} aria-label="View Attendance module" className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
-            <div className="flex items-start justify-between">
-              <div>
+          <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center shrink-0">
+                <ClipboardCheck className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Attendance</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums">{KPI.todayAttendancePct}%</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Mark today's attendance</p>
+                <p className="text-2xl font-bold tabular-nums">{KPI.todayAttendancePct}%</p>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/10 transition-colors">
-                <ClipboardCheck className="w-4 h-4 text-yellow-600" />
-              </div>
-            </div>
-            {/* Mini bar chart */}
-            <div className="mt-2 h-6 flex items-end gap-1">
-              {attendanceSpark.map((d, i) => (
-                <div key={i} className="flex-1 rounded-sm bg-yellow-500/30 hover:bg-yellow-500/50 transition-colors" style={{ height: `${d.val}%` }} title={`${d.day}: ${d.val}%`} />
-              ))}
             </div>
           </div>
         </button>
 
         <button onClick={kpiClick("fees")} aria-label="View Fee Collection module" className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
-            <div className="flex items-start justify-between">
-              <div>
+          <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <DollarSign className="w-5 h-5 text-accent" />
+              </div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Today's Collection</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums">Rs. {KPI.todayFeeCollection.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{todayCollections.length} receipts today</p>
+                <p className="text-2xl font-bold tabular-nums">Rs. {KPI.todayFeeCollection.toLocaleString()}</p>
               </div>
-              <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
-                <DollarSign className="w-4 h-4 text-accent" />
-              </div>
-            </div>
-            {/* Mini bar chart */}
-            <div className="mt-2 h-6 flex items-end gap-1">
-              {feeSpark.map((d, i) => (
-                <div key={i} className="flex-1 rounded-sm bg-accent/30 hover:bg-accent/50 transition-colors" style={{ height: `${(d.val / 22) * 100}%` }} title={`${d.day}: Rs. ${d.val}K`} />
-              ))}
             </div>
           </div>
         </button>
 
         <button onClick={kpiClick("defaulters")} aria-label="View Defaulters module" className="text-left group">
-          <div className="relative overflow-hidden rounded-xl border border-border/40 bg-card p-3 shadow-sm ">
-            <div className="flex items-start justify-between">
-              <div>
+          <div className="rounded-xl border border-border/40 bg-card p-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fee Defaulters</p>
-                <p className="text-2xl font-bold mt-1 tabular-nums text-red-600">{KPI.defaultersCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Past due date</p>
-                <div className="flex items-center gap-1 mt-2 text-xs text-red-600 font-medium">
-                  <AlertTriangle className="w-3 h-3" /> Needs follow-up
-                </div>
-              </div>
-              <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/10 transition-colors">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-              </div>
-            </div>
-            {/* Progress bar showing collection rate */}
-            <div className="mt-2">
-              <div className="flex justify-between text-[9px] text-muted-foreground mb-1"><span>Collection Rate</span><span>{KPI.totalStudents > 0 ? Math.round((1 - KPI.defaultersCount / KPI.totalStudents) * 100) : 0}%</span></div>
-              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full" style={{ width: `${KPI.totalStudents > 0 ? Math.round(Math.max(0, 1 - KPI.defaultersCount / KPI.totalStudents) * 100) : 0}%` }} />
+                <p className="text-2xl font-bold tabular-nums text-red-600">{KPI.defaultersCount}</p>
               </div>
             </div>
           </div>
