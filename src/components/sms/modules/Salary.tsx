@@ -88,7 +88,12 @@ export function SalaryModule() {
     const absentDeduction = emp.attendance.absent * perDay;
     const lateDeduction = emp.attendance.late * LATE_FINE;
     const halfDayDeduction = Math.round(emp.attendance.halfDay * perDay * 0.5);
-    const totalDeduction = absentDeduction + lateDeduction + halfDayDeduction;
+    let totalDeduction = absentDeduction + lateDeduction + halfDayDeduction;
+    // Clamp: deductions cannot exceed gross — net pay floor is 0.
+    // Edge case: if absent + halfDay exceeds WORKING_DAYS (e.g., 30 absences in
+    // a 26-day cycle), totalDeduction would exceed gross and net would go
+    // negative. Cap the deduction at gross so employees don't owe the school.
+    if (totalDeduction > gross) totalDeduction = gross;
     const net = gross - totalDeduction;
     return { gross, perDay, absentDeduction, lateDeduction, halfDayDeduction, totalDeduction, net };
   };
