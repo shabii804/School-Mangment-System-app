@@ -146,6 +146,21 @@ export function ClassesModule() {
           </div>
 
           {/* Form body */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (newClass.name) {
+                addClassAction({
+                  name: newClass.name,
+                  sections: newClass.sections.split(",").map(s => s.trim()).filter(Boolean),
+                  monthlyFee: newClass.monthlyFee,
+                });
+                toast({ title: "Class Added ✓", description: `${newClass.name} created with monthly fee Rs. ${newClass.monthlyFee.toLocaleString()}.` });
+                setAddOpen(false);
+                setNewClass({ name: "", sections: "A,B", monthlyFee: 2000 });
+              }
+            }}
+          >
           <div className="px-5 py-4 space-y-3">
             {/* ─── Section: Basic Information ─── */}
             <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
@@ -222,27 +237,17 @@ export function ClassesModule() {
               <span className="text-red-500">*</span> Required fields
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
+              <Button variant="outline" type="button" onClick={() => setAddOpen(false)} className="h-9">Cancel</Button>
               <Button
+                type="submit"
                 className="bg-primary hover:bg-primary/90 h-9 px-5 shadow-md"
                 disabled={!newClass.name}
-                onClick={() => {
-                  if (newClass.name) {
-                    addClassAction({
-                      name: newClass.name,
-                      sections: newClass.sections.split(",").map(s => s.trim()).filter(Boolean),
-                      monthlyFee: newClass.monthlyFee,
-                    });
-                    toast({ title: "Class Added ✓", description: `${newClass.name} created with monthly fee Rs. ${newClass.monthlyFee.toLocaleString()}.` });
-                    setAddOpen(false);
-                    setNewClass({ name: "", sections: "A,B", monthlyFee: 2000 });
-                  }
-                }}
               >
                 <Plus className="w-4 h-4 mr-1.5" />Add Class
               </Button>
             </div>
           </div>
+          </form>
         </DialogContent>
       </Dialog>
 
