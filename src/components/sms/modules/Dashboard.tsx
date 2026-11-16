@@ -238,77 +238,30 @@ export function DashboardModule() {
         </div>
       </div>
 
-      {/* ═══ Fee Breakdown Card ═══ */}
+      {/* ═══ Fee Summary — compact, only when there are defaulters ═══ */}
       {defaulters.length > 0 && (
-        <Card className="border-0 shadow-sm glass-card">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-accent" />
-                Fee Collection Status
-              </CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setActiveModule("defaulters")}>
-                View Defaulters <ArrowRight className="w-3 h-3 ml-1" />
-              </Button>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {/* Total Outstanding */}
-              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Total Outstanding</p>
-                <p className="text-lg font-bold text-red-600 mt-1">Rs. {KPI.pendingFees.toLocaleString()}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">{defaulters.length} students owe fees</p>
-              </div>
-              {/* Expected Monthly Revenue */}
-              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Expected Monthly</p>
-                <p className="text-lg font-bold text-emerald-600 mt-1">Rs. {activeStudents.reduce((s, st) => s + st.monthlyFee, 0).toLocaleString()}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">{activeStudents.length} × monthly tuition</p>
-              </div>
-              {/* Collected This Month */}
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Collected This Month</p>
-                <p className="text-lg font-bold text-primary mt-1">Rs. {monthlyFeeIncome.toLocaleString()}</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">{feeCollections.filter(f => f.date.startsWith(todayStr.slice(0, 7))).length} receipts</p>
-              </div>
-              {/* Collection Rate */}
-              <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
-                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Collection Rate</p>
-                <p className="text-lg font-bold text-accent mt-1">{KPI.totalStudents > 0 ? Math.round(Math.max(0, (1 - defaulters.length / KPI.totalStudents) * 100)) : 0}%</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">{KPI.totalStudents - defaulters.length} of {KPI.totalStudents} paid</p>
-              </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Total Outstanding</p>
+              <p className="text-lg font-bold text-red-600 tabular-nums">Rs. {KPI.pendingFees.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">{defaulters.length} students owe fees</p>
             </div>
-
-            {/* Fee breakdown by type */}
-            <div className="mt-3 pt-3 border-t border-border/30">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-2">Fee Breakdown by Type</p>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground">One-Time Fees</p>
-                  <p className="font-bold text-sm mt-0.5">Rs. {(() => {
-                    const items = (feeStructure as any).feeItems || [];
-                    return items.filter((f: any) => f.enabled && f.type === "one-time").reduce((s: number, f: any) => s + f.amount * activeStudents.length, 0);
-                  })().toLocaleString()}</p>
-                  <p className="text-[9px] text-muted-foreground">admission + security</p>
-                </div>
-                <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground">Annual Fees</p>
-                  <p className="font-bold text-sm mt-0.5">Rs. {(() => {
-                    const items = (feeStructure as any).feeItems || [];
-                    return items.filter((f: any) => f.enabled && f.type === "annual").reduce((s: number, f: any) => s + f.amount * activeStudents.length, 0);
-                  })().toLocaleString()}</p>
-                  <p className="text-[9px] text-muted-foreground">registration + exam</p>
-                </div>
-                <div className="rounded-lg bg-muted/20 p-2 text-center">
-                  <p className="text-[9px] text-muted-foreground">Monthly Fees</p>
-                  <p className="font-bold text-sm mt-0.5">Rs. {activeStudents.reduce((s, st) => s + st.monthlyFee, 0).toLocaleString()}</p>
-                  <p className="text-[9px] text-muted-foreground">tuition per month</p>
-                </div>
-              </div>
+          </div>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <DollarSign className="w-5 h-5 text-primary" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Collected This Month</p>
+              <p className="text-lg font-bold text-primary tabular-nums">Rs. {monthlyFeeIncome.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">{feeCollections.filter(f => f.date.startsWith(todayStr.slice(0, 7))).length} receipts</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ═══ Concession / Scholarship Summary ═══ */}
