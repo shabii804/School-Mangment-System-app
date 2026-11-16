@@ -92,10 +92,13 @@ export function DashboardModule() {
   };
 
   // ─── Real fee trend — last 6 months from store ───
+  // Use LOCAL month (not UTC) so the filter aligns with feeCollections[].date
+  // which is stored as LOCAL YYYY-MM-DD via localDateStr().
   const feeTrend = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
     d.setMonth(d.getMonth() - (5 - i));
-    const ms = d.toISOString().slice(0, 7);
+    // Build LOCAL YYYY-MM to match feeCollections[].date format
+    const ms = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const collected = feeCollections.filter(f => f.date.startsWith(ms)).reduce((s, f) => s + f.amount, 0);
     return {
       month: d.toLocaleDateString("en-GB", { month: "short" }),
@@ -108,9 +111,15 @@ export function DashboardModule() {
   const studentGrowth = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
     d.setMonth(d.getMonth() - (5 - i));
-    const ms = d.toISOString().slice(0, 7);
+    // Build LOCAL YYYY-MM to match admissionDate format
+    const ms = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const count = students.filter(s => s.admissionDate && s.admissionDate.startsWith(ms)).length;
-    const cumulative = students.filter(s => s.admissionDate && s.admissionDate <= ms + "-31").length;
+    // Cumulative: all students admitted ON OR BEFORE the last day of this month.
+    // Use last day of month (not hardcoded '-31' which produces invalid dates
+    // like '2026-02-31' for February). Build the correct last-day string.
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const monthEndStr = `${ms}-${String(lastDay).padStart(2, "0")}`;
+    const cumulative = students.filter(s => s.admissionDate && s.admissionDate <= monthEndStr).length;
     return { month: d.toLocaleDateString("en-GB", { month: "short" }), students: count, total: cumulative };
   });
 
