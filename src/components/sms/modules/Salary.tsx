@@ -39,7 +39,7 @@ interface SalaryRow {
 export function SalaryModule() {
   useNowTick(); // Re-render every 60s so month dropdown stays current
   const { toast } = useToast();
-  const { school, teachers, staff, attendanceRecords, addTransaction } = useAppStore();
+  const { school, teachers, staff, attendanceRecords, addTransaction, transactions } = useAppStore();
   const [month, setMonth] = useState(new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" }));
   const [selected, setSelected] = useState<SalaryRow | null>(null);
   const [deptFilter, setDeptFilter] = useState("all");
@@ -178,6 +178,24 @@ export function SalaryModule() {
             onClick={() => {
               if (filteredEmployees.length === 0) {
                 toast({ title: "No employees", description: "No employees match the current filter.", variant: "destructive" });
+                return;
+              }
+              // Idempotency guard: prevent duplicate payroll entries.
+              // If payroll for this month has already been recorded as a Ledger
+              // transaction (matching description pattern), warn the user instead
+              // of creating a duplicate. The user can still proceed by dismissing
+              // and clicking again — but they get a chance to realize their mistake.
+              const payrollAlreadyRecorded = transactions.some(t =>
+                t.type === "Expense" &&
+                t.category === "Salary" &&
+                t.description === `Payroll for ${month} — ${filteredEmployees.length} employees`
+              );
+              if (payrollAlreadyRecorded) {
+                toast({
+                  title: "Payroll already finalized",
+                  description: `Salary expense for ${month} (${filteredEmployees.length} employees) is already in the Ledger. Re-finalizing will create a duplicate entry.`,
+                  variant: "destructive",
+                });
                 return;
               }
               const totalNet = filteredEmployees.reduce((s, e) => s + calculate(e).net, 0);
