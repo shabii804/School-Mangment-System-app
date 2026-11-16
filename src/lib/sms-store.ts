@@ -388,27 +388,36 @@ if (typeof window !== "undefined") {
   // the students' lastPaidMonth. If so, reset feePaidThisMonth = false
   // and recharge outstandingAmount for the new month.
   // This prevents the "all students show Paid in January" bug.
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const currentMonth = localMonthStr(); // LOCAL YYYY-MM (UTC would miss month boundary east of GMT)
   const lastResetMonth = window.localStorage.getItem("edudesk_lastFeeReset");
   if (lastResetMonth !== currentMonth) {
-    // Month has changed (or first run) — reset fee flags for all students
+    // Month has changed (or first run) — reset fee flags for all students.
+    // IMPORTANT: must add monthlyFee to outstanding for ALL active students,
+    // not just those who paid last month. Otherwise multi-month defaulters
+    // never accumulate outstanding (their Feb fee is added when Feb begins,
+    // but their March fee is never added because feePaidThisMonth stays
+    // false from Feb onward).
     try {
       const rawStudents = window.localStorage.getItem("edudesk_students");
       if (rawStudents) {
         const studentsList = JSON.parse(rawStudents) as Student[];
         let changed = false;
         const updated = studentsList.map(s => {
-          if (s.status === "Active" && s.feePaidThisMonth) {
-            changed = true;
-            return {
-              ...s,
-              feePaidThisMonth: false,
-              // Add this month's fee to outstanding (since it hasn't been paid)
-              outstandingAmount: (s.outstandingAmount || 0) + (s.monthlyFee || 0),
-              lastPaidMonth: s.lastPaidMonth || lastResetMonth || currentMonth,
-            };
-          }
-          return s;
+          if (s.status !== "Active") return s;
+          changed = true;
+          return {
+            ...s,
+            // Always reset feePaidThisMonth for the new month — even if the
+            // student didn't pay last month, the flag should be false for
+            // the new month (they haven't paid THIS month yet).
+            feePaidThisMonth: false,
+            // Always add this month's fee to outstanding. If they paid last
+            // month, outstanding was 0, now becomes monthlyFee. If they
+            // didn't pay, outstanding was already monthlyFee, now becomes
+            // 2× monthlyFee (correctly accumulating the defaulter's debt).
+            outstandingAmount: (s.outstandingAmount || 0) + (s.monthlyFee || 0),
+            lastPaidMonth: s.lastPaidMonth || lastResetMonth || currentMonth,
+          };
         });
         if (changed) {
           window.localStorage.setItem("edudesk_students", JSON.stringify(updated));
