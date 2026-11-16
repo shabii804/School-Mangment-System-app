@@ -147,69 +147,26 @@ export function DashboardModule() {
 
   return (
     <div className="space-y-3 fade-in">
-      {/* ═══ Hero Banner ═══ */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/90 p-4 text-primary-foreground shadow-lg">
-        <div className="absolute inset-0 opacity-10 pattern-grid" />
-        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/25 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
-        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-y-1/2" />
-        <div className="absolute top-1/2 left-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl" />
-        <div className="relative flex items-start gap-6">
+      {/* ═══ Hero Banner — simplified, clean ═══ */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/90 p-5 text-primary-foreground shadow-md">
+        <div className="relative flex items-center gap-4">
           {/* Logo */}
-          <div className="w-20 h-20 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center overflow-hidden ring-4 ring-white/20 shadow-2xl shrink-0">
+          <div className="w-14 h-14 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center overflow-hidden ring-2 ring-white/20 shrink-0">
             {school.logo ? (
               <img src={school.logo} alt={school.name} className="w-full h-full object-cover" />
             ) : (
-              <School className="w-8 h-8 text-primary-foreground" />
+              <School className="w-7 h-7 text-primary-foreground" />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs opacity-90">Assalam-o-Alaikum, welcome back 👋</p>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 font-medium backdrop-blur-sm">
-                <Sparkles className="w-2.5 h-2.5 inline mr-1" />Session {school.session}
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/20 font-medium flex items-center gap-1 backdrop-blur-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
-              </span>
-            </div>
-            <h2 className="text-2xl font-bold mt-1 tracking-tight">{school.name}</h2>
-            <p className="text-sm opacity-80 mt-0.5">{school.tagline}</p>
-            {/* Inline mini stats */}
-            <div className="flex gap-4 mt-3">
-              <div>
-                <p className="text-2xl font-bold tabular-nums">{KPI.totalStudents}</p>
-                <p className="text-[10px] uppercase opacity-60 tracking-wider">Students</p>
-              </div>
-              <div className="border-l border-white/15 pl-5">
-                <p className="text-2xl font-bold tabular-nums">{KPI.totalTeachers + KPI.totalStaff}</p>
-                <p className="text-[10px] uppercase opacity-60 tracking-wider">Staff</p>
-              </div>
-              <div className="border-l border-white/15 pl-5">
-                <p className="text-2xl font-bold tabular-nums">{KPI.todayAttendancePct}%</p>
-                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Att.</p>
-              </div>
-              <div className="border-l border-white/15 pl-5">
-                <p className="text-2xl font-bold tabular-nums">Rs. {(KPI.todayFeeCollection / 1000).toFixed(0)}K</p>
-                <p className="text-[10px] uppercase opacity-60 tracking-wider">Today Coll.</p>
-              </div>
-            </div>
-            {/* Quick action buttons */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <button onClick={() => setActiveModule("fees")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-semibold transition-all hover:scale-105 backdrop-blur-sm shadow-sm">
-                <Receipt className="w-3.5 h-3.5" /> Collect Fee
-              </button>
-              <button onClick={() => setActiveModule("attendance")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition-all hover:scale-105 border border-white/20 backdrop-blur-sm">
-                <ClipboardList className="w-3.5 h-3.5" /> Mark Attendance
-              </button>
-              <button onClick={() => setActiveModule("students")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition-all hover:scale-105 border border-white/20 backdrop-blur-sm">
-                <Plus className="w-3.5 h-3.5" /> New Admission
-              </button>
-              <button onClick={() => setActiveModule("defaulters")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent/25 hover:bg-accent/35 text-xs font-semibold transition-all hover:scale-105 border border-accent/30 backdrop-blur-sm">
-                <AlertTriangle className="w-3.5 h-3.5" /> {KPI.defaultersCount} Defaulters
-              </button>
-            </div>
+            <h2 className="text-xl font-bold tracking-tight truncate">{school.name}</h2>
+            <p className="text-xs opacity-80 mt-0.5 truncate">
+              {school.tagline || "School Management System"} • {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </p>
           </div>
+          <span className="hidden sm:inline-flex text-[10px] px-2.5 py-1 rounded-full bg-white/15 font-medium backdrop-blur-sm shrink-0">
+            <Sparkles className="w-3 h-3 inline mr-1" />Session {school.session}
+          </span>
         </div>
       </div>
 
